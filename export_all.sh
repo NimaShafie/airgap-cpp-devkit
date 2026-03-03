@@ -249,11 +249,23 @@ SUPER_REPO_PATH="${EXPORT_FOLDER}/${SUPER_REPO_NAME}"
 
 print_info "Cloning to: $SUPER_REPO_PATH"
 
-# Clone from bundle (filter detached HEAD warnings)
-git -c advice.detachedHead=false \
-    -c transfer.fsckObjects=false \
-    clone --quiet --no-progress "$SUPER_BUNDLE" "$SUPER_REPO_PATH" \
-    2>&1 | grep -v "Receiving\|Resolving\|detached HEAD\|HEAD is now\|Cloning into\|Note: switching to\|Note: checking out" >> "$LOG_FILE" || true
+# Clone from bundle with verbose error handling
+print_info "Cloning super repository from bundle..."
+
+CLONE_OUTPUT=$(git -c advice.detachedHead=false \
+                  -c transfer.fsckObjects=false \
+                  clone --quiet --no-progress "$SUPER_BUNDLE" "$SUPER_REPO_PATH" 2>&1)
+
+CLONE_EXIT_CODE=$?
+
+if [ $CLONE_EXIT_CODE -ne 0 ]; then
+    print_error "Super repository clone failed (exit code: $CLONE_EXIT_CODE)"
+    echo "========================================" >&3
+    echo "CLONE ERROR DETAILS:" >&3
+    echo "$CLONE_OUTPUT" >&3
+    echo "========================================" >&3
+    exit 1
+fi
 
 cd "$SUPER_REPO_PATH"
 
@@ -306,6 +318,15 @@ for remote in $(git branch -r | grep -v '\->' | grep 'origin/' | sed 's|^[[:spac
     fi
 done &> /dev/null
 
+# Initialize submodule references so git knows what commits each should be at
+if [ -f ".gitmodules" ]; then
+    print_info "Initializing submodule references..."
+    git submodule init >/dev/null 2>&1 || true
+    print_success "Submodule commit pointers loaded from super repo"
+else
+    print_warning "No .gitmodules file - no submodules defined"
+fi
+
 # Remove the remote - all branches are now local
 git remote remove origin 2>/dev/null || true
 print_success "Local branches created for all remote refs"
@@ -343,24 +364,31 @@ cd "$IMPORT_FOLDER"
 SUPER_BUNDLE_NAME=$(basename "$SUPER_BUNDLE")
 
 # Find ALL bundles (mindepth 1), then filter out the super repo bundle
-ALL_BUNDLES=$(find . -mindepth 1 -name "*.bundle" -type f)
-SUBMODULE_BUNDLES=""
+ALL_BUNDLES=$(find . -mindepth 1 -name "*.bundle" -type f 2>/dev/null || true)
 
-# Filter: exclude super repo bundle, include everything else
-while IFS= read -r bundle; do
-    bundle_path="${bundle#./}"  # Remove leading ./
-    # Skip if this is the super repo bundle at root level
-    if [ "$bundle_path" = "$SUPER_BUNDLE_NAME" ]; then
-        continue
-    fi
-    # Include all other bundles
-    if [ -z "$SUBMODULE_BUNDLES" ]; then
-        SUBMODULE_BUNDLES="$IMPORT_FOLDER/$bundle_path"
-    else
-        SUBMODULE_BUNDLES="$SUBMODULE_BUNDLES
+if [ -z "$ALL_BUNDLES" ]; then
+    print_warning "No bundle files found in import folder"
+    SUBMODULE_BUNDLES=""
+else
+    SUBMODULE_BUNDLES=""
+    
+    # Filter: exclude super repo bundle, include everything else
+    while IFS= read -r bundle; do
+        [ -z "$bundle" ] && continue
+        bundle_path="${bundle#./}"  # Remove leading ./
+        # Skip if this is the super repo bundle at root level
+        if [ "$bundle_path" = "$SUPER_BUNDLE_NAME" ]; then
+            continue
+        fi
+        # Include all other bundles
+        if [ -z "$SUBMODULE_BUNDLES" ]; then
+            SUBMODULE_BUNDLES="$IMPORT_FOLDER/$bundle_path"
+        else
+            SUBMODULE_BUNDLES="$SUBMODULE_BUNDLES
 $IMPORT_FOLDER/$bundle_path"
-    fi
-done < <(echo "$ALL_BUNDLES")
+        fi
+    done < <(echo "$ALL_BUNDLES")
+fi
 
 cd "$SCRIPT_DIR"
 
@@ -373,6 +401,16 @@ if [ -z "$SUBMODULE_BUNDLES" ]; then
 else
     SUBMODULE_COUNT=$(echo "$SUBMODULE_BUNDLES" | wc -l)
     print_success "Found $SUBMODULE_COUNT submodule bundle(s) at all levels"
+    
+    # Log all discovered bundles for debugging
+    log_message ""
+    log_message "Discovered submodule bundles:"
+    log_message "-----------------------------------------------------------------"
+    echo "$SUBMODULE_BUNDLES" | while read -r bpath; do
+        RELATIVE="${bpath#$IMPORT_FOLDER/}"
+        log_message "  • $RELATIVE"
+    done
+    log_message ""
 fi
 
 ##############################################################################
@@ -414,20 +452,35 @@ else
             mkdir -p "$SUBMODULE_PARENT"
         fi
         
-        # Clone the submodule from bundle (filter all warnings)
-        if git -c advice.detachedHead=false \
-               -c transfer.fsckObjects=false \
-               clone --quiet --no-progress "$BUNDLE_FULL_PATH" "$SUBMODULE_PATH" \
-               2>&1 | grep -v "Receiving\|Resolving\|detached HEAD\|HEAD is now\|Cloning into\|Note: switching to\|Note: checking out" >> "$LOG_FILE" 2>&1; then
-            :  # Clone successful
-        else
-            print_error "  ✗ Clone failed"
+        # Clone the submodule from bundle with VERBOSE error output
+        print_info "  Cloning from bundle..."
+        
+        CLONE_OUTPUT=$(git -c advice.detachedHead=false \
+                          -c transfer.fsckObjects=false \
+                          clone --no-checkout "$BUNDLE_FULL_PATH" "$SUBMODULE_PATH" 2>&1)
+        
+        CLONE_EXIT_CODE=$?
+        
+        if [ $CLONE_EXIT_CODE -ne 0 ]; then
+            print_error "  ✗ Clone failed (exit code: $CLONE_EXIT_CODE)"
+            echo "----------------------------------------" >&3
+            echo "CLONE ERROR DETAILS:" >&3
+            echo "$CLONE_OUTPUT" >&3
+            echo "----------------------------------------" >&3
+            
             log_message ""
             log_message "Submodule #$SUBMODULE_NUM: $SUBMODULE_PATH"
             log_message "Status: ✗ CLONE FAILED"
+            log_message "Exit Code: $CLONE_EXIT_CODE"
+            log_message "Error Output:"
+            log_message "$CLONE_OUTPUT"
             log_message ""
+            
+            # Continue to next submodule instead of exiting
             continue
         fi
+        
+        print_success "  Cloned successfully"
         
         # Navigate to submodule
         cd "$SUBMODULE_PATH"
@@ -436,25 +489,65 @@ else
         git config advice.detachedHead false 2>/dev/null || true
         git config advice.statusHints false 2>/dev/null || true
         
-        # Determine and checkout the default branch (suppress output)
-        CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
+        # Checkout the specific commit that the super repo points to
         
-        if [ -z "$CURRENT_BRANCH" ] || [ "$CURRENT_BRANCH" = "HEAD" ]; then
-            # No local branch yet, create one from remote refs with priority order
-            AVAILABLE_BRANCHES=$(git branch -r | grep -v '\->' | sed 's|^[[:space:]]*origin/||' | sed 's|^[[:space:]]*||')
+        # Get the commit that the super repo expects for this submodule
+        cd "$SUPER_REPO_PATH"
+        
+        # Get submodule path relative to super repo
+        SUBMODULE_REL_PATH="${SUBMODULE_PATH#$SUPER_REPO_PATH/}"
+        
+        # Get the commit SHA that this submodule should be at (from super repo's index)
+        EXPECTED_COMMIT=$(git ls-tree HEAD "$SUBMODULE_REL_PATH" 2>/dev/null | awk '{print $3}')
+        
+        if [ -z "$EXPECTED_COMMIT" ]; then
+            # Submodule not in current branch - this might be a nested submodule or removed submodule
+            print_warning "  ⚠ Submodule not found in super repo's current branch"
+            log_message "Warning: $SUBMODULE_REL_PATH not referenced in super repo HEAD"
+            log_message "This may be a nested submodule or was removed in this branch"
             
-            # Priority: main -> develop -> master -> first available
-            if echo "$AVAILABLE_BRANCHES" | grep -q "^main$"; then
-                git checkout -b main origin/main &>/dev/null
-            elif echo "$AVAILABLE_BRANCHES" | grep -q "^develop$"; then
-                git checkout -b develop origin/develop &>/dev/null
-            elif echo "$AVAILABLE_BRANCHES" | grep -q "^master$"; then
-                git checkout -b master origin/master &>/dev/null
-            else
-                FIRST_BRANCH=$(echo "$AVAILABLE_BRANCHES" | head -n 1)
-                if [ -n "$FIRST_BRANCH" ]; then
-                    git checkout -b "$FIRST_BRANCH" "origin/$FIRST_BRANCH" &>/dev/null
+            cd "$SUBMODULE_PATH"
+            
+            # Fallback: checkout a default branch
+            AVAILABLE_BRANCHES=$(git branch -r 2>/dev/null | sed 's|  origin/||' | grep -v "HEAD" || true)
+            if [ -n "$AVAILABLE_BRANCHES" ]; then
+                if echo "$AVAILABLE_BRANCHES" | grep -q "^main$"; then
+                    git checkout -b main origin/main 2>&1 | grep -v "detached HEAD" >&3 || true
+                    print_info "  Checked out fallback: main"
+                elif echo "$AVAILABLE_BRANCHES" | grep -q "^develop$"; then
+                    git checkout -b develop origin/develop 2>&1 | grep -v "detached HEAD" >&3 || true
+                    print_info "  Checked out fallback: develop"
+                elif echo "$AVAILABLE_BRANCHES" | grep -q "^master$"; then
+                    git checkout -b master origin/master 2>&1 | grep -v "detached HEAD" >&3 || true
+                    print_info "  Checked out fallback: master"
                 fi
+            fi
+        else
+            # Checkout the EXACT commit that super repo points to
+            cd "$SUBMODULE_PATH"
+            
+            log_message "Submodule: $SUBMODULE_REL_PATH"
+            log_message "Expected commit: $EXPECTED_COMMIT"
+            
+            CHECKOUT_OUTPUT=$(git checkout "$EXPECTED_COMMIT" 2>&1)
+            CHECKOUT_EXIT_CODE=$?
+            
+            if [ $CHECKOUT_EXIT_CODE -eq 0 ]; then
+                print_success "  → Commit ${EXPECTED_COMMIT:0:8} (as per super repo)"
+                log_message "Successfully checked out $EXPECTED_COMMIT"
+            else
+                print_error "  ✗ Failed to checkout ${EXPECTED_COMMIT:0:8}"
+                echo "----------------------------------------" >&3
+                echo "CHECKOUT ERROR:" >&3  
+                echo "$CHECKOUT_OUTPUT" >&3
+                echo "----------------------------------------" >&3
+                
+                log_message "ERROR: Could not checkout commit $EXPECTED_COMMIT"
+                log_message "Error details: $CHECKOUT_OUTPUT"
+                log_message "This commit may not exist in the bundle - bundle may be out of sync"
+                
+                # Try to continue with whatever commit we have
+                print_warning "  Continuing with current state"
             fi
         fi
         
