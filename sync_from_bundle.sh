@@ -426,4 +426,4 @@ echo "  git status"
 echo "  git submodule status --recursive"
 echo ""
 
-print_success "All done! ✓"
+print_success "All done!"

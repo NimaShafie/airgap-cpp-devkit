@@ -7,6 +7,10 @@
 #
 # Verifies that all branches, tags, and commits were transferred correctly
 # from the full-test-repo to the exported version
+#
+# Fixes:
+#  - Use git-based repo detection (works when .git is a FILE, e.g. submodules)
+#  - Ignore a bogus local branch named "origin" if it exists (safety)
 ##############################################################################
 
 set -e
@@ -28,19 +32,32 @@ print_header() {
 }
 
 print_success() {
-    echo -e "${GREEN}✓ $1${NC}"
+    echo -e "${GREEN}OK $1${NC}"
 }
 
 print_error() {
-    echo -e "${RED}✗ $1${NC}"
+    echo -e "${RED}ERR $1${NC}"
 }
 
 print_info() {
-    echo -e "${YELLOW}ℹ $1${NC}"
+    echo -e "${YELLOW}INFO $1${NC}"
 }
 
+# Sanity checks (fail early with clear message)
+if ! command -v git >/dev/null 2>&1; then
+    print_error "git not found in PATH"
+    print_info "Run this script from Git Bash (MINGW64) where git is available"
+    exit 1
+fi
+
+if ! command -v wc >/dev/null 2>&1; then
+    print_error "wc not found in PATH"
+    print_info "Run this script from Git Bash (MINGW64) where coreutils are available"
+    exit 1
+fi
+
 # Find the most recent export
-EXPORT_DIR=$(find "${SCRIPT_DIR}" -maxdepth 2 -type d -name "full-test-repo" | grep "_export" | sort -r | head -n 1)
+EXPORT_DIR="$(find "${SCRIPT_DIR}" -maxdepth 2 -type d -name "full-test-repo" 2>/dev/null | grep "_export" | sort -r | head -n 1 || true)"
 
 if [ -z "$EXPORT_DIR" ]; then
     print_error "Could not find exported full-test-repo"
@@ -56,59 +73,79 @@ echo ""
 
 ISSUES=0
 
+# Determine if a path is a git repo (works for normal repos AND submodules where .git is a file)
+is_git_repo() {
+    local P="$1"
+    git -C "$P" rev-parse --is-inside-work-tree >/dev/null 2>&1
+}
+
+# Count local branches, excluding a bogus local branch named "origin" if present
+count_local_branches_sanitized() {
+    git for-each-ref --format='%(refname:short)' refs/heads 2>/dev/null | grep -v '^origin$' | wc -l | tr -d ' '
+}
+
 # Function to check repo
 check_repo() {
-    local NAME=$1
-    local PATH=$2
-    local EXPECTED_BRANCHES=$3
-    local EXPECTED_TAGS=$4
-    
+    local NAME="$1"
+    local REPO_PATH="$2"
+    local EXPECTED_BRANCHES="$3"
+    local EXPECTED_TAGS="$4"
+
     echo ""
     print_header "Checking: $NAME"
-    
-    if [ ! -d "$PATH/.git" ]; then
-        print_error "Not a git repository: $PATH"
+
+    if ! is_git_repo "$REPO_PATH"; then
+        print_error "Not a git repository: $REPO_PATH"
         ISSUES=$((ISSUES + 1))
         return
     fi
-    
-    cd "$PATH"
-    
-    # Check branches
-    BRANCH_COUNT=$(git branch | wc -l)
+
+    cd "$REPO_PATH"
+
+    # Branch count (exclude any stray local branch named "origin")
+    local BRANCH_COUNT
+    BRANCH_COUNT="$(count_local_branches_sanitized)"
     echo "Branches: $BRANCH_COUNT (expected: $EXPECTED_BRANCHES)"
-    git branch | sed 's/^/  /'
-    
+
+    # Show branches, but hide "origin" if it exists
+    git branch | grep -vE '^[* ] origin$' | sed 's/^/  /' || true
+
+    if git show-ref --verify --quiet refs/heads/origin; then
+        echo "  (note: local branch 'origin' exists but is ignored for verification)"
+    fi
+
     if [ "$BRANCH_COUNT" -eq "$EXPECTED_BRANCHES" ]; then
         print_success "Branch count correct"
     else
-        print_error "Branch count mismatch! Expected $EXPECTED_BRANCHES, got $BRANCH_COUNT"
+        print_error "Branch count mismatch (expected $EXPECTED_BRANCHES, got $BRANCH_COUNT)"
         ISSUES=$((ISSUES + 1))
     fi
-    
-    # Check tags
-    TAG_COUNT=$(git tag | wc -l)
+
+    # Tag count
+    local TAG_COUNT
+    TAG_COUNT="$(git tag | wc -l | tr -d ' ')"
     echo ""
     echo "Tags: $TAG_COUNT (expected: $EXPECTED_TAGS)"
-    git tag | sed 's/^/  /'
-    
+    git tag | sed 's/^/  /' || true
+
     if [ "$TAG_COUNT" -eq "$EXPECTED_TAGS" ]; then
         print_success "Tag count correct"
     else
-        print_error "Tag count mismatch! Expected $EXPECTED_TAGS, got $TAG_COUNT"
+        print_error "Tag count mismatch (expected $EXPECTED_TAGS, got $TAG_COUNT)"
         ISSUES=$((ISSUES + 1))
     fi
-    
-    # Check remotes (should be empty for air-gapped)
-    REMOTE_COUNT=$(git remote | wc -l)
+
+    # Remotes (should be empty for air-gapped)
+    local REMOTE_COUNT
+    REMOTE_COUNT="$(git remote | wc -l | tr -d ' ')"
     echo ""
     echo "Remotes: $REMOTE_COUNT (expected: 0 for air-gapped)"
-    
+
     if [ "$REMOTE_COUNT" -eq 0 ]; then
         print_success "No remotes (air-gapped setup correct)"
     else
         print_error "Found remotes (should be none for air-gapped)"
-        git remote -v
+        git remote -v || true
         ISSUES=$((ISSUES + 1))
     fi
 }
@@ -126,28 +163,22 @@ echo ""
 print_header "Verification Summary"
 echo ""
 
-if [ $ISSUES -eq 0 ]; then
-    print_success "ALL CHECKS PASSED!"
+if [ "$ISSUES" -eq 0 ]; then
+    print_success "ALL CHECKS PASSED"
     echo ""
-    echo "✓ All 21 branches transferred correctly"
-    echo "✓ All 16 tags transferred correctly"
-    echo "✓ All repositories are air-gapped (no remotes)"
-    echo "✓ Root-level submodules have all branches (not just main)"
-    echo "✓ Nested submodules have all branches"
-    echo ""
-    print_success "Bundle and export scripts are working perfectly!"
+    echo "OK All branches transferred correctly"
+    echo "OK All tags transferred correctly"
+    echo "OK All repositories are air-gapped (no remotes)"
 else
     print_error "FOUND $ISSUES ISSUE(S)"
     echo ""
     print_info "Review the output above to see what failed"
     echo ""
     echo "Common issues:"
-    echo "  • Root-level repos only have 'main' branch"
-    echo "    → This means bundle_all.sh didn't fetch all branches"
-    echo "  • Missing tags"
-    echo "    → Check bundle verification log"
-    echo "  • Remotes present"
-    echo "    → export_all.sh didn't remove remotes properly"
+    echo "  - Missing submodules in export"
+    echo "    -> bundle_all.sh skipped bundling because submodules were not initialized"
+    echo "  - Root-level repos only have main"
+    echo "    -> bundling did not include all branches or export didn't recreate refs"
 fi
 
 echo ""

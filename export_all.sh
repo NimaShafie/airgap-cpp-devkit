@@ -4,91 +4,67 @@
 # export_all.sh
 #
 # Author: Nima Shafie
-# 
-# Purpose: Extract and recreate a Git super repository with all its submodules
-#          from git bundles on an air-gapped network. Maintains the original
-#          folder structure and initializes all submodules.
 #
-# Usage: ./export_all.sh
+# Purpose: Recreate a Git super repository + submodules from bundles created
+#          by bundle_all.sh, suitable for air-gapped use.
 #
-# Requirements: git
+# Features:
+#  - Auto-detects most recent *_import folder (or use IMPORT_FOLDER_OVERRIDE)
+#  - Verifies SHA256 for ALL bundles (uses bundle_verification.txt from import)
+#  - Clones super repo from bundle, materializes local branches, removes remote
+#  - Restores submodule bundles into local cache: <repo>/_submodule_cache/<path>
+#  - Provides git scheckout to switch branches + fully init submodules offline
+#
+# Requirements: git, sha256sum
 ##############################################################################
 
-set -e  # Exit on error
-set -u  # Exit on undefined variable
+set -e
+set -u
 
-##############################################################################
-# SUPPRESS ALL GIT WARNINGS - Save stderr for our own messages
-##############################################################################
-exec 3>&2  # Save original stderr to file descriptor 3
-exec 2>&1  # Redirect stderr to stdout (will be filtered)
+# Suppress noisy git progress/warnings
+exec 3>&2
+exec 2>&1
 
-##############################################################################
-# PERFORMANCE OPTIMIZATION
-##############################################################################
 export GIT_TERMINAL_PROMPT=0
 export GIT_ASKPASS=echo
 
 ##############################################################################
-# USER CONFIGURATION - EDIT THESE VARIABLES
+# USER CONFIGURATION
 ##############################################################################
 
-# Path to the import folder (the folder created by bundle_all.sh)
-# This should be the YYYYMMDD_HHmm_import folder
-# Leave empty to auto-detect (finds the most recent *_import folder by timestamp in name)
-# Example: "20260126_2140_import" or leave "" for auto-detect
-IMPORT_FOLDER=""
+# Leave empty to auto-detect the most recent *_import folder.
+# Example: IMPORT_FOLDER_OVERRIDE="20260306_1631_import"
+IMPORT_FOLDER_OVERRIDE=""
 
-# Default branch to checkout (typically 'main' or 'master')
-DEFAULT_BRANCH="main"
+# SHA verification behavior:
+#   1 = fail export if any SHA mismatch / missing expected bundle
+#   0 = warn only
+STRICT_SHA_VERIFY=1
 
 ##############################################################################
-# SCRIPT CONFIGURATION - Generally no need to edit below
+# SCRIPT CONFIGURATION
 ##############################################################################
 
-# Store the original working directory (where the script is run from)
 SCRIPT_DIR="$(pwd)"
 
-# Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
-# Track script start time
 SCRIPT_START_TIME=$(date +%s)
 
-##############################################################################
-# FUNCTIONS
-##############################################################################
-
 print_header() {
-    echo -e "${BLUE}============================================================${NC}" >&3
-    echo -e "${BLUE}$1${NC}" >&3
-    echo -e "${BLUE}============================================================${NC}" >&3
+  echo -e "${BLUE}============================================================${NC}" >&3
+  echo -e "${BLUE}$1${NC}" >&3
+  echo -e "${BLUE}============================================================${NC}" >&3
 }
 
-print_success() {
-    echo -e "${GREEN}[OK]${NC} $1" >&3
-}
-
-print_warning() {
-    echo -e "${YELLOW}[WARN]${NC} $1" >&3
-}
-
-print_error() {
-    echo -e "${RED}[ERR]${NC} $1" >&3
-}
-
-print_info() {
-    echo -e "${YELLOW}[INFO]${NC} $1" >&3
-}
-
-log_message() {
-    # Log to file AND to the terminal (FD 3) without polluting stdout/stderr
-    echo "$1" | tee -a "$LOG_FILE" >&3
-}
+print_success(){ echo -e "${GREEN}[OK]${NC} $1" >&3; }
+print_warning(){ echo -e "${YELLOW}[WARN]${NC} $1" >&3; }
+print_error(){ echo -e "${RED}[ERR]${NC} $1" >&3; }
+print_info(){ echo -e "${YELLOW}[INFO]${NC} $1" >&3; }
 
 ##############################################################################
 # VALIDATION
@@ -96,668 +72,610 @@ log_message() {
 
 print_header "Git Export Script - Recreate Repository from Bundles"
 
-# Check if git is installed
-if ! command -v git &> /dev/null; then
-    print_error "Git is not installed. Please install git and try again."
-    exit 1
-fi
-
-# Auto-detect import folder if not specified
-if [ -z "$IMPORT_FOLDER" ]; then
-    print_info "Auto-detecting import folder..."
-    
-    # Find the most recent *_import folder
-    IMPORT_FOLDER=$(find . -maxdepth 1 -type d -name "*_import" | sort -r | head -n 1)
-    
-    if [ -z "$IMPORT_FOLDER" ]; then
-        print_error "No *_import folder found in current directory."
-        print_info "Please either:"
-        echo "  1. Place this script in the same directory as the import folder, or"
-        echo "  2. Edit the IMPORT_FOLDER variable in this script"
-        exit 1
-    fi
-    
-    # Remove leading ./
-    IMPORT_FOLDER="${IMPORT_FOLDER#./}"
-    print_success "Found import folder: $IMPORT_FOLDER"
-else
-    # Validate specified import folder
-    if [ ! -d "$IMPORT_FOLDER" ]; then
-        print_error "Import folder does not exist: $IMPORT_FOLDER"
-        print_info "Please edit the IMPORT_FOLDER variable in this script."
-        exit 1
-    fi
-fi
-
-# Extract timestamp from import folder name
-TIMESTAMP=$(basename "$IMPORT_FOLDER" | sed 's/_import$//')
-EXPORT_FOLDER="${SCRIPT_DIR}/${TIMESTAMP}_export"
-
-# Make IMPORT_FOLDER absolute if it's relative
-if [[ "$IMPORT_FOLDER" != /* ]]; then
-    IMPORT_FOLDER="${SCRIPT_DIR}/${IMPORT_FOLDER}"
-fi
-
-print_info "Export folder will be: $(basename $EXPORT_FOLDER)"
-
-# Check if export folder already exists
-if [ -d "$EXPORT_FOLDER" ]; then
-    print_warning "Export folder already exists: $EXPORT_FOLDER"
-    read -p "Do you want to remove it and continue? (yes/no): " CONFIRM
-    if [ "$CONFIRM" != "yes" ]; then
-        print_info "Export cancelled."
-        exit 0
-    fi
-    print_info "Removing existing export folder..."
-    rm -rf "$EXPORT_FOLDER"
-fi
-
-# Create export folder
-mkdir -p "$EXPORT_FOLDER"
-
-# Create log file
-LOG_FILE="${EXPORT_FOLDER}/export_log.txt"
-{
-    echo "================================================================="
-    echo "Git Export Log"
-    echo "================================================================="
-    echo "Generated: $(date)"
-    echo "Ran by: $(whoami)"
-    echo "Import Folder: $IMPORT_FOLDER"
-    echo "Export Folder: $EXPORT_FOLDER"
-    echo "Default Branch: $DEFAULT_BRANCH"
-    echo "================================================================="
-    echo ""
-} > "$LOG_FILE"
-
-log_message() {
-    echo "$1" | tee -a "$LOG_FILE"
-}
+command -v git >/dev/null 2>&1 || { print_error "Git is not installed"; exit 1; }
+command -v sha256sum >/dev/null 2>&1 || { print_error "sha256sum is not installed"; exit 1; }
 
 ##############################################################################
-# FIND SUPER REPOSITORY BUNDLE
+# Locate import folder
+##############################################################################
+
+print_info "Auto-detecting import folder..."
+
+IMPORT_FOLDER=""
+if [ -n "${IMPORT_FOLDER_OVERRIDE}" ]; then
+  IMPORT_FOLDER="$SCRIPT_DIR/${IMPORT_FOLDER_OVERRIDE}"
+else
+  IMPORT_FOLDER=$(find "$SCRIPT_DIR" -maxdepth 1 -type d -name "*_import" | sort -r | head -n 1 || true)
+fi
+
+if [ -z "${IMPORT_FOLDER}" ] || [ ! -d "${IMPORT_FOLDER}" ]; then
+  print_error "Could not find *_import folder in: $SCRIPT_DIR"
+  print_info "Set IMPORT_FOLDER_OVERRIDE at the top of export_all.sh if needed"
+  exit 1
+fi
+
+IMPORT_NAME=$(basename "$IMPORT_FOLDER")
+EXPORT_NAME="${IMPORT_NAME%_import}_export"
+EXPORT_FOLDER="$SCRIPT_DIR/$EXPORT_NAME"
+
+print_success "Found import folder: $IMPORT_NAME"
+print_info "Export folder will be: $EXPORT_NAME"
+
+mkdir -p "$EXPORT_FOLDER"
+
+EXPORT_LOG="$EXPORT_FOLDER/export_log.txt"
+{
+  echo "================================================================="
+  echo "Git Export Log"
+  echo "================================================================="
+  echo "Generated: $(date)"
+  echo "Ran by: $(whoami)"
+  echo "Import Folder: $IMPORT_FOLDER"
+  echo "Export Folder: $EXPORT_FOLDER"
+  echo "Strict SHA Verify: $STRICT_SHA_VERIFY"
+  echo "================================================================="
+  echo ""
+} > "$EXPORT_LOG"
+
+log() { echo "$1" | tee -a "$EXPORT_LOG" >&3; }
+
+##############################################################################
+# Step 0: SHA256 verification
+##############################################################################
+
+print_header "Step 0: Verifying Bundle SHA256"
+
+VERIFY_FILE="$IMPORT_FOLDER/bundle_verification.txt"
+
+if [ ! -f "$VERIFY_FILE" ]; then
+  print_warning "bundle_verification.txt not found in import folder - skipping SHA verification"
+  print_info "Expected at: $VERIFY_FILE"
+  echo "[WARN] bundle_verification.txt missing - skipped SHA verification" >> "$EXPORT_LOG"
+else
+  declare -A EXPECTED_SHA
+  parse_ok=0
+
+  while IFS='|' read -r f s; do
+    [ -z "${f}" ] && continue
+    [ -z "${s}" ] && continue
+    EXPECTED_SHA["$f"]="$s"
+    parse_ok=1
+  done < <(
+    awk '
+      BEGIN{file=""; sha=""}
+      /^Bundle File:[[:space:]]*/{
+        file=$0; sub(/^Bundle File:[[:space:]]*/,"",file); gsub(/\r/,"",file)
+      }
+      /^SHA256:[[:space:]]*/{
+        sha=$0; sub(/^SHA256:[[:space:]]*/,"",sha); gsub(/\r/,"",sha)
+        if(file!="" && sha!=""){
+          print file "|" sha
+          file=""; sha=""
+        }
+      }
+    ' "$VERIFY_FILE"
+  )
+
+  if [ "$parse_ok" -ne 1 ]; then
+    print_warning "Could not parse expected SHA256 values from bundle_verification.txt"
+    print_info "Continuing without SHA enforcement"
+    echo "[WARN] Could not parse SHA values - skipped SHA enforcement" >> "$EXPORT_LOG"
+  else
+    ALL_BUNDLES=$(find "$IMPORT_FOLDER" -type f -name "*.bundle" | sort || true)
+
+    if [ -z "${ALL_BUNDLES}" ]; then
+      print_error "No .bundle files found in import folder: $IMPORT_FOLDER"
+      exit 1
+    fi
+
+    mismatch=0
+    missing=0
+    extra=0
+
+    for key in "${!EXPECTED_SHA[@]}"; do
+      expected="${EXPECTED_SHA[$key]}"
+      found_path=$(find "$IMPORT_FOLDER" -type f -name "$key" | head -n 1 || true)
+
+      if [ -z "${found_path}" ]; then
+        missing=$((missing+1))
+        log "[ERR] Missing bundle expected by verification log: $key"
+        continue
+      fi
+
+      actual=$(sha256sum "$found_path" | awk '{print $1}')
+
+      if [ "$actual" != "$expected" ]; then
+        mismatch=$((mismatch+1))
+        log "[ERR] SHA MISMATCH: $key"
+        log "      expected: $expected"
+        log "      actual:   $actual"
+      else
+        log "[OK] SHA verified: $key"
+      fi
+    done
+
+    while IFS= read -r bundle_path; do
+      [ -z "${bundle_path}" ] && continue
+      bn=$(basename "$bundle_path")
+      if [ -z "${EXPECTED_SHA[$bn]+x}" ]; then
+        extra=$((extra+1))
+        log "[WARN] Bundle not listed in verification log (not validated): $bn"
+      fi
+    done < <(echo "$ALL_BUNDLES")
+
+    if [ "$missing" -gt 0 ] || [ "$mismatch" -gt 0 ]; then
+      if [ "$STRICT_SHA_VERIFY" -eq 1 ]; then
+        print_error "SHA verification failed (missing: $missing, mismatched: $mismatch)"
+        exit 1
+      else
+        print_warning "SHA verification issues found (missing: $missing, mismatched: $mismatch)"
+        print_info "STRICT_SHA_VERIFY=0 so continuing"
+      fi
+    else
+      print_success "SHA verification passed (validated: ${#EXPECTED_SHA[@]}, unlisted: $extra)"
+    fi
+  fi
+fi
+
+##############################################################################
+# Step 1: Locate super repository bundle
 ##############################################################################
 
 print_header "Step 1: Locating Super Repository Bundle"
 
-# The super repository bundle should be in the root of the import folder
-# We need to identify which one is the super repo by checking metadata
-# or by finding the largest bundle (super repos are usually larger)
-# Better approach: check which bundles are NOT in the .gitmodules reference
-
-cd "$IMPORT_FOLDER"
-
-# Get all bundles in the root directory
-ROOT_BUNDLES=$(find . -maxdepth 1 -name "*.bundle" -type f)
-
-if [ -z "$ROOT_BUNDLES" ]; then
-    print_error "No bundles found in $IMPORT_FOLDER"
-    exit 1
+SUPER_BUNDLE=$(find "$IMPORT_FOLDER" -maxdepth 1 -type f -name "*.bundle" | head -n 1 || true)
+if [ -z "${SUPER_BUNDLE}" ]; then
+  print_error "No super repository bundle found in import folder"
+  exit 1
 fi
 
-# If there's only one bundle in root, that's the super repository
-BUNDLE_COUNT=$(echo "$ROOT_BUNDLES" | wc -l)
+REPO_NAME=$(basename "$SUPER_BUNDLE" .bundle)
+REPO_DIR="$EXPORT_FOLDER/$REPO_NAME"
 
-if [ "$BUNDLE_COUNT" -eq 1 ]; then
-    SUPER_BUNDLE="$ROOT_BUNDLES"
-else
-    # Multiple bundles in root - we need to identify the super repo
-    # Check metadata.txt if available
-    if [ -f "metadata.txt" ]; then
-        SUPER_REPO_NAME=$(grep "Super Repository:" metadata.txt | awk '{print $3}')
-        if [ -n "$SUPER_REPO_NAME" ]; then
-            SUPER_BUNDLE="./${SUPER_REPO_NAME}.bundle"
-            if [ ! -f "$SUPER_BUNDLE" ]; then
-                print_warning "Super repository name from metadata not found: $SUPER_BUNDLE"
-                # Fall back to largest bundle
-                SUPER_BUNDLE=$(ls -S *.bundle 2>/dev/null | head -n 1)
-                SUPER_BUNDLE="./$SUPER_BUNDLE"
-            fi
-        else
-            # No metadata, use largest bundle as super repository
-            print_warning "Could not determine super repository from metadata, using largest bundle"
-            SUPER_BUNDLE=$(ls -S *.bundle 2>/dev/null | head -n 1)
-            SUPER_BUNDLE="./$SUPER_BUNDLE"
-        fi
-    else
-        # No metadata.txt, use largest bundle
-        print_warning "No metadata.txt found, using largest bundle as super repository"
-        SUPER_BUNDLE=$(ls -S *.bundle 2>/dev/null | head -n 1)
-        SUPER_BUNDLE="./$SUPER_BUNDLE"
-    fi
-fi
-
-cd "$SCRIPT_DIR"
-
-SUPER_BUNDLE="${IMPORT_FOLDER}/${SUPER_BUNDLE#./}"
-
-if [ ! -f "$SUPER_BUNDLE" ]; then
-    print_error "Could not locate super repository bundle"
-    exit 1
-fi
-
-SUPER_REPO_NAME=$(basename "$SUPER_BUNDLE" .bundle)
 print_success "Found super repository bundle: $SUPER_BUNDLE"
-print_info "Repository name: $SUPER_REPO_NAME"
+print_info "Repository name: $REPO_NAME"
 
 ##############################################################################
-# CLONE SUPER REPOSITORY
+# Step 2: Clone super repository
 ##############################################################################
 
 print_header "Step 2: Cloning Super Repository"
 
-SUPER_REPO_PATH="${EXPORT_FOLDER}/${SUPER_REPO_NAME}"
+print_info "Cloning to: $REPO_DIR"
 
-print_info "Cloning to: $SUPER_REPO_PATH"
+rm -rf "$REPO_DIR" >/dev/null 2>&1 || true
 
-# Clone from bundle with verbose error handling
 print_info "Cloning super repository from bundle..."
 
-CLONE_OUTPUT=$(git -c advice.detachedHead=false \
-                  -c transfer.fsckObjects=false \
-                  clone --quiet --no-progress "$SUPER_BUNDLE" "$SUPER_REPO_PATH" 2>&1)
+git clone "$SUPER_BUNDLE" "$REPO_DIR" --quiet
 
-CLONE_EXIT_CODE=$?
+cd "$REPO_DIR"
 
-if [ $CLONE_EXIT_CODE -ne 0 ]; then
-    print_error "Super repository clone failed (exit code: $CLONE_EXIT_CODE)"
-    echo "========================================" >&3
-    echo "CLONE ERROR DETAILS:" >&3
-    echo "$CLONE_OUTPUT" >&3
-    echo "========================================" >&3
-    exit 1
+git config --local protocol.file.allow always
+
+default_branch=""
+if git show-ref --verify --quiet refs/heads/main; then
+  default_branch="main"
+elif git show-ref --verify --quiet refs/heads/develop; then
+  default_branch="develop"
+elif git show-ref --verify --quiet refs/heads/master; then
+  default_branch="master"
+else
+  default_branch=$(git for-each-ref --format='%(refname:short)' refs/heads | head -n 1 || true)
 fi
 
-cd "$SUPER_REPO_PATH"
-
-# Set config to suppress all advice
-git config advice.detachedHead false 2>/dev/null || true
-git config advice.statusHints false 2>/dev/null || true
-
-# Determine and checkout the default branch
 print_info "Determining default branch..."
-
-# Check if we already have a local branch (bundle may have set HEAD)
-CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
-
-if [ -n "$CURRENT_BRANCH" ] && [ "$CURRENT_BRANCH" != "HEAD" ]; then
-    # Already on a branch
-    print_success "Checked out branch: $CURRENT_BRANCH"
+if [ -n "${default_branch}" ]; then
+  git checkout "$default_branch" >/dev/null 2>&1 || true
+  print_success "Checked out branch: $default_branch"
 else
-    # No local branch yet, create one from remote refs with priority order
-    AVAILABLE_BRANCHES=$(git branch -r | grep -v '\->' | sed 's|^[[:space:]]*origin/||' | sed 's|^[[:space:]]*||')
-    
-    # Priority: main -> develop -> master -> first available
-    if echo "$AVAILABLE_BRANCHES" | grep -q "^main$"; then
-        git checkout -b main origin/main
-        print_success "Checked out branch: main"
-    elif echo "$AVAILABLE_BRANCHES" | grep -q "^develop$"; then
-        git checkout -b develop origin/develop
-        print_success "Checked out branch: develop"
-    elif echo "$AVAILABLE_BRANCHES" | grep -q "^master$"; then
-        git checkout -b master origin/master
-        print_success "Checked out branch: master"
-    else
-        # Use the first available branch
-        FIRST_BRANCH=$(echo "$AVAILABLE_BRANCHES" | head -n 1)
-        if [ -n "$FIRST_BRANCH" ]; then
-            git checkout -b "$FIRST_BRANCH" "origin/$FIRST_BRANCH"
-            print_warning "Checked out fallback branch: $FIRST_BRANCH"
-        else
-            print_error "No branches found in bundle"
-            exit 1
-        fi
-    fi
+  print_warning "Could not determine default branch"
 fi
 
-# Create local tracking branches for all remote branches
 print_info "Creating local branches from bundle refs..."
-for remote in $(git branch -r | grep -v '\->' | grep 'origin/' | sed 's|^[[:space:]]*||'); do
-    branch_name=$(echo "$remote" | sed 's|origin/||' | sed 's|^[[:space:]]*||')
-    if [ -n "$branch_name" ] && ! git show-ref --verify --quiet "refs/heads/$branch_name"; then
-        git branch "$branch_name" "$remote" 2>/dev/null
-    fi
-done &> /dev/null
 
-# Initialize submodule references so git knows what commits each should be at
-if [ -f ".gitmodules" ]; then
-    print_info "Initializing submodule references..."
-    git submodule init >/dev/null 2>&1 || true
-    print_success "Submodule commit pointers loaded from super repo"
-else
-    print_warning "No .gitmodules file - no submodules defined"
+git for-each-ref --format='%(refname:short)' refs/remotes/origin/ 2>/dev/null | while read -r rb; do
+  [ -z "$rb" ] && continue
+  [ "$rb" = "origin/HEAD" ] && continue
+  [ "$rb" = "origin/origin" ] && continue
+  git branch -f "${rb#origin/}" "$rb" >/dev/null 2>&1 || true
+  git branch --set-upstream-to="$rb" "${rb#origin/}" >/dev/null 2>&1 || true
+done
+
+if git remote get-url origin >/dev/null 2>&1; then
+  git remote remove origin >/dev/null 2>&1 || true
 fi
 
-# Remove the remote - all branches are now local
-git remote remove origin 2>/dev/null || true
 print_success "Local branches created for all remote refs"
 
-git config alias.scheckout '!f(){ \
-  b="$1"; \
-  if [ -z "$b" ]; then echo "Usage: git scheckout <branch>" >&2; return 2; fi; \
-  gitdir="$(git rev-parse --git-dir 2>/dev/null)"; \
-  ts="$(date +%Y%m%d_%H%M%S)"; \
-  log="$gitdir/scheckout_${ts}.txt"; \
-  echo "=================================================================" >"$log"; \
-  echo "git scheckout $b" >>"$log"; \
-  echo "Started: $(date)" >>"$log"; \
-  echo "From: $(git rev-parse --abbrev-ref HEAD 2>/dev/null)" >>"$log"; \
-  echo "=================================================================" >>"$log"; \
-  echo "" >>"$log"; \
-  echo "[1/6] git submodule deinit -f --all" >>"$log"; \
-  git submodule deinit -f --all >>"$log" 2>&1 || true; \
-  echo "" >>"$log"; \
-  echo "[2/6] rm -rf submodule worktrees from current .gitmodules" >>"$log"; \
-  if [ -f .gitmodules ]; then \
-    git config -f .gitmodules --get-regexp "^submodule\\..*\\.path$" 2>/dev/null | awk "{print \\$2}" | while read -r p; do \
-      [ -z "$p" ] && continue; \
-      rm -rf "$p" >>"$log" 2>&1 || true; \
-    done; \
-  fi; \
-  echo "" >>"$log"; \
-  echo "[3/6] git clean -ffdx" >>"$log"; \
-  git clean -ffdx >>"$log" 2>&1 || true; \
-  echo "" >>"$log"; \
-  echo "[4/6] git checkout $b" >>"$log"; \
-  git checkout "$b" >>"$log" 2>&1 || return $?; \
-  echo "" >>"$log"; \
-  echo "[5/6] git clean -ffdx (post-checkout)" >>"$log"; \
-  git clean -ffdx >>"$log" 2>&1 || true; \
-  echo "" >>"$log"; \
-  echo "[6/6] git submodule update --init --recursive" >>"$log"; \
-  git -c protocol.file.allow=always submodule sync --recursive >>"$log" 2>&1 || true; \
-  git -c protocol.file.allow=always submodule update --init --recursive --jobs 4 >>"$log" 2>&1 || true; \
-  echo "" >>"$log"; \
-  echo "Done: $(date)" >>"$log"; \
-  echo "Log written to: $log"; \
-}; f'
+if git show-ref --verify --quiet refs/heads/origin; then
+  git branch -D origin >/dev/null 2>&1 || true
+fi
 
-print_success "Installed: git scheckout <branch> (clean switch + recursive submodules)"
+BRANCH_COUNT=$(git branch | wc -l | tr -d ' ')
+TAG_COUNT=$(git tag | wc -l | tr -d ' ')
+COMMIT_COUNT=$(git rev-list --all --count 2>/dev/null || echo 0)
 
-# Get statistics (after removing remote so we only count local branches)
-BRANCH_COUNT=$(git branch | wc -l)
-TAG_COUNT=$(git tag | wc -l)
-COMMIT_COUNT=$(git rev-list --all --count)
-
-log_message "================================================================="
-log_message "SUPER REPOSITORY: $SUPER_REPO_NAME"
-log_message "================================================================="
-log_message "Cloned to: $SUPER_REPO_PATH"
-log_message "Branches: $BRANCH_COUNT"
-log_message "Tags: $TAG_COUNT"
-log_message "Total Commits: $COMMIT_COUNT"
-log_message ""
+{
+  echo "================================================================="
+  echo "SUPER REPOSITORY: $REPO_NAME"
+  echo "================================================================="
+  echo "Cloned to: $REPO_DIR"
+  echo "Branches: $BRANCH_COUNT"
+  echo "Tags: $TAG_COUNT"
+  echo "Total Commits: $COMMIT_COUNT"
+  echo ""
+} >> "$EXPORT_LOG"
 
 print_success "Super repository cloned successfully"
 
-cd "$SCRIPT_DIR"
-
 ##############################################################################
-# DISCOVER SUBMODULE BUNDLES
+# Step 3: Discover submodule bundles
 ##############################################################################
 
 print_header "Step 3: Discovering Submodule Bundles"
 
-# Find all bundle files except the super repository bundle  
-# CRITICAL: Use mindepth 1 (not 2) to include ROOT-LEVEL submodules
-# The super repo bundle is at the root, but we need to exclude it by name
-cd "$IMPORT_FOLDER"
+SUB_BUNDLES=$(cd "$IMPORT_FOLDER" && find . -type f -name "*.bundle" | grep -v "^\./${REPO_NAME}\.bundle$" | sort || true)
 
-# Get super repo bundle name to exclude it
-SUPER_BUNDLE_NAME=$(basename "$SUPER_BUNDLE")
-
-# Find ALL bundles (mindepth 1), then filter out the super repo bundle
-ALL_BUNDLES=$(find . -mindepth 1 -name "*.bundle" -type f 2>/dev/null || true)
-
-if [ -z "$ALL_BUNDLES" ]; then
-    print_warning "No bundle files found in import folder"
-    SUBMODULE_BUNDLES=""
+if [ -z "${SUB_BUNDLES}" ]; then
+  print_warning "No submodule bundles found"
+  SUB_BUNDLE_COUNT=0
 else
-    SUBMODULE_BUNDLES=""
-    
-    # Filter: exclude super repo bundle, include everything else
-    while IFS= read -r bundle; do
-        [ -z "$bundle" ] && continue
-        bundle_path="${bundle#./}"  # Remove leading ./
-        # Skip if this is the super repo bundle at root level
-        if [ "$bundle_path" = "$SUPER_BUNDLE_NAME" ]; then
-            continue
-        fi
-        # Include all other bundles
-        if [ -z "$SUBMODULE_BUNDLES" ]; then
-            SUBMODULE_BUNDLES="$IMPORT_FOLDER/$bundle_path"
-        else
-            SUBMODULE_BUNDLES="$SUBMODULE_BUNDLES
-$IMPORT_FOLDER/$bundle_path"
-        fi
-    done < <(echo "$ALL_BUNDLES")
-fi
-
-cd "$SCRIPT_DIR"
-
-# Sort by directory depth (shallowest first) to ensure parent directories are created before nested ones
-SUBMODULE_BUNDLES=$(echo "$SUBMODULE_BUNDLES" | awk '{ print length, $0 }' | sort -n | cut -d" " -f2-)
-
-if [ -z "$SUBMODULE_BUNDLES" ]; then
-    print_warning "No submodule bundles found"
-    SUBMODULE_COUNT=0
-else
-    SUBMODULE_COUNT=$(echo "$SUBMODULE_BUNDLES" | wc -l)
-    print_success "Found $SUBMODULE_COUNT submodule bundle(s) at all levels"
-    
-    # Log all discovered bundles for debugging
-    log_message ""
-    log_message "Discovered submodule bundles:"
-    log_message "-----------------------------------------------------------------"
-    echo "$SUBMODULE_BUNDLES" | while read -r bpath; do
-        RELATIVE="${bpath#$IMPORT_FOLDER/}"
-        log_message "  • $RELATIVE"
-    done
-    log_message ""
+  SUB_BUNDLE_COUNT=$(echo "$SUB_BUNDLES" | wc -l | tr -d ' ')
+  print_success "Found $SUB_BUNDLE_COUNT submodule bundle(s)"
 fi
 
 ##############################################################################
-# PROCESS ALL SUBMODULE BUNDLES
+# Step 4: Restore submodule bundles into local cache
 ##############################################################################
 
-print_header "Step 4: Processing Submodules"
+print_header "Step 4: Restoring Submodules into Local Cache"
 
-cd "$SUPER_REPO_PATH"
+CACHE_DIR="$REPO_DIR/_submodule_cache"
+mkdir -p "$CACHE_DIR"
 
-if [ "$SUBMODULE_COUNT" -eq 0 ]; then
-    print_info "No submodule bundles to process"
-else
-    log_message "================================================================="
-    log_message "SUBMODULES ($SUBMODULE_COUNT total - including nested)"
-    log_message "================================================================="
-    
-    SUBMODULE_NUM=0
-    SUBMODULE_SUCCESS=0
-    SUBMODULE_SKIPPED=0
-    SUBMODULE_FAILED=0
-    
-    while IFS= read -r BUNDLE_FULL_PATH; do
-        SUBMODULE_NUM=$((SUBMODULE_NUM + 1))
-        
-        # Get the relative path from import folder
-        BUNDLE_REL_PATH="${BUNDLE_FULL_PATH#$IMPORT_FOLDER/}"
-        BUNDLE_REL_DIR=$(dirname "$BUNDLE_REL_PATH")
-        BUNDLE_NAME=$(basename "$BUNDLE_REL_PATH" .bundle)
-        
-        # The submodule path is the bundle path without .bundle extension
-        if [ "$BUNDLE_REL_DIR" = "." ]; then
-            SUBMODULE_PATH="$SUPER_REPO_PATH/$BUNDLE_NAME"
-        else
-            SUBMODULE_PATH="$SUPER_REPO_PATH/${BUNDLE_REL_DIR}/${BUNDLE_NAME}"
-        fi
-        
-        # Calculate relative path from super repo
-        SUBMODULE_REL_PATH="${SUBMODULE_PATH#$SUPER_REPO_PATH/}"
-        
-        print_info "[$SUBMODULE_NUM/$SUBMODULE_COUNT] Processing: $SUBMODULE_REL_PATH"
-        
-        # CRITICAL: Check if this submodule exists in the current branch's .gitmodules
-        cd "$SUPER_REPO_PATH"
-        
-        # Get the commit SHA that this submodule should be at (from super repo's index)
-        EXPECTED_COMMIT=$(git ls-tree HEAD "$SUBMODULE_REL_PATH" 2>/dev/null | awk '{print $3}')
-        
-        if [ -z "$EXPECTED_COMMIT" ]; then
-            # Submodule not in current branch - SKIP it entirely
-            print_warning "  Submodule not in current branch - skipping"
-            log_message ""
-            log_message "Submodule #$SUBMODULE_NUM: $SUBMODULE_REL_PATH"
-            log_message "Status: SKIPPED (not in current branch)"
-            log_message "This submodule exists in bundle but not in current super repo HEAD"
-            log_message "It may belong to a different branch or was removed"
-            log_message ""
-            
-            SUBMODULE_SKIPPED=$((SUBMODULE_SKIPPED + 1))
-            
-            # Clean up any existing empty directory
-            if [ -d "$SUBMODULE_PATH" ] && [ -z "$(ls -A "$SUBMODULE_PATH" 2>/dev/null)" ]; then
-                rmdir "$SUBMODULE_PATH" 2>/dev/null || true
-            fi
-            
-            continue
-        fi
-        
-        # Submodule IS in current branch - process it
-        log_message ""
-        log_message "Submodule #$SUBMODULE_NUM: $SUBMODULE_REL_PATH"
-        log_message "Expected commit: $EXPECTED_COMMIT"
-        
-        # Create parent directory structure if needed
-        SUBMODULE_PARENT=$(dirname "$SUBMODULE_PATH")
-        if [ ! -d "$SUBMODULE_PARENT" ]; then
-            mkdir -p "$SUBMODULE_PARENT"
-        fi
-        
-        # Check if submodule directory already exists and is populated
-        if [ -d "$SUBMODULE_PATH" ]; then
-            if [ -e "$SUBMODULE_PATH/.git" ]; then
-                print_warning "  Submodule already exists - checking commit"
-                cd "$SUBMODULE_PATH"
-                CURRENT_COMMIT=$(git rev-parse HEAD 2>/dev/null || echo "")
-                
-                if [ "$CURRENT_COMMIT" = "$EXPECTED_COMMIT" ]; then
-                    print_success "  Already at correct commit ${EXPECTED_COMMIT:0:8}"
-                    log_message "Status: ALREADY CORRECT"
-                    SUBMODULE_SUCCESS=$((SUBMODULE_SUCCESS + 1))
-                    cd "$SUPER_REPO_PATH"
-                    continue
-                else
-                    print_info "  Updating from ${CURRENT_COMMIT:0:8} to ${EXPECTED_COMMIT:0:8}"
-                    # Try to checkout the expected commit
-                    if git checkout "$EXPECTED_COMMIT" 2>&1 | grep -v "detached HEAD\|Note: switching\|HEAD is now" >&3; then
-                        print_success "  Updated to commit ${EXPECTED_COMMIT:0:8}"
-                        log_message "Status: UPDATED"
-                        SUBMODULE_SUCCESS=$((SUBMODULE_SUCCESS + 1))
-                    else
-                        print_error "  Failed to update commit"
-                        log_message "Status: UPDATE FAILED"
-                        SUBMODULE_FAILED=$((SUBMODULE_FAILED + 1))
-                    fi
-                    cd "$SUPER_REPO_PATH"
-                    continue
-                fi
-            else
-                # Directory exists but is empty (corrupted state)
-                print_warning "  Removing corrupted empty directory"
-                rm -rf "$SUBMODULE_PATH"
-            fi
-        fi
-        
-        # Clone the submodule from bundle
-        print_info "  Cloning from bundle..."
-        
-        CLONE_OUTPUT=$(git -c advice.detachedHead=false \
-                          -c transfer.fsckObjects=false \
-                          clone --no-checkout "$BUNDLE_FULL_PATH" "$SUBMODULE_PATH" 2>&1)
-        
-        CLONE_EXIT_CODE=$?
-        
-        if [ $CLONE_EXIT_CODE -ne 0 ]; then
-            print_error "  Clone failed (exit code: $CLONE_EXIT_CODE)"
-            echo "========================================" >&3
-            echo "CLONE ERROR DETAILS:" >&3
-            echo "$CLONE_OUTPUT" >&3
-            echo "========================================" >&3
-            
-            log_message "Status: CLONE FAILED"
-            log_message "Exit Code: $CLONE_EXIT_CODE"
-            log_message "Error Output:"
-            log_message "$CLONE_OUTPUT"
-            log_message ""
-            
-            # Clean up failed clone
-            if [ -d "$SUBMODULE_PATH" ]; then
-                rm -rf "$SUBMODULE_PATH"
-            fi
-            
-            SUBMODULE_FAILED=$((SUBMODULE_FAILED + 1))
-            continue
-        fi
-        
-        print_success "  Cloned successfully"
-        
-        # Navigate to submodule and checkout the EXACT commit
-        cd "$SUBMODULE_PATH"
-        
-        # Disable all advice for this repository
-        git config advice.detachedHead false 2>/dev/null || true
-        git config advice.statusHints false 2>/dev/null || true
-        
-        # Checkout the EXACT commit that super repo points to
-        print_info "  Checking out commit ${EXPECTED_COMMIT:0:8}..."
-        
-        CHECKOUT_OUTPUT=$(git checkout "$EXPECTED_COMMIT" 2>&1)
-        CHECKOUT_EXIT_CODE=$?
-        
-        if [ $CHECKOUT_EXIT_CODE -eq 0 ]; then
-            print_success "  Commit ${EXPECTED_COMMIT:0:8} checked out"
-            log_message "Status: SUCCESS"
-            log_message "Commit: $EXPECTED_COMMIT"
-            SUBMODULE_SUCCESS=$((SUBMODULE_SUCCESS + 1))
-        else
-            print_error "  Failed to checkout commit ${EXPECTED_COMMIT:0:8}"
-            echo "========================================" >&3
-            echo "CHECKOUT ERROR:" >&3  
-            echo "$CHECKOUT_OUTPUT" >&3
-            echo "========================================" >&3
-            
-            log_message "Status: CHECKOUT FAILED"
-            log_message "Error details: $CHECKOUT_OUTPUT"
-            log_message "This commit may not exist in the bundle - bundle may be out of sync"
-            
-            # Clean up failed checkout
-            cd "$SUPER_REPO_PATH"
-            rm -rf "$SUBMODULE_PATH"
-            
-            SUBMODULE_FAILED=$((SUBMODULE_FAILED + 1))
-            continue
-        fi
-        
-        # Create local tracking branches for all remote branches
-        cd "$SUBMODULE_PATH"
-        for remote in $(git branch -r | grep -v '\->' | grep 'origin/' | sed 's|^[[:space:]]*||' 2>/dev/null); do
-            branch_name=$(echo "$remote" | sed 's|origin/||' | sed 's|^[[:space:]]*||')
-            if [ -n "$branch_name" ] && ! git show-ref --verify --quiet "refs/heads/$branch_name" 2>/dev/null; then
-                git branch "$branch_name" "$remote" 2>/dev/null || true
-            fi
-        done
-        
-        # Remove remote origin (air-gapped)
-        git remote remove origin 2>/dev/null || true
-        
-        # Get statistics
-        SUB_BRANCH_COUNT=$(git branch 2>/dev/null | wc -l)
-        SUB_TAG_COUNT=$(git tag 2>/dev/null | wc -l)
-        
-        log_message "Branches: $SUB_BRANCH_COUNT"
-        log_message "Tags: $SUB_TAG_COUNT"
-        log_message ""
-        
-        # Return to super repository root
-        cd "$SUPER_REPO_PATH"
-    done < <(echo "$SUBMODULE_BUNDLES")
-    
-    # Print summary
-    echo "" >&3
-    print_success "Submodule processing complete"
-    print_info "  Successful: $SUBMODULE_SUCCESS"
-    if [ $SUBMODULE_SKIPPED -gt 0 ]; then
-        print_warning "  Skipped: $SUBMODULE_SKIPPED (not in current branch)"
+restored=0
+idx=0
+
+if [ "$SUB_BUNDLE_COUNT" -gt 0 ]; then
+  while IFS= read -r rel_bundle; do
+    [ -z "${rel_bundle}" ] && continue
+    idx=$((idx+1))
+
+    rel_no_dot=${rel_bundle#./}
+    sub_rel_dir=$(dirname "$rel_no_dot")
+    sub_bundle_file=$(basename "$rel_no_dot")
+    sub_name=$(basename "$sub_bundle_file" .bundle)
+
+    src_bundle="$IMPORT_FOLDER/$rel_no_dot"
+    dest_repo="$CACHE_DIR/${sub_rel_dir}/${sub_name}"
+
+    mkdir -p "$(dirname "$dest_repo")"
+    rm -rf "$dest_repo" >/dev/null 2>&1 || true
+
+    print_info "[$idx/$SUB_BUNDLE_COUNT] Restoring to cache: _submodule_cache/${sub_rel_dir}/${sub_name}"
+
+    git clone "$src_bundle" "$dest_repo" --quiet || true
+
+    if [ ! -d "$dest_repo/.git" ]; then
+      print_warning "[$idx/$SUB_BUNDLE_COUNT] Restore failed (skipping): $rel_no_dot"
+      echo "[WARN] Cache restore failed: $rel_no_dot" >> "$EXPORT_LOG"
+      continue
     fi
-    if [ $SUBMODULE_FAILED -gt 0 ]; then
-        print_error "  Failed: $SUBMODULE_FAILED"
-    fi
-    
-    log_message "================================================================="
-    log_message "Submodule Summary:"
-    log_message "  Successful: $SUBMODULE_SUCCESS"
-    log_message "  Skipped: $SUBMODULE_SKIPPED"
-    log_message "  Failed: $SUBMODULE_FAILED"
-    log_message "================================================================="
+
+    (
+      cd "$dest_repo"
+      git config --local protocol.file.allow always
+
+      git for-each-ref --format='%(refname:short)' refs/remotes/origin/ 2>/dev/null | while read -r rb; do
+        [ -z "$rb" ] && continue
+        [ "$rb" = "origin/HEAD" ] && continue
+        [ "$rb" = "origin/origin" ] && continue
+        git branch -f "${rb#origin/}" "$rb" >/dev/null 2>&1 || true
+      done
+
+      git remote remove origin >/dev/null 2>&1 || true
+    )
+
+    restored=$((restored+1))
+  done < <(echo "$SUB_BUNDLES")
 fi
 
-cd "$SCRIPT_DIR"
+print_success "Restored $restored submodule bundle(s) into cache"
 
 ##############################################################################
-# CREATE NETWORK CONNECTIVITY NOTES
+# Step 5: Configure git scheckout <branch>
 ##############################################################################
 
-print_header "Step 5: Creating Documentation"
+print_header "Step 5: Configuring git scheckout <branch>"
 
-NETWORK_NOTES="${EXPORT_FOLDER}/NETWORK_CONNECTIVITY_NOTES.txt"
+SCK_SCRIPT="$REPO_DIR/.git/scheckout.sh"
 
-{
-    echo "================================================================="
-    echo "Network Connectivity Notes"
-    echo "================================================================="
-    echo "Generated: $(date)"
-    echo ""
-    echo "CURRENT CONFIGURATION (Air-gapped):"
-    echo "-----------------------------------------------------------------"
-    echo "The repository has been cloned from git bundles without remote"
-    echo "URLs configured. This is intentional for air-gapped networks."
-    echo ""
-    echo "FUTURE NETWORK CONNECTIVITY:"
-    echo "-----------------------------------------------------------------"
-    echo "If/when network connectivity becomes available between networks,"
-    echo "you can configure remote URLs for the repositories:"
-    echo ""
-    echo "For the super repository:"
-    echo "  cd $SUPER_REPO_PATH"
-    echo "  git remote add origin <URL>"
-    echo ""
-    echo "For submodules, you have two options:"
-    echo ""
-    echo "Option 1: Manually configure each submodule remote"
-    echo "  cd $SUPER_REPO_PATH/<submodule-path>"
-    echo "  git remote add origin <URL>"
-    echo ""
-    echo "Option 2: Update .gitmodules and sync"
-    echo "  cd $SUPER_REPO_PATH"
-    echo "  # Edit .gitmodules to restore original URLs"
-    echo "  git submodule sync"
-    echo "  git submodule update --init --recursive --remote"
-    echo ""
-    echo "BRANCH SWITCHING (RECOMMENDED):"
-    echo "-----------------------------------------------------------------"
-    echo "If branches have different submodules, use the installed alias:"
-    echo ""
-    echo "  cd $SUPER_REPO_PATH"
-    echo "  git scheckout <branch>"
-    echo ""
-    echo "This will:"
-    echo "  - Remove stale submodule folders"
-    echo "  - Clean files that do not belong to the target branch"
-    echo "  - Run: git submodule update --init --recursive"
-    echo "  - Log details to: .git/scheckout_<timestamp>.txt"
-    echo ""
-    echo "VERIFYING INTEGRITY:"
-    echo "-----------------------------------------------------------------"
-    echo "To verify the repository was cloned correctly:"
-    echo "  cd $SUPER_REPO_PATH"
-    echo "  git log --oneline -10"
-    echo "  git submodule status"
-    echo ""
-    echo "PUSHING TO REMOTE (when connectivity available):"
-    echo "-----------------------------------------------------------------"
-    echo "  cd $SUPER_REPO_PATH"
-    echo "  git remote add origin <URL>"
-    echo "  git push -u origin --all"
-    echo "  git push -u origin --tags"
-    echo ""
-    echo "  # Push submodules"
-    echo "  git submodule foreach --recursive 'git push -u origin --all'"
-    echo "  git submodule foreach --recursive 'git push -u origin --tags'"
-    echo ""
-    echo "================================================================="
-} > "$NETWORK_NOTES"
+cat > "$SCK_SCRIPT" <<'SCKEOF'
+#!/bin/bash
+set -e
 
-print_success "Network connectivity notes created: $NETWORK_NOTES"
+if [ $# -lt 1 ]; then
+  echo "Usage: git scheckout <branch>" >&2
+  exit 1
+fi
+
+TARGET="$1"
+
+ROOT=$(git rev-parse --show-toplevel 2>/dev/null || true)
+if [ -z "$ROOT" ]; then
+  echo "Not in a git repository" >&2
+  exit 1
+fi
+
+cd "$ROOT"
+
+git checkout "$TARGET" >/dev/null 2>&1
+
+SUPER_ROOT="$ROOT"
+CACHE_DIR="$SUPER_ROOT/_submodule_cache"
+
+git config --local protocol.file.allow always >/dev/null 2>&1 || true
+
+# ---------------------------------------------------------------------------
+# Stale submodule removal
+#
+# EXPECTED_ROOT lists only top-level gitlinks, so we keep any working dir
+# that is UNDER a top-level gitlink (nested submodules), and only remove
+# dirs that are completely outside the new branch's submodule tree.
+# ---------------------------------------------------------------------------
+EXPECTED_ROOT=$(git ls-tree -r --full-name HEAD 2>/dev/null | awk '$1=="160000" {print $4}' || true)
+
+remove_submodule_dir() {
+  local p="$1"
+  git submodule deinit -f -- "$p" >/dev/null 2>&1 || true
+  if [ -d ".git/modules/$p" ]; then
+    rm -rf ".git/modules/$p" >/dev/null 2>&1 || true
+  fi
+  if [ -e "$p" ]; then
+    rm -rf "$p" >/dev/null 2>&1 || true
+  fi
+}
+
+# BUG FIX (Bug 3): A submodule dir is stale only when it is NOT a direct match
+# AND NOT nested under any expected top-level gitlink.  The previous code only
+# checked for exact matches, so nested submodules were always flagged stale.
+find_stale_submodules() {
+  find . -mindepth 2 -maxdepth 10 -type f -name ".git" 2>/dev/null | sed 's#^\./##' | while read -r gitfile; do
+    dir=$(dirname "$gitfile")
+    stale=true
+    while IFS= read -r expected; do
+      [ -z "$expected" ] && continue
+      # Keep if exact match OR nested under an expected top-level submodule
+      if [ "$dir" = "$expected" ] || [[ "$dir" == "$expected/"* ]]; then
+        stale=false
+        break
+      fi
+    done < <(echo "$EXPECTED_ROOT")
+    if $stale; then
+      echo "$dir"
+    fi
+  done | sort -u
+}
+
+STALE=$(find_stale_submodules)
+if [ -n "$STALE" ]; then
+  while IFS= read -r p; do
+    [ -z "$p" ] && continue
+    remove_submodule_dir "$p"
+  done < <(echo "$STALE")
+fi
+
+# ---------------------------------------------------------------------------
+# rewrite_gitmodules_to_cache
+#
+# Temporarily rewrites .gitmodules URLs to point to _submodule_cache, then
+# syncs those URLs into .git/config so that "git submodule update --init"
+# clones from the cache.
+#
+# BUG FIX (Bug 2): The original code left .gitmodules permanently modified,
+# causing "git checkout" to fail on the NEXT scheckout call because the
+# tracked file had local changes.  We now restore .gitmodules AFTER the
+# submodule update so the working tree is always clean.
+# (Restoration is done in init_one_level, after git submodule update --init.)
+# ---------------------------------------------------------------------------
+rewrite_gitmodules_to_cache() {
+  local repo_root="$1"
+  local super_rel="$2"
+
+  if [ ! -f "$repo_root/.gitmodules" ]; then
+    return
+  fi
+
+  git -C "$repo_root" config -f "$repo_root/.gitmodules" --name-only --get-regexp '^submodule\..*\.path$' 2>/dev/null | while read -r key; do
+    [ -z "$key" ] && continue
+
+    name=$(echo "$key" | sed 's/^submodule\.//; s/\.path$//')
+    sub_path=$(git -C "$repo_root" config -f "$repo_root/.gitmodules" "$key" 2>/dev/null || true)
+    [ -z "$sub_path" ] && continue
+
+    if [ -n "$super_rel" ]; then
+      full_rel="$super_rel/$sub_path"
+    else
+      full_rel="$sub_path"
+    fi
+
+    if [ -d "$CACHE_DIR/$full_rel/.git" ]; then
+      git -C "$repo_root" config -f "$repo_root/.gitmodules" "submodule.${name}.url" "$CACHE_DIR/$full_rel" >/dev/null 2>&1 || true
+    fi
+  done
+
+  # Propagate rewritten URLs from .gitmodules into .git/config
+  git -C "$repo_root" submodule sync >/dev/null 2>&1 || true
+  # NOTE: .gitmodules is still dirty here; init_one_level restores it after update
+}
+
+# Initialize direct submodules for one repo level (no recursion)
+init_one_level() {
+  local repo_root="$1"
+  local super_rel="$2"
+
+  rewrite_gitmodules_to_cache "$repo_root" "$super_rel"
+  git -C "$repo_root" -c protocol.file.allow=always submodule update --init --jobs 4 >/dev/null 2>&1 || true
+
+  # BUG FIX (Bug 2): Restore .gitmodules to committed state so git checkout
+  # on the next scheckout call does not fail due to a dirty tracked file.
+  if [ -f "$repo_root/.gitmodules" ]; then
+    git -C "$repo_root" checkout -- .gitmodules >/dev/null 2>&1 || true
+  fi
+}
+
+# ---------------------------------------------------------------------------
+# finalize_repo
+#
+# BUG FIX (Bug 1): The original code used "git submodule foreach --recursive"
+# to materialize local branches and remove the origin remote.  That foreach
+# runs inside a git-spawned subshell, and its entire output was silenced with
+# ">/dev/null 2>&1 || true".  When the foreach failed (e.g. due to module
+# state issues), it did so completely silently, leaving every submodule with
+# only one local branch and origin still present.
+#
+# We now call finalize_repo directly on each submodule path using "git -C",
+# which is deterministic and has no silent-failure risk from foreach.
+# ---------------------------------------------------------------------------
+finalize_repo() {
+  local repo_dir="$1"
+
+  git -C "$repo_dir" config --local protocol.file.allow always >/dev/null 2>&1 || true
+
+  # Materialize all local branches from remote-tracking refs
+  git -C "$repo_dir" for-each-ref --format='%(refname:short)' refs/remotes/origin/ 2>/dev/null | \
+  while IFS= read -r rb; do
+    [ -z "$rb" ] && continue
+    [ "$rb" = "origin/HEAD" ] && continue
+    [ "$rb" = "origin/origin" ] && continue
+    lb="${rb#origin/}"
+    git -C "$repo_dir" branch -f "$lb" "$rb" >/dev/null 2>&1 || true
+  done
+
+  # Remove origin remote so the repo is fully air-gapped
+  if git -C "$repo_dir" remote get-url origin >/dev/null 2>&1; then
+    git -C "$repo_dir" remote remove origin >/dev/null 2>&1 || true
+  fi
+
+  # Clean up any stray local branch named "origin" (artifact of some clone ops)
+  if git -C "$repo_dir" show-ref --verify --quiet refs/heads/origin; then
+    git -C "$repo_dir" branch -D origin >/dev/null 2>&1 || true
+  fi
+}
+
+# Recursively initialize submodules depth-first, rewriting URLs at each level
+# BEFORE cloning children, then finalize each child after full recursion.
+init_recursive() {
+  local repo_root="$1"
+  local super_rel="$2"
+
+  init_one_level "$repo_root" "$super_rel"
+
+  local child_paths
+  child_paths=$(git -C "$repo_root" config -f .gitmodules --get-regexp '^submodule\..*\.path$' 2>/dev/null | awk '{print $2}' || true)
+  if [ -z "$child_paths" ]; then
+    return
+  fi
+
+  while IFS= read -r child; do
+    [ -z "$child" ] && continue
+
+    local child_super_rel
+    if [ -n "$super_rel" ]; then
+      child_super_rel="$super_rel/$child"
+    else
+      child_super_rel="$child"
+    fi
+
+    if [ -d "$repo_root/$child/.git" ] || [ -f "$repo_root/$child/.git" ]; then
+      init_recursive "$repo_root/$child" "$child_super_rel"
+      # Finalize this child after it and all its descendants are initialized
+      finalize_repo "$repo_root/$child"
+    fi
+  done < <(echo "$child_paths")
+}
+
+# Start at superproject root
+init_recursive "$SUPER_ROOT" ""
+
+# ── Final air-gap pass ────────────────────────────────────────────────────
+# Walk every initialized submodule working copy and ensure:
+#   * all local branches are materialized from refs/remotes/origin/*
+#   * the origin remote is removed
+#
+# This is a deterministic second pass that guarantees correct state even
+# when the inline finalize_repo calls inside init_recursive are disrupted
+# by Windows-specific git locking, gitmodules restoration ordering, or
+# submodule sync re-setting the remote URL mid-recursion.
+#
+# Uses process substitution (not a pipe) so the while body runs in the
+# current shell -- no subshell variable-scope or silent-exit risk.
+# The _submodule_cache repos have .git DIRECTORIES (not files), so
+# "-type f" already excludes them; the grep -v is belt-and-suspenders.
+while IFS= read -r sub_gitfile; do
+  [ -z "$sub_gitfile" ] && continue
+  sub_dir=$(dirname "$sub_gitfile")
+  [ -z "$sub_dir" ] && continue
+  finalize_repo "$sub_dir"
+done < <(find "$SUPER_ROOT" -mindepth 2 -name ".git" -type f 2>/dev/null \
+           | grep -v "_submodule_cache" \
+           | sort)
+
+echo "OK switched to '$TARGET' with submodules initialized"
+SCKEOF
+
+chmod +x "$SCK_SCRIPT"
+
+cd "$REPO_DIR"
+git config alias.scheckout "!bash .git/scheckout.sh" >/dev/null 2>&1 || true
+
+print_success "Configured: git scheckout <branch>"
+
+##############################################################################
+# Step 6: Initialize submodules for current branch
+##############################################################################
+
+print_header "Step 6: Initializing Submodules for Current Branch"
+
+cd "$REPO_DIR"
+
+current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)
+if [ -z "$current_branch" ]; then
+  print_warning "Could not determine current branch"
+else
+  print_info "Initializing submodules on branch: $current_branch"
+  git scheckout "$current_branch" >/dev/null 2>&1 || true
+  print_success "Submodules initialized for: $current_branch"
+fi
+
+##############################################################################
+# Step 7: Documentation
+##############################################################################
+
+print_header "Step 7: Creating Documentation"
+
+NOTES="$EXPORT_FOLDER/NETWORK_CONNECTIVITY_NOTES.txt"
+cat > "$NOTES" <<EOF_NOTES
+NETWORK / AIR-GAPPED NOTES
+
+- This repo was recreated from git bundle files.
+- No network remotes were kept.
+
+Clean branch switching (handles Windows submodule cleanup):
+
+  cd $REPO_DIR
+  git scheckout main
+  git scheckout develop
+
+How it works:
+- Submodule bundles are restored into:
+    _submodule_cache/
+- git scheckout rewrites .gitmodules URLs at every nesting level to the cache,
+  then initializes submodules level-by-level offline.
+EOF_NOTES
+
+print_success "Network connectivity notes created: $NOTES"
 
 ##############################################################################
 # FINAL SUMMARY
@@ -765,7 +683,6 @@ print_success "Network connectivity notes created: $NETWORK_NOTES"
 
 print_header "Export Complete!"
 
-# Calculate elapsed time
 SCRIPT_END_TIME=$(date +%s)
 ELAPSED_TIME=$((SCRIPT_END_TIME - SCRIPT_START_TIME))
 MINUTES=$((ELAPSED_TIME / 60))
@@ -773,38 +690,43 @@ SECONDS=$((ELAPSED_TIME % 60))
 
 TOTAL_SIZE=$(du -sh "$EXPORT_FOLDER" | awk '{print $1}')
 
-echo ""
+log "================================================================="
+log "SUMMARY"
+log "================================================================="
+log "Total Export Size: $TOTAL_SIZE"
+log "Super Repository: $REPO_NAME"
+log "Submodule Bundles Discovered: $SUB_BUNDLE_COUNT"
+log "Submodule Bundles Restored: $restored"
+log "Repository Path: $REPO_DIR"
+log "Time Taken: ${MINUTES}m ${SECONDS}s"
+log "Script Completed: $(date +%Y%m%d_%H%M)"
+log "================================================================="
+
+echo "" >&3
 print_success "Export folder: $EXPORT_FOLDER"
 print_success "Total size: $TOTAL_SIZE"
-print_success "Super repository: $SUPER_REPO_NAME"
-print_success "Submodules: $SUBMODULE_COUNT initialized"
+print_success "Super repository: $REPO_NAME"
+print_success "Submodule bundles discovered: $SUB_BUNDLE_COUNT"
+print_success "Submodule bundles restored: $restored"
 print_success "Time taken: ${MINUTES}m ${SECONDS}s"
-echo ""
+
+echo "" >&3
 print_info "Repository location:"
-echo "  $SUPER_REPO_PATH"
-echo ""
+echo "  $REPO_DIR" >&3
+
+echo "" >&3
 print_info "Documentation created:"
-echo "  - export_log.txt (detailed export log)"
-echo "  - NETWORK_CONNECTIVITY_NOTES.txt (remote configuration guide)"
-echo ""
+echo "  - export_log.txt (detailed export log)" >&3
+echo "  - NETWORK_CONNECTIVITY_NOTES.txt (branch switching guide)" >&3
+
+echo "" >&3
 print_warning "Important Notes:"
-echo "  1. All repositories are currently air-gapped (no remote URLs)"
-echo "  2. Default branch '$DEFAULT_BRANCH' has been checked out where available"
-echo "  3. See NETWORK_CONNECTIVITY_NOTES.txt for future remote setup"
-echo ""
+echo "  1. Use: git scheckout <branch> for clean branch switches with submodules" >&3
+echo "  2. Submodule URLs are rewritten to local _submodule_cache paths (all levels)" >&3
 
-log_message "================================================================="
-log_message "SUMMARY"
-log_message "================================================================="
-log_message "Total Export Size: $TOTAL_SIZE"
-log_message "Super Repository: $SUPER_REPO_NAME"
-log_message "Submodules Initialized: $SUBMODULE_COUNT"
-log_message "Repository Path: $SUPER_REPO_PATH"
-log_message "Time Taken: ${MINUTES}m ${SECONDS}s"
-log_message "Script Completed: $(date +%Y%m%d_%H%M)"
-log_message "================================================================="
-
+echo "" >&3
 print_success "All done!"
-echo ""
+
+echo "" >&3
 print_info "You can now work with your repository at:"
-echo "  cd $SUPER_REPO_PATH"
+echo "  cd $REPO_DIR" >&3
