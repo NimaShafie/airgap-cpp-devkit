@@ -1,12 +1,8 @@
-# Logs
-*.log
-
 # Build output
 /build/
 /out/
 /bin/
 /obj/
-/target/
 /Debug/
 /Release/
 /x64/
@@ -14,37 +10,35 @@
 
 # Compile database
 compile_commands.json
+build/compile_commands.json
+out/compile_commands.json
 
 # Python
 __pycache__/
 *.pyc
 *.pyo
 
-# VS / VS Code / Eclipse / JetBrains
+# Logs and reports
+*.log
+coverage/
+reports/
+
+# IDEs and editors
 .vs/
 .vscode/
 .idea/
+.metadata/
 *.suo
 *.user
 *.userosscache
 *.sln.docstates
-.metadata/
 
 # OS junk
 .DS_Store
 Thumbs.db
 
-# Vim
-*.swp
-*.swo
-
-# Coverage / reports
-coverage/
-reports/
-
-# Temporary files
+# Temp
 *.tmp
 *.bak
-
-# ignore older/backup versions of the project
-_old-version/
+*.swp
+*.swo
