@@ -72,21 +72,57 @@ fi
 # ---------------------------------------------------------------------------
 # Find the committed tarball
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Locate the tarball — either a single file or split parts (.part-aa, .part-ab…)
+# The split-parts approach is used to stay under git hosting file size limits
+# (GitHub: 100 MB, Bitbucket: configurable). Parts are reassembled on-the-fly
+# into a temporary file that is deleted after extraction.
+# ---------------------------------------------------------------------------
 TARBALL=""
+TARBALL_TEMP=""   # set if we reassembled from parts
+
+# 1. Single-file tarball (preferred, used on servers with high limits)
 for f in "${SRC_DIR}"/llvm-project-*.src.tar.xz \
           "${SRC_DIR}"/llvm-project-*.src.tar.gz; do
     [[ -f "${f}" ]] && { TARBALL="${f}"; break; }
 done
 
+# 2. Split parts — llvm-project-<ver>.src.tar.xz.part-aa, .part-ab, ...
+if [[ -z "${TARBALL}" ]]; then
+    FIRST_PART=""
+    for f in "${SRC_DIR}"/llvm-project-*.src.tar.xz.part-aa; do
+        [[ -f "${f}" ]] && { FIRST_PART="${f}"; break; }
+    done
+
+    if [[ -n "${FIRST_PART}" ]]; then
+        # Derive the base name and find all parts in order
+        BASE="${FIRST_PART%.part-aa}"
+        PARTS=( $(ls "${BASE}".part-* 2>/dev/null | sort) )
+        NUM_PARTS="${#PARTS[@]}"
+
+        echo "  Found ${NUM_PARTS} split parts — reassembling tarball…"
+        echo "  Parts: $(basename "${BASE}").part-*"
+        echo ""
+
+        TARBALL_TEMP="${SRC_DIR}/.reassembled.tar.xz"
+        cat "${PARTS[@]}" > "${TARBALL_TEMP}"
+        TARBALL="${TARBALL_TEMP}"
+        echo "  Reassembled: $(du -sh "${TARBALL}" | cut -f1)"
+    fi
+fi
+
 if [[ -z "${TARBALL}" ]]; then
     echo "" >&2
     echo "ERROR: No LLVM tarball found in llvm-src/." >&2
     echo "" >&2
-    echo "  Expected: llvm-src/llvm-project-<version>.src.tar.xz" >&2
+    echo "  Expected either:" >&2
+    echo "    llvm-src/llvm-project-<version>.src.tar.xz" >&2
+    echo "  or split parts:" >&2
+    echo "    llvm-src/llvm-project-<version>.src.tar.xz.part-aa" >&2
+    echo "    llvm-src/llvm-project-<version>.src.tar.xz.part-ab  ..." >&2
     echo "" >&2
-    echo "  This file should be committed in the repository." >&2
+    echo "  These files should be committed in the repository." >&2
     echo "  If you are the maintainer, see scripts/fetch-llvm-source.sh" >&2
-    echo "  for how to add the tarball." >&2
     exit 1
 fi
 

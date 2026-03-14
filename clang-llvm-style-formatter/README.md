@@ -13,7 +13,7 @@ LLVM C++ style via a pre-commit hook.
 The submodule ships with everything needed to build `clang-format` and `ninja`
 from source, with no network access required on developer machines:
 
-- **`llvm-src/llvm-project-22.1.1.src.tar.xz`** — the LLVM/Clang source tarball (~159 MB, committed)
+- **`llvm-src/llvm-project-22.1.1.src.tar.xz`** (or `.part-aa`, `.part-ab`, `.part-ac`) — the LLVM/Clang source tarball (~159 MB). Split into 95 MB parts to stay under git hosting file size limits. `extract-llvm-source.sh` reassembles parts automatically.
 - **`ninja-src/ninja-1.13.2.tar.gz`** — the Ninja build system source (~220 KB, committed)
 
 Developers clone the repo, run `bootstrap.sh`, and everything is built locally.
@@ -236,6 +236,28 @@ Developers get the new tarball on the next `git pull` and rebuild with
 
 ---
 
+## Git Hosting File Size Limits
+
+GitHub enforces a 100 MB per-file limit. Bitbucket Server/Data Center defaults
+to 250 MB but may be configured lower by your admin.
+
+The LLVM tarball (~159 MB) exceeds GitHub's limit. The solution is to split it
+into parts using `scripts/split-llvm-tarball.sh`:
+
+```bash
+bash scripts/split-llvm-tarball.sh        # splits into 95 MB chunks
+git rm llvm-src/llvm-project-22.1.1.src.tar.xz
+git add llvm-src/llvm-project-22.1.1.src.tar.xz.part-*
+git commit -m "vendor: split LLVM tarball into <100MB parts"
+git push
+```
+
+`extract-llvm-source.sh` detects and reassembles the parts automatically —
+developers do not need to do anything differently. `bootstrap.sh` works
+identically whether the tarball is a single file or split parts.
+
+---
+
 ## Air-Gapped Environments
 
 No network access is required on developer machines. The committed tarballs
@@ -279,6 +301,7 @@ a connected machine before committing and distributing.
 | `scripts/build-clang-format.sh` | Compile clang-format |
 | `scripts/build-ninja.sh` | Compile Ninja from vendored source |
 | `scripts/fetch-llvm-source.sh` | **[Maintainer]** Update vendored LLVM tarball |
+| `scripts/split-llvm-tarball.sh` | **[Maintainer]** Split tarball into <100MB parts for git hosting |
 | `scripts/install-hooks.sh` | Wire hook into a host repo |
 | `scripts/fix-format.sh` | Auto-format and re-stage failing files |
 | `scripts/verify-tools.sh` | Tool diagnostic with build guidance |
