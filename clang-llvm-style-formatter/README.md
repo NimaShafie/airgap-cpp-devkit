@@ -8,294 +8,243 @@
 ## Overview
 
 `clang-llvm-style-formatter` is a **self-contained Git submodule** that enforces
-LLVM C++ style via a pre-commit hook. Add it to as many repositories as you like;
-each host repository carries one copy of the hook configuration and a single
-bootstrap command wires everything up.
+LLVM C++ style via a pre-commit hook.
 
-The submodule includes the LLVM/Clang source tree (tests stripped, ~250 MB)
-so that `clang-format` can be **built entirely on air-gapped machines** with no
-network access and no external package manager required.
+The submodule ships with everything needed to build `clang-format` and `ninja`
+from source, with no network access required on developer machines:
+
+- **`llvm-src/llvm-project-22.1.1.src.tar.xz`** — the LLVM/Clang source tarball (~159 MB, committed)
+- **`ninja-src/ninja-1.13.2.tar.gz`** — the Ninja build system source (~220 KB, committed)
+
+Developers clone the repo, run `bootstrap.sh`, and everything is built locally.
 
 ```
 your-repo/
-├── .git/
-│   └── hooks/
-│       └── pre-commit          ← installed by bootstrap.sh
-├── .llvm-hooks/                ← this submodule
-│   ├── bootstrap.sh            ← one-command developer setup
-│   ├── hooks/
-│   │   └── pre-commit          ← the actual hook logic
-│   ├── config/
-│   │   ├── hooks.conf          ← runtime toggles
-│   │   ├── .clang-format       ← LLVM style rules
-│   │   └── .clang-tidy         ← static analysis rules
-│   ├── llvm-src/               ← vendored LLVM/Clang source (~250 MB, tests stripped)
-│   │   ├── llvm/               ← LLVM core
-│   │   │   └── tools/clang/    ← Clang frontend
-│   │   ├── cmake/              ← build system modules
-│   │   ├── third-party/        ← build system support
-│   │   └── SOURCE_INFO.txt     ← LLVM version + original checksums
-│   ├── bin/
-│   │   ├── linux/clang-format  ← built by build-clang-format.sh (not committed)
-│   │   └── windows/clang-format.exe  ← built by build-clang-format.sh (not committed)
-│   └── scripts/
-│       ├── build-clang-format.sh    ← compile clang-format from llvm-src/
-│       ├── fetch-llvm-source.sh     ← (connected machine only) fetch + strip source
-│       ├── install-hooks.sh
-│       ├── fix-format.sh
-│       ├── setup-user-path.sh
-│       ├── find-tools.sh
-│       ├── verify-tools.sh
-│       └── create-test-repo.sh
-├── .clang-format               ← symlink → .llvm-hooks/config/.clang-format
-└── .clang-tidy                 ← symlink → .llvm-hooks/config/.clang-tidy
+├── .git/hooks/pre-commit          ← installed by bootstrap.sh
+└── .llvm-hooks/                   ← this submodule
+    ├── bootstrap.sh               ← ONE command to set up everything
+    ├── llvm-src/
+    │   └── llvm-project-22.1.1.src.tar.xz   ← committed source tarball
+    ├── ninja-src/
+    │   └── ninja-1.13.2.tar.gz              ← committed ninja source
+    ├── bin/
+    │   ├── linux/clang-format     ← built on developer machine (not committed)
+    │   ├── linux/ninja            ← built if needed (not committed)
+    │   ├── windows/clang-format.exe  ← built on developer machine (not committed)
+    │   └── windows/ninja.exe      ← built if needed (not committed)
+    ├── config/
+    │   ├── .clang-format          ← LLVM style rules
+    │   ├── .clang-tidy            ← static analysis rules
+    │   └── hooks.conf             ← runtime toggles
+    ├── hooks/pre-commit           ← the gate logic
+    └── scripts/
+        ├── extract-llvm-source.sh ← extracts the committed tarball
+        ├── build-clang-format.sh  ← compiles clang-format
+        ├── build-ninja.sh         ← compiles ninja from vendored source
+        ├── fetch-llvm-source.sh   ← [MAINTAINER] update vendored tarball
+        ├── install-hooks.sh
+        ├── fix-format.sh
+        ├── verify-tools.sh
+        ├── find-tools.sh
+        ├── setup-user-path.sh
+        └── create-test-repo.sh
 ```
 
 ---
 
-## Requirements
+## Developer Workflow
 
-| Tool | Notes |
-|------|-------|
-| Git 2.13+ | For submodule support |
-| Bash 4.x+ | Git Bash on Windows satisfies this |
-| CMake 3.14+ | Required to build `clang-format` from source |
-| C++ compiler | MSVC (VS 2017/2019/2022) on Windows; GCC 8+ on RHEL 8 |
-| Ninja *(recommended)* | Faster builds; falls back to `make` if absent |
-
-**`clang-format` itself does not need to be pre-installed.** If it is not already
-present, `bootstrap.sh` will compile it from the vendored source in `llvm-src/`.
-This takes 30–60 minutes on first run and requires no network access.
-
----
-
-## Adding to a New Repository (one-time, per repo)
+### Adding to a new host repository (once per repo)
 
 ```bash
-# From the host repository root:
 git submodule add https://bitbucket.example.com/your-org/clang-llvm-style-formatter.git .llvm-hooks
 git submodule update --init --recursive
-
-# Bootstrap: build clang-format if needed, install hook, wire config
 bash .llvm-hooks/bootstrap.sh
-```
-
-Commit the submodule pointer and config symlinks:
-
-```bash
 git add .gitmodules .llvm-hooks .clang-format .clang-tidy
-git commit -m "chore: add LLVM style enforcement via clang-llvm-style-formatter"
+git commit -m "chore: add LLVM style enforcement"
 ```
 
----
-
-## Developer Onboarding (after cloning a host repo)
-
-When a developer clones a repository that already has this submodule, they run
-**one command**:
+### After cloning a repo that already has this submodule
 
 ```bash
 bash .llvm-hooks/bootstrap.sh
 ```
 
-This will:
-1. Initialise and update all submodules
-2. Check whether `clang-format` is already present (system install or a previous
-   build in `bin/linux/` or `bin/windows/`)
-3. If not found, offer to build it from the vendored source in `llvm-src/`
-   (30–60 minutes; requires CMake and a C++ compiler — both typically present
-   if LLVM is installed as the project compiler)
-4. Install the pre-commit hook into `.git/hooks/pre-commit`
+That's it. Bootstrap handles everything:
+
+| Step | What happens |
+|------|-------------|
+| 1 | Git submodules initialised |
+| 2 | Scans system PATH for `clang-format` and `ninja` — reports what was found and what was missing |
+| 3 | If anything is missing: shows what will be built and asks **"Install from vendored source? [y/N]"** |
+| → | **Yes** → builds missing tools from the committed tarballs (no network needed) |
+| → | **No** → exits with an error; the hook is NOT installed |
+| → | `build-ninja.sh` builds Ninja first (~30 sec) |
+| → | `extract-llvm-source.sh` extracts the LLVM tarball (~5–15 min) |
+| → | `build-clang-format.sh` compiles `clang-format` (~30–60 min) |
+| 4 | Pre-commit hook installed into `.git/hooks/pre-commit` |
+
+**No network access is required at any point on developer machines.**
 
 ---
 
-## How the Hook Works
+## Build Prerequisites
+
+The build requires tools already present on a standard developer machine.
+`clang-format` itself does not need to be pre-installed.
+
+### Windows 11 (Git Bash / MINGW64)
+
+| Tool | Minimum | Notes |
+|------|---------|-------|
+| Visual Studio | 2017 / 2019 / 2022 | With C++ workload |
+| CMake | 3.14 | Bundled with VS 2019+ |
+| Python 3 | 3.6 | Bundled with VS 2019+ |
+
+Run `bootstrap.sh` from an **x64 Native Tools Command Prompt for VS**, or from
+Git Bash after sourcing the VS environment.
+
+Ninja is vendored in `ninja-src/` — no separate Ninja installation needed.
+
+### RHEL 8
+
+| Tool | Package | Minimum |
+|------|---------|---------|
+| GCC/G++ | `gcc-c++` | 8.x |
+| CMake | `cmake` | 3.14 |
+| Python 3 | pre-installed | 3.6 |
+
+Ninja is vendored in `ninja-src/` — no separate Ninja installation needed.
+
+See `docs/llvm-install-guide.md` for detailed prerequisite instructions and
+troubleshooting.
+
+---
+
+## How the Pre-Commit Hook Works
 
 On every `git commit`, the hook:
 
-1. Collects all **staged** C/C++ files (`.cpp`, `.cxx`, `.cc`, `.c`, `.h`, `.hpp`, `.hxx`, `.hh`)
-2. Runs `clang-format --style=file` against the **staged content** (not working-tree)
-3. If any file would be reformatted → **commit is rejected** with a clear message
-4. Optionally runs `clang-tidy` if `ENABLE_TIDY=true` and `compile_commands.json` exists
+1. Collects all staged C/C++ files (`.cpp`, `.cxx`, `.cc`, `.c`, `.h`, `.hpp`, `.hxx`, `.hh`)
+2. Runs `clang-format --style=file` against the staged content
+3. Rejects the commit if any file would be reformatted
 
-When the commit is rejected:
+When a commit is rejected:
 
 ```
 ╔══════════════════════════════════════════════════════════════════╗
 ║  clang-format: LLVM style violations found — commit REJECTED    ║
 ╚══════════════════════════════════════════════════════════════════╝
     ✗  src/bad_indent.cpp
-    ✗  src/bad_style.cpp
 
   Fix options:
     Auto-fix staged files:  .llvm-hooks/scripts/fix-format.sh
-    Manual inspection:      clang-format --style=file -i <file>
+    Manual:                 clang-format --style=file -i <file>
 ```
 
 ### Auto-fixing violations
 
 ```bash
-# Format all staged files in-place and re-stage them:
-bash .llvm-hooks/scripts/fix-format.sh
-
-# Preview what would change without modifying anything:
-bash .llvm-hooks/scripts/fix-format.sh --dry-run
-
-# Then commit normally:
+bash .llvm-hooks/scripts/fix-format.sh        # fix and re-stage
+bash .llvm-hooks/scripts/fix-format.sh --dry-run  # preview only
 git commit -m "your message"
 ```
 
-### Bypassing the hook (emergency only)
+### Emergency bypass
 
 ```bash
-git commit --no-verify -m "emergency: bypass style check"
+git commit --no-verify -m "emergency"
 ```
 
 ---
 
 ## Configuration
 
-### Per-repo overrides (`hooks.conf`)
+### Per-repo overrides
 
-`bootstrap.sh` copies a `hooks.conf` to `.llvm-hooks-local/hooks.conf` for
-per-repository customisation. Edit this file to override defaults:
+`bootstrap.sh` creates `.llvm-hooks-local/hooks.conf` for per-repo settings:
 
 ```bash
-# Enable clang-tidy (requires compile_commands.json)
+# Enable clang-tidy (requires compile_commands.json from CMake)
 ENABLE_TIDY="true"
 
-# Point to a specific binary if the vendored build is not used
-CLANG_FORMAT_BIN="/usr/local/bin/clang-format"
+# Use a system-installed clang-format instead of the vendored build
+CLANG_FORMAT_BIN="/usr/bin/clang-format-17"
 
-# Increase verbosity (shows per-file diffs on failure)
+# Show per-file diffs when a commit is rejected
 VERBOSE="true"
 ```
 
-### Updating the style configuration
+### Style rules
 
-The canonical style rules live in:
+Edit `config/.clang-format` and `config/.clang-tidy` in this submodule.
+All host repos pick up changes on the next `git submodule update --remote .llvm-hooks`.
 
+---
+
+## Known Issues — Windows (Git Bash / MINGW64)
+
+### Symlink warnings during tarball extraction
+
+The LLVM tarball contains Linux symlinks inside `test/` directories. Windows
+cannot create these. `extract-llvm-source.sh` suppresses the warnings — they
+are harmless because `test/` directories are stripped immediately after.
+
+Expected (harmless) output during extraction:
 ```
-.llvm-hooks/config/.clang-format   ← clang-format rules
-.llvm-hooks/config/.clang-tidy     ← clang-tidy checks
+tar: .../clang/test/Driver/Inputs/...: Cannot create symlink to '...': No such file or directory
 ```
 
-To change rules for **all repos**, update the files in this submodule and push.
-Each host repo picks up the changes on the next `git submodule update --remote .llvm-hooks`.
+### "Device or resource busy" when clearing llvm-src/
+
+Git Bash holds a handle on tracked directories. `extract-llvm-source.sh`
+works around this by deleting the **contents** of `llvm-src/` rather than
+the directory itself. If the error persists, close all File Explorer windows,
+terminals, and editors that have `llvm-src/` open, then rerun.
 
 ---
 
 ## Updating the Submodule in Host Repositories
 
 ```bash
-# From the host repo root:
 git submodule update --remote .llvm-hooks
 git add .llvm-hooks
-git commit -m "chore: update clang-llvm-style-formatter submodule"
+git commit -m "chore: update clang-llvm-style-formatter"
 ```
 
 ---
 
-## Building clang-format from Source
-
-`clang-format` is compiled from the vendored source in `llvm-src/` when not
-already present. `bootstrap.sh` handles this automatically, but you can also
-trigger it manually:
+## Updating the Vendored LLVM Version (Maintainers Only)
 
 ```bash
-bash .llvm-hooks/scripts/build-clang-format.sh
+# On a connected machine:
+bash scripts/fetch-llvm-source.sh --version 23.x.x
 
-# Force a clean rebuild:
-bash .llvm-hooks/scripts/build-clang-format.sh --rebuild
+# Or with a pre-downloaded tarball:
+bash scripts/fetch-llvm-source.sh \
+    --version 23.x.x \
+    --tarball-dir /path/to/downloads
 
-# Control parallel jobs:
-bash .llvm-hooks/scripts/build-clang-format.sh --jobs 8
+# Commit and push:
+git add llvm-src/llvm-project-23.x.x.src.tar.xz
+git commit -m "vendor: update LLVM tarball to 23.x.x"
+git push
 ```
 
-The compiled binary is placed at `bin/linux/clang-format` or
-`bin/windows/clang-format.exe`. The build directory (`llvm-src/build/`) can
-be deleted after building to reclaim ~420 MB of disk space — the binary is
-all that is kept.
-
-### Build prerequisites
-
-**Windows (Git Bash / MINGW64):**
-- Visual Studio 2017, 2019, or 2022 with the C++ workload
-- CMake 3.14+ (bundled with VS 2019+)
-- Ninja (bundled with VS, or from `ninja-build.org`)
-- Run from an **x64 Native Tools Command Prompt** or ensure MSVC is on PATH
-
-**RHEL 8:**
-- GCC 8+ (`gcc-c++` package, part of Development Tools group)
-- CMake 3.14+ (`cmake` package)
-- Ninja (`ninja-build` package, recommended) or GNU make
-
----
-
-## Updating the Vendored LLVM Source
-
-The vendored source in `llvm-src/` is pinned to a specific LLVM version
-(recorded in `llvm-src/SOURCE_INFO.txt`). To update to a new version:
-
-1. On a machine with network access, run:
-   ```bash
-   bash .llvm-hooks/scripts/fetch-llvm-source.sh --version X.Y.Z
-   ```
-2. This fetches, verifies, extracts, and strips the new source tree into `llvm-src/`.
-3. Commit the updated `llvm-src/` directory:
-   ```bash
-   git add llvm-src/
-   git commit -m "vendor: update LLVM source to X.Y.Z"
-   ```
-4. Distribute the updated submodule to air-gapped machines via your normal
-   transfer process. Developers run `build-clang-format.sh` once to rebuild.
-
----
-
-## Running the End-to-End Test
-
-Verify the hook works correctly in a fully isolated scratch environment:
-
-```bash
-bash .llvm-hooks/scripts/create-test-repo.sh
-
-# Keep the test directory afterwards for manual inspection:
-bash .llvm-hooks/scripts/create-test-repo.sh --keep
-```
-
-Expected output:
-
-```
-  A (clean commit accepted)  : ✓ PASS
-  B (bad commit rejected)    : ✓ PASS
-  C (fixed commit accepted)  : ✓ PASS
-```
+Developers get the new tarball on the next `git pull` and rebuild with
+`bash .llvm-hooks/scripts/build-clang-format.sh --rebuild`.
 
 ---
 
 ## Air-Gapped Environments
 
-This project is designed for air-gapped use. **No network access is required
-at any point on developer machines.**
+No network access is required on developer machines. The committed tarballs
+(`llvm-src/llvm-project-22.1.1.src.tar.xz` and `ninja-src/ninja-1.13.2.tar.gz`)
+contain everything needed. Everything is compiled locally from those sources.
 
-The `llvm-src/` directory contains the complete LLVM/Clang source needed to
-build `clang-format`, pre-stripped of tests and documentation to keep the
-committed size to ~250 MB. Everything builds locally from this source using
-only the tools already present on a developer's machine (CMake + C++ compiler).
-
-The only step that requires a network connection is the one-time source fetch
-when updating the LLVM version (`fetch-llvm-source.sh`), which is run by a
-maintainer on a connected machine before committing and distributing.
-
----
-
-## Super-Project / Nested Submodule Repositories
-
-For host repositories that are themselves super-projects, no special handling
-is required. The `.llvm-hooks` submodule sits at the host repo root and
-operates on all C/C++ files staged in that repo. The hook uses
-`git diff --cached --name-only` which is scoped to the currently committed
-repository and will not accidentally reach into nested submodule working trees.
+The only step requiring network access is the one-time maintainer operation
+of updating the vendored tarball (`fetch-llvm-source.sh`), which is run on
+a connected machine before committing and distributing.
 
 ---
 
@@ -316,20 +265,23 @@ repository and will not accidentally reach into nested submodule working trees.
 | Path | Purpose |
 |------|---------|
 | `bootstrap.sh` | One-command developer setup |
-| `hooks/pre-commit` | The pre-commit hook (gate logic) |
+| `hooks/pre-commit` | Pre-commit gate logic |
 | `config/hooks.conf` | Runtime configuration |
-| `config/.clang-format` | LLVM clang-format rules |
+| `config/.clang-format` | LLVM clang-format style rules |
 | `config/.clang-tidy` | LLVM clang-tidy checks |
-| `llvm-src/` | Vendored LLVM/Clang source (~250 MB, tests stripped) |
-| `llvm-src/SOURCE_INFO.txt` | LLVM version, fetch date, original checksums |
-| `bin/linux/clang-format` | Built binary (generated, not committed) |
-| `bin/windows/clang-format.exe` | Built binary (generated, not committed) |
-| `scripts/build-clang-format.sh` | Compile clang-format from llvm-src/ |
-| `scripts/fetch-llvm-source.sh` | Fetch + strip LLVM source (connected machine only) |
-| `scripts/install-hooks.sh` | Wire hook into a host repo's `.git/hooks/` |
-| `scripts/fix-format.sh` | Auto-format + re-stage failing files |
+| `llvm-src/llvm-project-22.1.1.src.tar.xz` | Vendored LLVM source (~159 MB, committed) |
+| `ninja-src/ninja-1.13.2.tar.gz` | Vendored Ninja source (~220 KB, committed) |
+| `bin/linux/clang-format` | Built binary — generated, not committed |
+| `bin/linux/ninja` | Built binary — generated, not committed |
+| `bin/windows/clang-format.exe` | Built binary — generated, not committed |
+| `bin/windows/ninja.exe` | Built binary — generated, not committed |
+| `scripts/extract-llvm-source.sh` | Extract the committed LLVM tarball |
+| `scripts/build-clang-format.sh` | Compile clang-format |
+| `scripts/build-ninja.sh` | Compile Ninja from vendored source |
+| `scripts/fetch-llvm-source.sh` | **[Maintainer]** Update vendored LLVM tarball |
+| `scripts/install-hooks.sh` | Wire hook into a host repo |
+| `scripts/fix-format.sh` | Auto-format and re-stage failing files |
 | `scripts/verify-tools.sh` | Tool diagnostic with build guidance |
-| `scripts/setup-user-path.sh` | Add a bin directory to user PATH (no admin) |
-| `scripts/find-tools.sh` | Sourced helper: discover clang-format/tidy |
+| `scripts/find-tools.sh` | Sourced helper: discover clang-format |
 | `scripts/create-test-repo.sh` | End-to-end isolated test harness |
-| `docs/llvm-install-guide.md` | LLVM build prerequisites by platform |
+| `docs/llvm-install-guide.md` | Build prerequisites by platform |

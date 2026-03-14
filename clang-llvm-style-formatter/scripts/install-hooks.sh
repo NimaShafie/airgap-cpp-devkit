@@ -157,9 +157,9 @@ if command -v clang-format &>/dev/null; then
     CF_VER="$(clang-format --version 2>/dev/null | head -1)"
     echo "[install-hooks] clang-format found: ${CF_VER}"
 else
-    echo "[install-hooks] ⚠  clang-format not found on PATH."
-    echo "                Run the following to configure your PATH:"
-    echo "                  bash ${SUBMODULE_ROOT}/scripts/setup-user-path.sh --auto"
+    echo "[install-hooks] ⚠  clang-format not found."
+    echo "                Build from vendored source:"
+    echo "                  bash ${SUBMODULE_ROOT}/scripts/build-clang-format.sh"
 fi
 
 echo ""

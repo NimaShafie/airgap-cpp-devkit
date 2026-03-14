@@ -116,17 +116,9 @@ if [[ -z "${LLVM_BIN_DIR}" ]]; then
 fi
 
 if [[ -z "${LLVM_BIN_DIR}" ]]; then
-    echo ""
     echo "[setup-user-path] Could not auto-detect an LLVM bin directory."
-    echo "  Please supply the path manually:"
-    echo "    $0 --llvm-bin /path/to/llvm/bin"
-    echo ""
-    echo "  Common locations:"
-    echo "    Windows : C:\\Program Files\\LLVM\\bin"
-    echo "              (Visual Studio installer path)"
-    echo "    RHEL 8  : /opt/rh/llvm-toolset-14/root/usr/bin"
-    echo "              /usr/lib/llvm-14/bin"
-    exit 1
+    echo "  Use: $0 --llvm-bin /path/to/llvm/bin"
+    exit 0
 fi
 
 echo "[setup-user-path] LLVM bin directory: ${LLVM_BIN_DIR}"
