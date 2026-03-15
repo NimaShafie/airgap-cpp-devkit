@@ -143,9 +143,13 @@ fi
 # 5.  Verify clang-format is available
 # ---------------------------------------------------------------------------
 echo ""
-# Check vendored bin/ first, then PATH
+# Check all known locations in priority order:
+# 1. pip venv (fastest install)
+# 2. clang-llvm-source-build bin/ (optional LLVM build)
+# 3. legacy bin/ inside formatter dir
+# 4. system PATH
 CF_BIN=""
-for _candidate in     "${SUBMODULE_ROOT}/bin/windows/clang-format.exe"     "${SUBMODULE_ROOT}/bin/linux/clang-format"; do
+for _candidate in     "${SUBMODULE_ROOT}/.venv/Scripts/clang-format.exe"     "${SUBMODULE_ROOT}/.venv/bin/clang-format"     "${SUBMODULE_ROOT}/../clang-llvm-source-build/bin/windows/clang-format.exe"     "${SUBMODULE_ROOT}/../clang-llvm-source-build/bin/linux/clang-format"     "${SUBMODULE_ROOT}/bin/windows/clang-format.exe"     "${SUBMODULE_ROOT}/bin/linux/clang-format"; do
     [[ -x "${_candidate}" ]] && { CF_BIN="${_candidate}"; break; }
 done
 [[ -z "${CF_BIN}" ]] && command -v clang-format &>/dev/null     && CF_BIN="$(command -v clang-format)"

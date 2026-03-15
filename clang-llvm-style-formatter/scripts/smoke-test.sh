@@ -44,6 +44,10 @@ echo "=================================================================="
 # ---------------------------------------------------------------------------
 CF_BIN=""
 for candidate in \
+    "${SUBMODULE_ROOT}/.venv/Scripts/clang-format.exe" \
+    "${SUBMODULE_ROOT}/.venv/bin/clang-format" \
+    "${SUBMODULE_ROOT}/../clang-llvm-source-build/bin/windows/clang-format.exe" \
+    "${SUBMODULE_ROOT}/../clang-llvm-source-build/bin/linux/clang-format" \
     "${SUBMODULE_ROOT}/bin/windows/clang-format.exe" \
     "${SUBMODULE_ROOT}/bin/linux/clang-format"; do
     [[ -x "${candidate}" ]] && { CF_BIN="${candidate}"; break; }
