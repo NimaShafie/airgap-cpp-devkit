@@ -42,6 +42,19 @@ if [[ -z "${SUBMODULE_ROOT}" ]]; then
     exit 1
 fi
 
+# Build --style=file: with a Windows-compatible path on MINGW/MSYS.
+# clang-format on Windows requires C:\... paths not /c/... Unix paths.
+_cf_config_path() {
+    local p="${SUBMODULE_ROOT}/config/.clang-format"
+    case "$(uname -s)" in
+        MINGW*|MSYS*|CYGWIN*)
+            cygpath -w "${p}" 2>/dev/null ||                 printf '%s' "${p}" | sed 's|/c/|C:\\|; s|/|\\|g' ;;
+        *) printf '%s' "${p}" ;;
+    esac
+}
+CF_STYLE_ARG="--style=file:$(_cf_config_path)"
+
+
 CONF="${SUBMODULE_ROOT}/config/hooks.conf"
 
 # ---------------------------------------------------------------------------
@@ -129,7 +142,7 @@ if [[ "${ENABLE_FORMAT}" == "true" ]]; then
         # Run clang-format against the staged content via stdin
         formatted="$(echo "${staged_content}" | \
             "${CLANG_FORMAT_BIN}" \
-                --style=file:"${SUBMODULE_ROOT}/config/.clang-format" \
+                --style=file:"$(case "$(uname -s)" in MINGW*|MSYS*|CYGWIN*) cygpath -w "${SUBMODULE_ROOT}/config/.clang-format" 2>/dev/null || printf '%s' "${SUBMODULE_ROOT}/config/.clang-format" | sed 's|/c/|C:\\|; s|/|\\|g' ;; *) echo "${SUBMODULE_ROOT}/config/.clang-format" ;; esac)" \
                 --assume-filename="${abs}" \
                 2>/dev/null)"
 

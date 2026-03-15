@@ -107,7 +107,17 @@ if [[ -z "${CF_BIN}" || -z "${CF_CONFIG}" ]]; then
     _section "Tests 4-6: formatting checks"
     _skip "clang-format binary or config not available — skipping formatting tests"
 else
-    STYLE_ARG="--style=file:${CF_CONFIG}"
+    # clang-format on Windows requires a Windows-style path for --style=file:
+    # Convert /c/Users/... to C:\Users\... if running on Windows
+    case "$(uname -s)" in
+        MINGW*|MSYS*|CYGWIN*)
+            CF_CONFIG_NATIVE="$(cygpath -w "${CF_CONFIG}" 2>/dev/null ||                 printf '%s' "${CF_CONFIG}" | sed 's|/c/|C:\|; s|/|\|g')"
+            ;;
+        *)
+            CF_CONFIG_NATIVE="${CF_CONFIG}"
+            ;;
+    esac
+    STYLE_ARG="--style=file:${CF_CONFIG_NATIVE}"
 
     # -------------------------------------------------------------------------
     # Test 4 — Badly formatted code is rejected
