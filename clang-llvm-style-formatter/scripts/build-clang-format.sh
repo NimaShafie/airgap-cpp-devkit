@@ -555,3 +555,17 @@ echo ""
 echo "  To reclaim ~420 MB of build disk space:"
 echo "    rm -rf ${BUILD_DIR}"
 echo ""
+
+# ---------------------------------------------------------------------------
+# Smoke test — verify the build works end-to-end
+# ---------------------------------------------------------------------------
+SMOKE_SCRIPT="${SCRIPT_DIR}/smoke-test.sh"
+if [[ -x "${SMOKE_SCRIPT}" ]]; then
+    echo "Running smoke test..."
+    echo ""
+    bash "${SMOKE_SCRIPT}" || {
+        echo "" >&2
+        echo "WARNING: Smoke test reported failures." >&2
+        echo "         Binary was built but check output above." >&2
+    }
+fi
