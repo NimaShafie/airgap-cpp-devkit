@@ -7,7 +7,7 @@
 #
 # Install:  run scripts/install-hooks.sh from the host repository root.
 # Config:   hooks are driven by:
-#             .clang-format     (must live at host repo root or be symlinked)
+#             .clang-format     (lives in the submodule config/ directory)
 #             .clang-tidy       (same)
 #             .llvm-hooks/config/hooks.conf  (runtime toggles — see below)
 #
@@ -129,7 +129,7 @@ if [[ "${ENABLE_FORMAT}" == "true" ]]; then
         # Run clang-format against the staged content via stdin
         formatted="$(echo "${staged_content}" | \
             "${CLANG_FORMAT_BIN}" \
-                --style=file \
+                --style=file:"${SUBMODULE_ROOT}/config/.clang-format" \
                 --assume-filename="${abs}" \
                 2>/dev/null)"
 

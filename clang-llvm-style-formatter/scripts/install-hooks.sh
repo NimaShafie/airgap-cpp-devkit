@@ -104,36 +104,30 @@ WRAPPER
 fi
 
 # ---------------------------------------------------------------------------
-# 3.  Place config files at repo root (symlink on Unix, copy on Windows)
+# 3.  Config files stay inside the submodule — do NOT copy to repo root.
+#
+#     clang-format finds .clang-format by walking UP the directory tree from
+#     the file being formatted. This means it will find the config at:
+#       <submodule>/config/.clang-format
+#     only if the pre-commit hook passes --style=file:<path> explicitly,
+#     OR if a .clang-format exists in an ancestor of the files being checked.
+#
+#     For multi-project repos (where the submodule is one of several projects),
+#     we do NOT pollute the repo root with config files. The pre-commit hook
+#     passes --style=file: pointing at the submodule config directly.
+#
+#     If the host repo wants its own .clang-format, the developer can create
+#     one manually. The submodule config is the default fallback.
 # ---------------------------------------------------------------------------
-_install_config() {
-    local src="$1"
-    local dest="${REPO_ROOT}/$(basename "${src}")"
-    local name
-    name="$(basename "${src}")"
-
-    if [[ -e "${dest}" && "${FORCE}" == "false" ]]; then
-        echo "[install-hooks] ${name} already exists at repo root — skipping."
-        echo "                Use --force to overwrite."
-        return
-    fi
-
-    if [[ "$(uname -s)" == MINGW* || "$(uname -s)" == MSYS* || "$(uname -s)" == CYGWIN* ]]; then
-        cp -f "${src}" "${dest}"
-        echo "[install-hooks] Copied ${name} to repo root (Windows)."
-    else
-        ln -sf "${src}" "${dest}"
-        echo "[install-hooks] Symlinked ${name} to repo root."
-    fi
-}
-
-_install_config "${CONFIG_SRC}/.clang-format"
-_install_config "${CONFIG_SRC}/.clang-tidy"
+echo "[install-hooks] Config files remain in submodule: ${CONFIG_SRC}"
+echo "                The pre-commit hook references them directly."
 
 # ---------------------------------------------------------------------------
 # 4.  Install a per-repo hooks.conf if one doesn't already exist
 # ---------------------------------------------------------------------------
-REPO_CONF_DIR="${REPO_ROOT}/.llvm-hooks-local"
+# Per-repo hooks.conf lives inside the submodule, not the host repo root.
+# This avoids polluting the host repo with submodule-specific config files.
+REPO_CONF_DIR="${SUBMODULE_ROOT}/.llvm-hooks-local"
 REPO_CONF="${REPO_CONF_DIR}/hooks.conf"
 if [[ ! -f "${REPO_CONF}" ]]; then
     mkdir -p "${REPO_CONF_DIR}"
@@ -143,8 +137,6 @@ if [[ ! -f "${REPO_CONF}" ]]; then
     fi
     echo "[install-hooks] Created per-repo config at ${REPO_CONF}"
     echo "                Edit this file to customise behaviour for this repo."
-    echo "                Add .llvm-hooks-local/hooks.conf to .gitignore if"
-    echo "                you do not want to commit per-developer overrides."
 else
     echo "[install-hooks] Per-repo config already exists — skipping."
 fi
@@ -153,9 +145,17 @@ fi
 # 5.  Verify clang-format is available
 # ---------------------------------------------------------------------------
 echo ""
-if command -v clang-format &>/dev/null; then
-    CF_VER="$(clang-format --version 2>/dev/null | head -1)"
+# Check vendored bin/ first, then PATH
+CF_BIN=""
+for _candidate in     "${SUBMODULE_ROOT}/bin/windows/clang-format.exe"     "${SUBMODULE_ROOT}/bin/linux/clang-format"; do
+    [[ -x "${_candidate}" ]] && { CF_BIN="${_candidate}"; break; }
+done
+[[ -z "${CF_BIN}" ]] && command -v clang-format &>/dev/null     && CF_BIN="$(command -v clang-format)"
+
+if [[ -n "${CF_BIN}" ]]; then
+    CF_VER="$("${CF_BIN}" --version 2>/dev/null | head -1)"
     echo "[install-hooks] clang-format found: ${CF_VER}"
+    echo "                Location: ${CF_BIN}"
 else
     echo "[install-hooks] ⚠  clang-format not found."
     echo "                Build from vendored source:"
