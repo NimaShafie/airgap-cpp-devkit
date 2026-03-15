@@ -2,42 +2,32 @@
 # =============================================================================
 # bootstrap.sh — One-command developer onboarding
 #
-# Run this once after cloning any host repository that uses
-# clang-llvm-style-formatter as a submodule.
+# Installs clang-format via Python venv (from vendored wheels in
+# python-packages/) and wires the pre-commit hook into the host repository.
 #
-# Flow:
-#   1. Initialise git submodules.
-#   2. Check system PATH for clang-format AND ninja.
-#      - Found both  → nothing to build, proceed to hook install.
-#      - Found some  → report what's missing.
-#      - Found none  → report missing.
-#   3. If anything is missing, show what was found vs. what was missing,
-#      then ask: "Install from vendored source? [y/N]"
-#      - Yes → build whatever is missing from the committed tarballs.
-#      - No  → print a clear message and EXIT with error (non-zero).
-#              The hook is NOT installed when the user declines.
-#   4. Install the pre-commit hook.
-#   5. Print a health summary.
+# This is the FAST path (~5 seconds). No compiler, no Visual Studio,
+# no CMake required. Python 3.8+ must be available on PATH.
+#
+# If you need to build clang-format from LLVM source instead, see:
+#   ../clang-llvm-source-build/bootstrap.sh
 #
 # Usage:
-#   bash .llvm-hooks/bootstrap.sh [--force] [--skip-path-setup]
+#   bash clang-llvm-style-formatter/bootstrap.sh [--force]
 #
 # Options:
-#   --force           Overwrite an existing hook without prompting.
-#   --skip-path-setup Skip the system PATH scan (jump straight to build offer).
+#   --force    Overwrite existing hook and recreate venv without prompting.
 # =============================================================================
 
 set -euo pipefail
 
 FORCE=""
-SKIP_PATH_SETUP=false
+FORCE_BOOL=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --force)           FORCE="--force";      shift ;;
-        --skip-path-setup) SKIP_PATH_SETUP=true; shift ;;
+        --force) FORCE="--force"; FORCE_BOOL=true; shift ;;
         -h|--help)
-            echo "Usage: $0 [--force] [--skip-path-setup]"
+            echo "Usage: $0 [--force]"
             exit 0 ;;
         *) echo "ERROR: Unknown argument: $1" >&2; exit 1 ;;
     esac
@@ -53,27 +43,29 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-
-# Find a tool on PATH or at the vendored bin/ locations
 _find_tool() {
     local tool="$1"
     # System PATH (plain name + versioned suffixes)
     if command -v "${tool}" &>/dev/null; then
-        command -v "${tool}"
-        return 0
+        command -v "${tool}"; return 0
     fi
     for ver in 18 17 16 15 14; do
         if command -v "${tool}-${ver}" &>/dev/null; then
-            command -v "${tool}-${ver}"
-            return 0
+            command -v "${tool}-${ver}"; return 0
         fi
     done
-    # pip venv (preferred over built binary — faster install, no compiler needed)
-    for candidate in         "${SCRIPT_DIR}/.venv/Scripts/${tool}.exe"         "${SCRIPT_DIR}/.venv/bin/${tool}"; do
+    # pip venv (preferred local install)
+    for candidate in \
+        "${SCRIPT_DIR}/.venv/Scripts/${tool}.exe" \
+        "${SCRIPT_DIR}/.venv/bin/${tool}"; do
         [[ -x "${candidate}" ]] && { echo "${candidate}"; return 0; }
     done
-    # Vendored bin/ (fallback — binary built from LLVM source)
-    for candidate in         "${SCRIPT_DIR}/bin/windows/${tool}.exe"         "${SCRIPT_DIR}/bin/linux/${tool}"; do
+    # Built binary from LLVM source (fallback)
+    for candidate in \
+        "${SCRIPT_DIR}/../clang-llvm-source-build/bin/windows/${tool}.exe" \
+        "${SCRIPT_DIR}/../clang-llvm-source-build/bin/linux/${tool}" \
+        "${SCRIPT_DIR}/bin/windows/${tool}.exe" \
+        "${SCRIPT_DIR}/bin/linux/${tool}"; do
         [[ -x "${candidate}" ]] && { echo "${candidate}"; return 0; }
     done
     return 1
@@ -93,219 +85,96 @@ _tool_version() {
 # ---------------------------------------------------------------------------
 echo "=================================================================="
 echo "  clang-llvm-style-formatter — Developer Bootstrap"
+echo "  Install method: Python venv (pip)"
 echo "=================================================================="
 echo ""
 
 # ---------------------------------------------------------------------------
 # Step 1 — Initialise submodules
 # ---------------------------------------------------------------------------
-echo "[bootstrap] Step 1/4: Initialising git submodules…"
+echo "[bootstrap] Step 1/4: Initialising git submodules..."
 git -C "${REPO_ROOT}" submodule update --init --recursive
 echo "            Done."
 echo ""
 
 # ---------------------------------------------------------------------------
-# Step 2 — Check system/PATH for all required tools
+# Step 2 — Check for clang-format
 # ---------------------------------------------------------------------------
-echo "[bootstrap] Step 2/4: Checking system for required tools…"
+echo "[bootstrap] Step 2/4: Checking for clang-format..."
 echo ""
 
 CF_PATH=""
-NINJA_PATH=""
+CF_OK=false
 
-# clang-format
 if CF_PATH="$(_find_tool "clang-format" 2>/dev/null)"; then
     CF_VER="$(_tool_version "${CF_PATH}" "clang-format")"
+    CF_OK=true
     echo "  ✓  clang-format : ${CF_VER}"
     echo "     Location     : ${CF_PATH}"
 else
-    echo "  ✗  clang-format : not found on PATH or in bin/"
+    echo "  ✗  clang-format : not found"
 fi
-
 echo ""
 
-# ninja
-if NINJA_PATH="$(_find_tool "ninja" 2>/dev/null)"; then
-    NINJA_VER="$(_tool_version "${NINJA_PATH}" "ninja")"
-    echo "  ✓  ninja        : v${NINJA_VER}"
-    echo "     Location     : ${NINJA_PATH}"
+# ---------------------------------------------------------------------------
+# Step 3 — Install via pip/venv if needed
+# ---------------------------------------------------------------------------
+if [[ "${CF_OK}" == "true" && "${FORCE_BOOL}" == "false" ]]; then
+    echo "[bootstrap] Step 3/4: clang-format available — skipping install."
 else
-    echo "  ✗  ninja        : not found on PATH or in bin/"
-    echo "     (ninja dramatically speeds up the clang-format build;"
-    echo "      it will be built from vendored source if needed)"
-fi
-
-echo ""
-
-# Determine what needs to be done
-CF_OK=false
-NINJA_OK=false
-[[ -n "${CF_PATH}" ]]    && CF_OK=true
-[[ -n "${NINJA_PATH}" ]] && NINJA_OK=true
-
-# If clang-format is already present, nothing more to do
-if [[ "${CF_OK}" == "true" ]]; then
-    echo "[bootstrap] Step 3/4: clang-format available — no build required."
+    echo "[bootstrap] Step 3/4: Installing clang-format via Python venv..."
     echo ""
-else
-    # ---------------------------------------------------------------------------
-    # Step 3 — Tools missing: show summary, ask user whether to proceed
-    # ---------------------------------------------------------------------------
-    echo "[bootstrap] Step 3/4: One or more tools are missing."
+    echo "  ── pip + venv method ──────────────────────────────────────────"
+    echo "  Installs clang-format from vendored .whl files in python-packages/"
+    echo "  No network access, no compiler, no admin rights required."
+    echo "  Requires: Python 3.8+ on PATH"
+    echo "  Time    : ~5 seconds"
     echo ""
 
-    # Summarise what's needed
-    echo "  ── What will be built ─────────────────────────────────────────"
-    [[ "${CF_OK}"    == "false" ]] && echo "    • clang-format  (from llvm-src/   — ~30–60 min)"
-    [[ "${NINJA_OK}" == "false" ]] && echo "    • ninja         (from ninja-src/  — ~30 sec)"
-    echo ""
-    echo "  ── Prerequisites required ─────────────────────────────────────"
-    case "$(uname -s)" in
-        MINGW*|MSYS*|CYGWIN*)
-            echo "    • Visual Studio 2017/2019/2022 (C++ workload)"
-            echo "    • CMake 3.14+  (bundled with VS 2019+)"
-            echo "    • Run from:    x64 Native Tools Command Prompt for VS"
-            ;;
-        *)
-            echo "    • GCC/G++ 8+  (gcc-c++ package)"
-            echo "    • CMake 3.14+ (cmake package)"
-            ;;
-    esac
-    echo "  ── ────────────────────────────────────────────────────────────"
-    echo ""
-
-    # Verify the vendored tarballs are present before asking
-    LLVM_TARBALL=""
-    # Check for single-file tarball first, then split parts
-    for f in "${SCRIPT_DIR}/llvm-src"/llvm-project-*.src.tar.xz \
-              "${SCRIPT_DIR}/llvm-src"/llvm-project-*.src.tar.gz; do
-        [[ -f "${f}" ]] && { LLVM_TARBALL="${f}"; break; }
-    done
-    # Check for split parts (.part-aa is always the first chunk)
-    if [[ -z "${LLVM_TARBALL}" ]]; then
-        for f in "${SCRIPT_DIR}/llvm-src"/llvm-project-*.src.tar.xz.part-aa; do
-            [[ -f "${f}" ]] && { LLVM_TARBALL="${f}"; break; }
-        done
-    fi
-
-    NINJA_TARBALL=""
-    for f in "${SCRIPT_DIR}/ninja-src"/ninja-*.tar.gz \
-              "${SCRIPT_DIR}/ninja-src"/ninja-*.tar.xz; do
-        [[ -f "${f}" ]] && { NINJA_TARBALL="${f}"; break; }
-    done
-
-    # If tarballs are missing, we can't proceed — hard error
-    TARBALLS_OK=true
-    if [[ "${CF_OK}" == "false" && -z "${LLVM_TARBALL}" ]]; then
-        echo "  ERROR: LLVM tarball not found in llvm-src/." >&2
-        echo "         Expected: llvm-src/llvm-project-22.1.1.src.tar.xz" >&2
-        echo "         The tarball must be committed to the repository." >&2
-        TARBALLS_OK=false
-    fi
-    if [[ "${NINJA_OK}" == "false" && -z "${NINJA_TARBALL}" ]]; then
-        echo "  WARNING: Ninja tarball not found in ninja-src/ — will try make instead." >&2
-    fi
-
-    if [[ "${TARBALLS_OK}" == "false" ]]; then
-        echo "" >&2
-        echo "  Bootstrap cannot continue. Contact your repository maintainer." >&2
-        exit 1
-    fi
-
-    # ── Ask the user ──────────────────────────────────────────────────────
-    read -r -p "  Install missing tools from vendored source? [y/N] " user_choice
-    echo ""
-
-    if [[ "${user_choice,,}" != "y" ]]; then
-        echo "  ┌─────────────────────────────────────────────────────────┐"
-        echo "  │  Installation declined.                                 │"
-        echo "  │                                                         │"
-        echo "  │  clang-format is required for the pre-commit hook.      │"
-        echo "  │  The hook has NOT been installed.                       │"
-        echo "  │                                                         │"
-        echo "  │  To install later, rerun:                               │"
-        echo "  │    bash clang-llvm-style-formatter/bootstrap.sh         │"
-        echo "  └─────────────────────────────────────────────────────────┘"
-        echo ""
-        exit 1
-    fi
-
-    echo ""
-
-    # ── Method 1: pip + venv from vendored wheels (~5 seconds) ───────────
-    # Preferred: installs clang-format as a Python wheel into a local venv.
-    # No compiler, no VS, no CMake, no 60-minute wait.
-    # Requires: Python 3.8+ (already available on target platforms).
-    VENV_INSTALL_SCRIPT="${SCRIPT_DIR}/scripts/install-venv.sh"
+    VENV_SCRIPT="${SCRIPT_DIR}/scripts/install-venv.sh"
     WHEELS_PRESENT=false
     for f in "${SCRIPT_DIR}/python-packages"/clang_format-*.whl; do
         [[ -f "${f}" ]] && { WHEELS_PRESENT=true; break; }
     done
 
-    if [[ "${WHEELS_PRESENT}" == "true" ]]; then
-        echo "  ── Method 1: pip + venv (fast, ~5 seconds) ───────────────────"
-        echo ""
-        if bash "${VENV_INSTALL_SCRIPT}"; then
-            # Pick up the venv binary
-            case "$(uname -s)" in
-                MINGW*|MSYS*|CYGWIN*) _VENV_CF="${SCRIPT_DIR}/.venv/Scripts/clang-format.exe" ;;
-                *)                    _VENV_CF="${SCRIPT_DIR}/.venv/bin/clang-format" ;;
-            esac
-            if [[ -x "${_VENV_CF}" ]]; then
-                CF_PATH="${_VENV_CF}"
-                CF_OK=true
-                CF_VER="$(_tool_version "${CF_PATH}" "clang-format")"
-                echo ""
-                echo "  ✓  clang-format installed via pip venv: ${CF_VER}"
-            fi
-        else
-            echo "  WARNING: pip/venv install failed — falling back to LLVM source build." >&2
-        fi
-    else
-        echo "  NOTE: No Python wheels found in python-packages/ — skipping pip method."
-        echo "        To add wheels: bash ${SCRIPT_DIR}/scripts/fetch-wheels.sh"
-        echo ""
+    if [[ "${WHEELS_PRESENT}" == "false" ]]; then
+        echo "  ERROR: No clang-format wheels found in python-packages/" >&2
+        echo "" >&2
+        echo "  Expected files:" >&2
+        echo "    python-packages/clang_format-*-win_amd64.whl" >&2
+        echo "    python-packages/clang_format-*-manylinux*.whl" >&2
+        echo "" >&2
+        echo "  To fetch wheels (requires internet, run once on connected machine):" >&2
+        echo "    bash ${SCRIPT_DIR}/scripts/fetch-wheels.sh" >&2
+        echo "" >&2
+        echo "  Alternatively, build clang-format from LLVM source:" >&2
+        echo "    bash $(cd "${SCRIPT_DIR}/.." && pwd)/clang-llvm-source-build/bootstrap.sh" >&2
+        exit 1
     fi
 
-    # ── Method 2: Build from LLVM source (~30-60 minutes) ────────────────
-    # Fallback: compiles clang-format from the vendored LLVM source tarball.
-    # Used when: no wheels available, or pip install failed.
-    if [[ "${CF_OK}" == "false" ]]; then
-        echo ""
-        echo "  ── Method 2: Build from LLVM source (slow, ~30-60 min) ───────"
-        echo ""
+    VENV_ARGS=""
+    [[ "${FORCE_BOOL}" == "true" ]] && VENV_ARGS="--force"
 
-        # Build ninja first if missing
-        if [[ "${NINJA_OK}" == "false" && -n "${NINJA_TARBALL}" ]]; then
-            echo "  Building Ninja from vendored source..."
-            echo ""
-            bash "${SCRIPT_DIR}/scripts/build-ninja.sh"
-            echo ""
-            NINJA_PATH="$(_find_tool "ninja" 2>/dev/null || true)"
-            [[ -n "${NINJA_PATH}" ]] && NINJA_OK=true
-        fi
-
-        echo "  Building clang-format from vendored LLVM source..."
-        echo ""
-        bash "${SCRIPT_DIR}/scripts/build-clang-format.sh" || {
-            if ! _find_tool "clang-format" &>/dev/null; then
-                echo "  ERROR: build-clang-format.sh failed." >&2
-                exit 1
-            fi
-            echo "  (Build completed with non-fatal warnings)"
-        }
-        echo ""
-
-        if CF_PATH="$(_find_tool "clang-format" 2>/dev/null)"; then
+    if bash "${VENV_SCRIPT}" ${VENV_ARGS}; then
+        case "$(uname -s)" in
+            MINGW*|MSYS*|CYGWIN*) _VENV_CF="${SCRIPT_DIR}/.venv/Scripts/clang-format.exe" ;;
+            *)                    _VENV_CF="${SCRIPT_DIR}/.venv/bin/clang-format" ;;
+        esac
+        if [[ -x "${_VENV_CF}" ]]; then
+            CF_PATH="${_VENV_CF}"
             CF_OK=true
             CF_VER="$(_tool_version "${CF_PATH}" "clang-format")"
-            echo "  ✓  clang-format built from source: ${CF_VER}"
+            echo ""
+            echo "  ✓  clang-format installed: ${CF_VER}"
             echo "     Location: ${CF_PATH}"
-        else
-            echo "  ERROR: Both installation methods failed." >&2
-            echo "         Run: bash ${SCRIPT_DIR}/scripts/verify-tools.sh" >&2
-            exit 1
         fi
+    else
+        echo "" >&2
+        echo "  ERROR: pip/venv install failed." >&2
+        echo "" >&2
+        echo "  To build from LLVM source instead (~30-60 min):" >&2
+        echo "    bash $(cd "${SCRIPT_DIR}/.." && pwd)/clang-llvm-source-build/bootstrap.sh" >&2
+        exit 1
     fi
 fi
 
@@ -314,8 +183,7 @@ echo ""
 # ---------------------------------------------------------------------------
 # Step 4 — Install the pre-commit hook
 # ---------------------------------------------------------------------------
-echo "[bootstrap] Step 4/4: Installing pre-commit hook…"
-# shellcheck disable=SC2086
+echo "[bootstrap] Step 4/4: Installing pre-commit hook..."
 bash "${SCRIPT_DIR}/scripts/install-hooks.sh" ${FORCE} 2>&1 | sed 's/^/            /'
 echo ""
 
@@ -326,10 +194,12 @@ echo "=================================================================="
 echo "  Bootstrap complete ✓"
 echo "=================================================================="
 echo ""
-_yn() { [[ "$1" == "true" ]] && echo "YES" || echo "NO  ← action needed"; }
-echo "  clang-format : $(_yn "${CF_OK}")  ${CF_PATH:-(not found)}"
-echo "  ninja        : $(_yn "${NINJA_OK}")  ${NINJA_PATH:-(not found — make was used)}"
+echo "  clang-format : ${CF_PATH:-not found}"
 echo "  pre-commit   : $(
     [[ -f "${REPO_ROOT}/.git/hooks/pre-commit" ]] && echo "installed" || echo "MISSING"
 )"
+echo ""
+echo "  Every 'git commit' will now enforce LLVM C++ style."
+echo "  To fix violations:  bash ${SCRIPT_DIR}/scripts/fix-format.sh"
+echo "  To run smoke test:  bash ${SCRIPT_DIR}/scripts/smoke-test.sh"
 echo ""
