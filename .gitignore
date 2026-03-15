@@ -44,4 +44,6 @@ reports/
 
 # Temporary files
 *.tmp
-*.bak
+*.bak.clang-format
+.clang-tidy
+.llvm-hooks-local/
