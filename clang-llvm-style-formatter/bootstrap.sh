@@ -68,12 +68,12 @@ _find_tool() {
             return 0
         fi
     done
-    # Vendored bin/
-    for candidate in         "${SCRIPT_DIR}/bin/windows/${tool}.exe"         "${SCRIPT_DIR}/bin/linux/${tool}"; do
+    # pip venv (preferred over built binary — faster install, no compiler needed)
+    for candidate in         "${SCRIPT_DIR}/.venv/Scripts/${tool}.exe"         "${SCRIPT_DIR}/.venv/bin/${tool}"; do
         [[ -x "${candidate}" ]] && { echo "${candidate}"; return 0; }
     done
-    # pip venv
-    for candidate in         "${SCRIPT_DIR}/.venv/Scripts/${tool}.exe"         "${SCRIPT_DIR}/.venv/bin/${tool}"; do
+    # Vendored bin/ (fallback — binary built from LLVM source)
+    for candidate in         "${SCRIPT_DIR}/bin/windows/${tool}.exe"         "${SCRIPT_DIR}/bin/linux/${tool}"; do
         [[ -x "${candidate}" ]] && { echo "${candidate}"; return 0; }
     done
     return 1
