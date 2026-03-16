@@ -1,6 +1,18 @@
 #!/usr/bin/env bash
 # =============================================================================
-# setup-user-path.sh — Add LLVM bin directory to the current user's PATH
+# setup-user-path.sh — Add an LLVM bin directory to the current user's PATH
+#
+# ┌─────────────────────────────────────────────────────────────────────────┐
+# │  NOTE: This script is NOT required for the standard pip/venv install.  │
+# │                                                                         │
+# │  The pre-commit hook and all helper scripts (fix-format.sh, etc.)      │
+# │  locate clang-format automatically via find-tools.sh, which checks     │
+# │  the .venv/ directory inside the submodule without any PATH changes.   │
+# │                                                                         │
+# │  Use this script only if you want clang-format available on your       │
+# │  system PATH for interactive use (e.g. running it manually, or         │
+# │  integrating with an editor that reads PATH rather than the venv).     │
+# └─────────────────────────────────────────────────────────────────────────┘
 #
 # No administrator or root privileges required.
 #   • Windows (Git Bash / MINGW64): uses `setx` (user-scoped registry key)
@@ -8,8 +20,8 @@
 #   • Linux (RHEL 8 / generic):     appends to ~/.bashrc and ~/.bash_profile.
 #
 # Usage:
-#   bash scripts/setup-user-path.sh [--llvm-bin /path/to/llvm/bin]
-#   bash scripts/setup-user-path.sh --auto          # scan & guess
+#   bash scripts/setup-user-path.sh --auto           # scan known locations
+#   bash scripts/setup-user-path.sh --llvm-bin /path/to/llvm/bin
 #
 # The script never modifies system files and never requires sudo.
 # =============================================================================

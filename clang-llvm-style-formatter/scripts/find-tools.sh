@@ -2,16 +2,18 @@
 # =============================================================================
 # find-tools.sh — Locate clang-format and clang-tidy on the current system.
 #
-# Sourced by the pre-commit hook and verify-tools.sh.
+# Sourced by the pre-commit hook, fix-format.sh, and verify-tools.sh.
 # Updates CLANG_FORMAT_BIN / CLANG_TIDY_BIN if the current values are not
 # resolvable.
 #
-# Search order:
-#   1. Value already set in hooks.conf / environment (explicit override)
-#   2. Plain name on PATH
-#   3. Versioned names on PATH  (clang-format-18, -17, -16 …)
-#   4. Known install locations — Windows (VS 2017/2019/2022 + standalone LLVM)
-#   5. Known install locations — RHEL 8 / Linux (dnf module, SCL, user-local)
+# Search order (first match wins):
+#   1. Explicit path set in hooks.conf / environment (CLANG_FORMAT_BIN override)
+#   2. pip venv inside the submodule  (.venv/ — standard install)
+#   3. clang-llvm-source-build bin/   (optional LLVM source build)
+#   4. Plain name on PATH
+#   5. Versioned names on PATH        (clang-format-18, -17, -16 …)
+#   6. Known install locations — Windows (VS 2017/2019/2022 + standalone LLVM)
+#   7. Known install locations — RHEL 8 / Linux (dnf module, SCL, user-local)
 #
 # This file intentionally does NOT abort on failure (no set -e).
 # The calling script is responsible for checking the result and erroring.
@@ -28,39 +30,55 @@ _detect_os_for_find() {
 
 _FIND_OS="$(_detect_os_for_find)"
 
+# Resolve the submodule root at source time, while BASH_SOURCE[0] is valid
+# in the sourcing context. Exported so subshells spawned by $() at the
+# bottom of this file (and in calling scripts) can inherit the value.
+_FIND_SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd 2>/dev/null || true)"
+_FIND_SUBMODULE_ROOT="$(cd "${_FIND_SELF_DIR}/.." && pwd 2>/dev/null || true)"
+export _FIND_SUBMODULE_ROOT _FIND_OS
+
 _find_clang_tool() {
     local tool="$1"
 
-    # 0. Vendored build inside the submodule — highest priority
-    #    Produced by build-clang-format.sh; works with zero PATH changes.
-    local _self_dir
-    _self_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd 2>/dev/null || true)"
-    local _submodule_root
-    _submodule_root="$(cd "${_self_dir}/.." && pwd 2>/dev/null || true)"
-    # pip venv (preferred)
-    for _bundled in         "${_submodule_root}/.venv/Scripts/${tool}.exe"         "${_submodule_root}/.venv/bin/${tool}"; do
-        [[ -x "${_bundled}" ]] && { echo "${_bundled}"; return 0; }
-    done
-    # clang-llvm-source-build bin/ fallback
-    for _bundled in         "${_submodule_root}/../clang-llvm-source-build/bin/windows/${tool}.exe"         "${_submodule_root}/../clang-llvm-source-build/bin/linux/${tool}"; do
-        [[ -x "${_bundled}" ]] && { echo "${_bundled}"; return 0; }
-    done
-
-    # 1. Already explicit and found via current value in env
-    local env_var="${tool//-/_}_BIN"
-    local current_val="${!env_var:-${tool}}"
-    if command -v "${current_val}" &>/dev/null; then
-        echo "${current_val}"
-        return 0
+    # 1. Explicit override in hooks.conf or environment.
+    #    If CLANG_FORMAT_BIN (or CLANG_TIDY_BIN) has been set to something
+    #    other than the bare default tool name, treat it as an intentional
+    #    path override and honour it before any auto-discovery.
+    local env_var
+    env_var="$(echo "${tool//-/_}_BIN" | tr '[:lower:]' '[:upper:]')"
+    local current_val="${!env_var:-}"
+    if [[ -n "${current_val}" && "${current_val}" != "${tool}" ]]; then
+        if [[ -x "${current_val}" ]]; then
+            echo "${current_val}"; return 0
+        fi
+        if command -v "${current_val}" &>/dev/null; then
+            command -v "${current_val}"; return 0
+        fi
+        # Explicit override set but not resolvable — warn and fall through.
+        echo "[find-tools] WARNING: ${env_var}='${current_val}' is set but not executable — falling back to auto-discovery." >&2
     fi
 
-    # 2. Plain name on PATH
+    # 2. pip venv (standard install — bootstrap.sh puts clang-format here).
+    for _bundled in \
+            "${_FIND_SUBMODULE_ROOT}/.venv/Scripts/${tool}.exe" \
+            "${_FIND_SUBMODULE_ROOT}/.venv/bin/${tool}"; do
+        [[ -x "${_bundled}" ]] && { echo "${_bundled}"; return 0; }
+    done
+
+    # 3. clang-llvm-source-build bin/ (optional LLVM source build path).
+    for _bundled in \
+            "${_FIND_SUBMODULE_ROOT}/../clang-llvm-source-build/bin/windows/${tool}.exe" \
+            "${_FIND_SUBMODULE_ROOT}/../clang-llvm-source-build/bin/linux/${tool}"; do
+        [[ -x "${_bundled}" ]] && { echo "${_bundled}"; return 0; }
+    done
+
+    # 4. Plain name on PATH
     if command -v "${tool}" &>/dev/null; then
         echo "${tool}"
         return 0
     fi
 
-    # 3. Versioned suffixes on PATH — newest first
+    # 5. Versioned suffixes on PATH — newest first
     for ver in 18 17 16 15 14 13 12; do
         if command -v "${tool}-${ver}" &>/dev/null; then
             echo "${tool}-${ver}"
@@ -68,7 +86,7 @@ _find_clang_tool() {
         fi
     done
 
-    # 4. Windows heuristic paths
+    # 6. Windows heuristic paths
     if [[ "${_FIND_OS}" == "windows" ]]; then
         local win_candidates=()
 
@@ -79,7 +97,6 @@ _find_clang_tool() {
         )
 
         # Visual Studio bundled LLVM — all supported combinations
-        # Note: x64/bin is the 64-bit toolchain; bin/ is 32-bit (fallback)
         for vs_year in 2022 2019 2017; do
             for edition in Enterprise Professional Community; do
                 win_candidates+=(
@@ -103,7 +120,7 @@ _find_clang_tool() {
         done
     fi
 
-    # 5. RHEL 8 / Linux heuristic paths
+    # 7. RHEL 8 / Linux heuristic paths
     if [[ "${_FIND_OS}" == "linux" || "${_FIND_OS}" == "unknown" ]]; then
         local linux_candidates=()
 
@@ -113,7 +130,7 @@ _find_clang_tool() {
             "/usr/local/bin/${tool}"
         )
 
-        # Versioned system packages (Debian/Ubuntu style, useful if devs run Linux desktop)
+        # Versioned system packages (Debian/Ubuntu style)
         for ver in 18 17 16 15 14 13; do
             linux_candidates+=(
                 "/usr/bin/${tool}-${ver}"
@@ -131,8 +148,7 @@ _find_clang_tool() {
             "/opt/rh/llvm-toolset/root/usr/bin/${tool}"
         )
 
-        # User-local extraction (no-sudo rpm2cpio method, documented in
-        # docs/llvm-install-guide.md)
+        # User-local extraction (no-sudo rpm2cpio method)
         linux_candidates+=(
             "${HOME}/llvm-local/bin/${tool}"
             "/opt/llvm/bin/${tool}"

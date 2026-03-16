@@ -56,12 +56,18 @@ CF_STYLE_ARG="--style=file:$(_cf_config_path)"
 
 
 CONF="${SUBMODULE_ROOT}/config/hooks.conf"
+CONF_LOCAL="${SUBMODULE_ROOT}/.llvm-hooks-local/hooks.conf"
 
 # ---------------------------------------------------------------------------
 # 1.  Load configuration
+#     Source the committed default first, then the per-repo local override
+#     on top so developer customisations (ENABLE_TIDY, VERBOSE, binary path
+#     overrides, etc.) actually take effect at commit time.
 # ---------------------------------------------------------------------------
 # shellcheck source=/dev/null
 source "${CONF}"
+# shellcheck source=/dev/null
+[[ -f "${CONF_LOCAL}" ]] && source "${CONF_LOCAL}"
 
 # Defaults if not set in hooks.conf
 ENABLE_FORMAT="${ENABLE_FORMAT:-true}"

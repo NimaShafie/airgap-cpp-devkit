@@ -19,9 +19,12 @@ REPO_ROOT="$(git rev-parse --show-toplevel)"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SUBMODULE_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 CONF="${SUBMODULE_ROOT}/config/hooks.conf"
+CONF_LOCAL="${SUBMODULE_ROOT}/.llvm-hooks-local/hooks.conf"
 
 # shellcheck source=/dev/null
 source "${CONF}"
+# shellcheck source=/dev/null
+[[ -f "${CONF_LOCAL}" ]] && source "${CONF_LOCAL}"
 # shellcheck source=/dev/null
 source "${SUBMODULE_ROOT}/scripts/find-tools.sh"
 
