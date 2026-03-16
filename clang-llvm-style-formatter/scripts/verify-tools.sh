@@ -100,8 +100,12 @@ _find_tool() {
         fi
     done
 
-    # 3a. Vendored build inside submodule (produced by build-clang-format.sh)
-    for _bundled in         "${SUBMODULE_ROOT}/bin/windows/${tool}.exe"         "${SUBMODULE_ROOT}/bin/linux/${tool}"         "${SUBMODULE_ROOT}/bin/macos/${tool}"; do
+    # 3a. pip venv (preferred)
+    for _bundled in         "${SUBMODULE_ROOT}/.venv/Scripts/${tool}.exe"         "${SUBMODULE_ROOT}/.venv/bin/${tool}"; do
+        [[ -x "${_bundled}" ]] && { echo "${_bundled}"; return 0; }
+    done
+    # 3b. clang-llvm-source-build bin/ (optional LLVM source build)
+    for _bundled in         "${SUBMODULE_ROOT}/../clang-llvm-source-build/bin/windows/${tool}.exe"         "${SUBMODULE_ROOT}/../clang-llvm-source-build/bin/linux/${tool}"; do
         [[ -x "${_bundled}" ]] && { echo "${_bundled}"; return 0; }
     done
 
@@ -187,7 +191,7 @@ _print_build_guidance_windows() {
     echo "    • Ninja        (bundled with VS)" >&2
     echo "" >&2
     echo "  Run from an x64 Native Tools Command Prompt for VS:" >&2
-    echo "    bash ${SUBMODULE_ROOT}/scripts/build-clang-format.sh" >&2
+    echo "    bash ${SUBMODULE_ROOT}/../clang-llvm-source-build/bootstrap.sh" >&2
     echo "" >&2
     echo "  Build time: ~30–45 min. Disk required: ~5 GB during build." >&2
     echo "  Binary output: ${SUBMODULE_ROOT}/bin/windows/clang-format.exe" >&2
@@ -221,7 +225,7 @@ _print_build_guidance_rhel() {
     echo "    gcc --version && cmake --version && ninja --version" >&2
     echo "" >&2
     echo "  Then build:" >&2
-    echo "    bash ${SUBMODULE_ROOT}/scripts/build-clang-format.sh" >&2
+    echo "    bash ${SUBMODULE_ROOT}/../clang-llvm-source-build/bootstrap.sh" >&2
     echo "" >&2
     echo "  Build time: ~45–60 minutes. Disk needed: ~5 GB during build." >&2
     echo "  After building, the binary lives at:" >&2
@@ -238,8 +242,10 @@ _print_build_guidance() {
         rhel)    _print_build_guidance_rhel    "${tool}" "${issue}" ;;
         *)
             echo "" >&2
-            echo "  Build ${tool} from the vendored source:" >&2
-            echo "    bash ${SUBMODULE_ROOT}/scripts/build-clang-format.sh" >&2
+            echo "  Build ${tool} from vendored source (~30-60 min):" >&2
+            echo "    bash ${SUBMODULE_ROOT}/../clang-llvm-source-build/bootstrap.sh" >&2
+            echo "  Or install via pip/venv (~5 sec):" >&2
+            echo "    bash ${SUBMODULE_ROOT}/bootstrap.sh" >&2
             echo "  See: ${DOCS_DIR}/llvm-install-guide.md" >&2
             echo "" >&2
             ;;
@@ -273,11 +279,14 @@ _verify_tool() {
             _fail "${tool} — NOT FOUND"
             OVERALL_PASS=false
             # Check if vendored source is available to build from
-            if [[ -f "${SUBMODULE_ROOT}/llvm-src/SOURCE_INFO.txt" ]]; then
+            if [[ -d "${SUBMODULE_ROOT}/../clang-llvm-source-build/llvm-src" ]]; then
                 echo "" >&2
-                echo "  Vendored LLVM source is present — you can build ${tool} from source." >&2
-                echo "  Run: bash ${SUBMODULE_ROOT}/scripts/build-clang-format.sh" >&2
-                echo "  (Takes 30–60 minutes; requires CMake + a C++ compiler)" >&2
+                echo "  Vendored LLVM source is present in clang-llvm-source-build/." >&2
+                echo "  Build clang-format from source (~30-60 min):" >&2
+                echo "    bash ${SUBMODULE_ROOT}/../clang-llvm-source-build/bootstrap.sh" >&2
+                echo "" >&2
+                echo "  Or install via pip/venv (~5 sec):" >&2
+                echo "    bash ${SUBMODULE_ROOT}/bootstrap.sh" >&2
                 echo "" >&2
             else
                 _print_build_guidance "${tool}" "missing"

@@ -96,13 +96,13 @@ git -C "${HOST_REPO}" config user.name  "Hook Test Runner"
 # ---------------------------------------------------------------------------
 # 3.  Wire in the clang-llvm-style-formatter submodule
 # ---------------------------------------------------------------------------
-echo "[test] Adding clang-llvm-style-formatter as submodule (.llvm-hooks/)…"
+echo "[test] Adding clang-llvm-style-formatter as submodule (clang-llvm-style-formatter/)…"
 
 # Use the local submodule root as the "remote URL" — perfect for air-gapped.
 git -C "${HOST_REPO}" submodule add \
     --name clang-llvm-style-formatter \
     "${SUBMODULE_ROOT}" \
-    .llvm-hooks 2>/dev/null
+    clang-llvm-style-formatter 2>/dev/null
 
 git -C "${HOST_REPO}" submodule update --init --recursive -q
 
@@ -110,7 +110,7 @@ git -C "${HOST_REPO}" submodule update --init --recursive -q
 # 4.  Install the hook
 # ---------------------------------------------------------------------------
 echo "[test] Installing pre-commit hook…"
-bash "${HOST_REPO}/.llvm-hooks/scripts/install-hooks.sh" \
+bash "${HOST_REPO}/clang-llvm-style-formatter/scripts/install-hooks.sh" \
     --force 2>&1 | sed 's/^/             /'
 
 # ---------------------------------------------------------------------------
@@ -237,7 +237,7 @@ build/
 *.o
 *.obj
 compile_commands.json
-.llvm-hooks-local/
+clang-llvm-style-formatter-local/
 GITIGNORE
 
 cat > "${HOST_REPO}/README.md" << 'README'
@@ -254,7 +254,7 @@ echo "────────────────────────�
 echo "  TEST A: Committing only well-formatted files (expect: PASS)"
 echo "──────────────────────────────────────────────────────────────────"
 
-git -C "${HOST_REPO}" add .gitignore README.md .llvm-hooks \
+git -C "${HOST_REPO}" add .gitignore README.md clang-llvm-style-formatter \
     "${CPP_SRC_DIR}/good.cpp" "${CPP_SRC_DIR}/good.h"
 
 PASS_A=false
@@ -296,7 +296,7 @@ echo "────────────────────────�
 
 # The bad files are already staged; run fix-format.sh from within the repo
 pushd "${HOST_REPO}" > /dev/null
-bash ".llvm-hooks/scripts/fix-format.sh" 2>&1 | sed 's/^/  /'
+bash "clang-llvm-style-formatter/scripts/fix-format.sh" 2>&1 | sed 's/^/  /'
 popd > /dev/null
 
 PASS_C=false

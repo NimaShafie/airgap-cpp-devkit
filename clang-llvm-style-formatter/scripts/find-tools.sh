@@ -41,8 +41,8 @@ _find_clang_tool() {
     for _bundled in         "${_submodule_root}/.venv/Scripts/${tool}.exe"         "${_submodule_root}/.venv/bin/${tool}"; do
         [[ -x "${_bundled}" ]] && { echo "${_bundled}"; return 0; }
     done
-    # built binary fallback
-    for _bundled in         "${_submodule_root}/bin/windows/${tool}.exe"         "${_submodule_root}/bin/linux/${tool}"         "${_submodule_root}/bin/macos/${tool}"; do
+    # clang-llvm-source-build bin/ fallback
+    for _bundled in         "${_submodule_root}/../clang-llvm-source-build/bin/windows/${tool}.exe"         "${_submodule_root}/../clang-llvm-source-build/bin/linux/${tool}"; do
         [[ -x "${_bundled}" ]] && { echo "${_bundled}"; return 0; }
     done
 
