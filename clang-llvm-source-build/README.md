@@ -1,5 +1,7 @@
 # clang-llvm-source-build
 
+### Author: Nima Shafie
+
 > **Optional** — builds `clang-format` from LLVM source (~30-60 minutes).
 >
 > Most developers should use the faster pip method instead:

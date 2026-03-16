@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Author: Nima Shafie
 # =============================================================================
 # split-llvm-tarball.sh — MAINTAINER TOOL: Split the LLVM tarball into
 #                          parts that fit under git hosting file size limits.

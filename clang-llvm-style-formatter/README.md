@@ -1,5 +1,7 @@
 # clang-llvm-style-formatter
 
+### Author: Nima Shafie
+
 > Pre-commit hook enforcement of [LLVM Coding Standards](https://llvm.org/docs/CodingStandards.html)
 > for C/C++ repositories — designed for air-gapped, multi-repo, multi-platform environments.
 

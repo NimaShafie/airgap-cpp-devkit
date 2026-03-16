@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Author: Nima Shafie
 # =============================================================================
 # setup.sh — One-command developer onboarding for LLVM C++ style enforcement
 #

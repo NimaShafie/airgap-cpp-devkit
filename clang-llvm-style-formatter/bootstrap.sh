@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Author: Nima Shafie
 # =============================================================================
 # bootstrap.sh — One-command developer onboarding
 #

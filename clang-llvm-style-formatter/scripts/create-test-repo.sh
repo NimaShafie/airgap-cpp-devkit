@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Author: Nima Shafie
 # =============================================================================
 # create-test-repo.sh — Spin up a temporary local git repository and
 #                        run the pre-commit hook end-to-end.

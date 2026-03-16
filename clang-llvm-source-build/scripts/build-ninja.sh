@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Author: Nima Shafie
 # =============================================================================
 # build-ninja.sh — Build the Ninja build system from the vendored source
 #                  tarball in ninja-src/.

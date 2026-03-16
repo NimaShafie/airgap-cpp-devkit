@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Author: Nima Shafie
 # =============================================================================
 # smoke-test.sh — Verify the clang-llvm-style-formatter submodule is working.
 #

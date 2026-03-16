@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Author: Nima Shafie
 # =============================================================================
 # extract-llvm-source.sh — Extract the vendored LLVM tarball in llvm-src/
 #                           into the source tree needed to build clang-format.

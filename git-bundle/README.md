@@ -1,5 +1,7 @@
 # git-bundle
 
+### Author: Nima Shafie
+
 Python scripts for transferring Git repositories — including super repositories
 with deeply nested submodules at any depth — across air-gapped networks using
 native Git bundle files.

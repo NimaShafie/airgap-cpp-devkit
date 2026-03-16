@@ -1,6 +1,9 @@
 ← [Back to README](../README.md)
 
 # LLVM Build Prerequisites
+
+### Author: Nima Shafie
+
 ### `clang-llvm-style-formatter`
 
 `clang-format` is compiled from the vendored source in `llvm-src/` by

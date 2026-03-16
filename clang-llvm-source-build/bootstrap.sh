@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Author: Nima Shafie
 # =============================================================================
 # bootstrap.sh — Build clang-format from LLVM source (optional method)
 #

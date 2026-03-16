@@ -1,5 +1,7 @@
 # ninja-src/ — Vendored Ninja Build System
 
+### Author: Nima Shafie
+
 This directory contains the Ninja build system source tarball.
 Ninja dramatically reduces LLVM build time compared to `make`
 (typically 2–3x faster) and significantly reduces peak RAM usage

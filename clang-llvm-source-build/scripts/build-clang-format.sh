@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Author: Nima Shafie
 # =============================================================================
 # build-clang-format.sh — Build clang-format from the vendored LLVM source
 #                          in llvm-src/ and install it into bin/<platform>/.

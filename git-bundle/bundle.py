@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Author: Nima Shafie
 """
 bundle.py  —  Bundle a Git super repository (with all submodules at any depth)
                into .bundle files for air-gapped transfer.

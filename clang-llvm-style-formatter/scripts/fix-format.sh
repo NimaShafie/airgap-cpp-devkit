@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Author: Nima Shafie
 # =============================================================================
 # fix-format.sh — Auto-apply clang-format to all staged C/C++ files
 #

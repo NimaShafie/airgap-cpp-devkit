@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Author: Nima Shafie
 # =============================================================================
 # install-hooks.sh — Wire the pre-commit hook into a host repository
 #

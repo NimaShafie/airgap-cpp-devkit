@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Author: Nima Shafie
 # =============================================================================
 # install-venv.sh — Set up a Python venv with clang-format from vendored wheels
 #

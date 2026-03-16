@@ -1,5 +1,7 @@
 # Production Repository Setup — clang-llvm-style-formatter
 
+### Author: Nima Shafie
+
 This folder contains the files to copy into each production C++ repository
 when adding LLVM style enforcement. It is a one-time maintainer action per
 repo. Developers only ever run one command after that.

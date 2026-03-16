@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Author: Nima Shafie
 """
 export.py  —  Recreate a Git super repository + all submodules from the .bundle
                files produced by bundle.py.  Suitable for air-gapped destinations.

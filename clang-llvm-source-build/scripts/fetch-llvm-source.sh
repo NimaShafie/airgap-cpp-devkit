@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Author: Nima Shafie
 # =============================================================================
 # fetch-llvm-source.sh — MAINTAINER TOOL: Update the vendored LLVM tarball.
 #

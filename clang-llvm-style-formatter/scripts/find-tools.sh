@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Author: Nima Shafie
 # =============================================================================
 # find-tools.sh — Locate clang-format and clang-tidy on the current system.
 #

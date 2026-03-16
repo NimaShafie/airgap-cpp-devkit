@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Author: Nima Shafie
 # =============================================================================
 # setup-user-path.sh — Add an LLVM bin directory to the current user's PATH
 #

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Author: Nima Shafie
 # =============================================================================
 # verify-tools.sh — Verify clang-format (and optionally clang-tidy) are
 #                   present, on PATH, and meet the minimum version requirement.

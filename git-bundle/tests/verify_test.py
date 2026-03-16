@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Author: Nima Shafie
 """
 tests/verify_test.py
 

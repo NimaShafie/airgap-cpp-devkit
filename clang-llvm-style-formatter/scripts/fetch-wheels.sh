@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Author: Nima Shafie
 # =============================================================================
 # fetch-wheels.sh — MAINTAINER TOOL: Download vendored Python wheels
 #

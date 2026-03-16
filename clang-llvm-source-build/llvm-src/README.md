@@ -1,5 +1,7 @@
 # llvm-src/ — Vendored LLVM/Clang Source
 
+### Author: Nima Shafie
+
 This directory contains a stripped subset of the LLVM/Clang source tree,
 used to build `clang-format` on air-gapped developer machines.
 
