@@ -1,0 +1,164 @@
+{
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "spdxVersion": "SPDX-2.3",
+  "creationInfo": {
+    "created": "2026-03-17T00:00:00Z",
+    "creators": [
+      "Organization: NimaShafie",
+      "Tool: airgap-cpp-devkit/scripts/generate-sbom.sh"
+    ],
+    "comment": "Root aggregate SBOM for airgap-cpp-devkit. References all subproject SBOMs. For full component detail see each subproject sbom.spdx.json."
+  },
+  "name": "airgap-cpp-devkit",
+  "dataLicense": "CC0-1.0",
+  "documentNamespace": "https://github.com/NimaShafie/airgap-cpp-devkit/sbom.spdx.json",
+  "documentDescribes": ["SPDXRef-airgap-cpp-devkit"],
+  "externalDocumentRefs": [
+    {
+      "externalDocumentId": "DocumentRef-clang-llvm-source-build",
+      "spdxDocument": "https://github.com/NimaShafie/airgap-cpp-devkit/clang-llvm-source-build/sbom.spdx.json",
+      "checksum": {
+        "algorithm": "SHA1",
+        "checksumValue": "NOASSERTION"
+      }
+    },
+    {
+      "externalDocumentId": "DocumentRef-clang-llvm-style-formatter",
+      "spdxDocument": "https://github.com/NimaShafie/airgap-cpp-devkit/clang-llvm-style-formatter/sbom.spdx.json",
+      "checksum": {
+        "algorithm": "SHA1",
+        "checksumValue": "NOASSERTION"
+      }
+    },
+    {
+      "externalDocumentId": "DocumentRef-git-bundle",
+      "spdxDocument": "https://github.com/NimaShafie/airgap-cpp-devkit/git-bundle/sbom.spdx.json",
+      "checksum": {
+        "algorithm": "SHA1",
+        "checksumValue": "NOASSERTION"
+      }
+    },
+    {
+      "externalDocumentId": "DocumentRef-winlibs-gcc-ucrt",
+      "spdxDocument": "https://github.com/NimaShafie/airgap-cpp-devkit/prebuilt/winlibs-gcc-ucrt/sbom.spdx.json",
+      "checksum": {
+        "algorithm": "SHA1",
+        "checksumValue": "NOASSERTION"
+      }
+    }
+  ],
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-airgap-cpp-devkit",
+      "name": "airgap-cpp-devkit",
+      "versionInfo": "1.0.0",
+      "supplier": "Organization: NimaShafie",
+      "downloadLocation": "https://github.com/NimaShafie/airgap-cpp-devkit",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "APPLICATION",
+      "comment": "Air-gapped C++ developer toolkit. All tools work without internet access, without admin rights, and without pre-installed binaries. Targets Windows 11 (Git Bash/MINGW64) and RHEL 8."
+    },
+    {
+      "SPDXID": "SPDXRef-subproject-clang-llvm-source-build",
+      "name": "clang-llvm-source-build",
+      "versionInfo": "1.0.0",
+      "supplier": "Organization: NimaShafie",
+      "downloadLocation": "https://github.com/NimaShafie/airgap-cpp-devkit",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "APPLICATION",
+      "comment": "Optional subproject. Builds clang-format from LLVM 22.1.1 source. See DocumentRef-clang-llvm-source-build for full component SBOM."
+    },
+    {
+      "SPDXID": "SPDXRef-subproject-clang-llvm-style-formatter",
+      "name": "clang-llvm-style-formatter",
+      "versionInfo": "1.0.0",
+      "supplier": "Organization: NimaShafie",
+      "downloadLocation": "https://github.com/NimaShafie/airgap-cpp-devkit",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "APPLICATION",
+      "comment": "Core subproject. Enforces LLVM C++ style via Git pre-commit hook using vendored clang-format wheel. See DocumentRef-clang-llvm-style-formatter for full component SBOM."
+    },
+    {
+      "SPDXID": "SPDXRef-subproject-git-bundle",
+      "name": "git-bundle",
+      "versionInfo": "1.0.0",
+      "supplier": "Organization: NimaShafie",
+      "downloadLocation": "https://github.com/NimaShafie/airgap-cpp-devkit",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "APPLICATION",
+      "comment": "Core subproject. Transfers Git repositories with nested submodules across air-gapped boundaries. Pure Python, no third-party dependencies. See DocumentRef-git-bundle for full component SBOM."
+    },
+    {
+      "SPDXID": "SPDXRef-subproject-winlibs-gcc-ucrt",
+      "name": "prebuilt-winlibs-gcc-ucrt",
+      "versionInfo": "15.2.0posix-13.0.0-ucrt-r6",
+      "supplier": "Organization: NimaShafie",
+      "downloadLocation": "https://github.com/NimaShafie/airgap-cpp-devkit",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "APPLICATION",
+      "comment": "Optional standalone subproject. Pre-built GCC 15.2.0 toolchain for Windows x86_64. Can be excluded without affecting other tools. See DocumentRef-winlibs-gcc-ucrt for full component SBOM."
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-airgap-cpp-devkit"
+    },
+    {
+      "spdxElementId": "SPDXRef-airgap-cpp-devkit",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-subproject-clang-llvm-source-build"
+    },
+    {
+      "spdxElementId": "SPDXRef-airgap-cpp-devkit",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-subproject-clang-llvm-style-formatter"
+    },
+    {
+      "spdxElementId": "SPDXRef-airgap-cpp-devkit",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-subproject-git-bundle"
+    },
+    {
+      "spdxElementId": "SPDXRef-airgap-cpp-devkit",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-subproject-winlibs-gcc-ucrt"
+    },
+    {
+      "spdxElementId": "SPDXRef-subproject-clang-llvm-source-build",
+      "relationshipType": "DESCRIBED_BY",
+      "relatedSpdxElement": "DocumentRef-clang-llvm-source-build:SPDXRef-clang-llvm-source-build"
+    },
+    {
+      "spdxElementId": "SPDXRef-subproject-clang-llvm-style-formatter",
+      "relationshipType": "DESCRIBED_BY",
+      "relatedSpdxElement": "DocumentRef-clang-llvm-style-formatter:SPDXRef-clang-llvm-style-formatter"
+    },
+    {
+      "spdxElementId": "SPDXRef-subproject-git-bundle",
+      "relationshipType": "DESCRIBED_BY",
+      "relatedSpdxElement": "DocumentRef-git-bundle:SPDXRef-git-bundle"
+    },
+    {
+      "spdxElementId": "SPDXRef-subproject-winlibs-gcc-ucrt",
+      "relationshipType": "DESCRIBED_BY",
+      "relatedSpdxElement": "DocumentRef-winlibs-gcc-ucrt:SPDXRef-winlibs-gcc-ucrt"
+    }
+  ]
+}

@@ -1,0 +1,184 @@
+{
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "spdxVersion": "SPDX-2.3",
+  "creationInfo": {
+    "created": "2026-03-17T00:00:00Z",
+    "creators": [
+      "Organization: NimaShafie",
+      "Tool: airgap-cpp-devkit/scripts/generate-sbom.sh"
+    ],
+    "comment": "Generated SBOM for clang-llvm-source-build subproject of airgap-cpp-devkit."
+  },
+  "name": "airgap-cpp-devkit-clang-llvm-source-build",
+  "dataLicense": "CC0-1.0",
+  "documentNamespace": "https://github.com/NimaShafie/airgap-cpp-devkit/clang-llvm-source-build/sbom.spdx.json",
+  "documentDescribes": ["SPDXRef-clang-llvm-source-build"],
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-clang-llvm-source-build",
+      "name": "clang-llvm-source-build",
+      "versionInfo": "1.0.0",
+      "supplier": "Organization: NimaShafie",
+      "downloadLocation": "https://github.com/NimaShafie/airgap-cpp-devkit",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "APPLICATION",
+      "comment": "Top-level subproject. Builds clang-format from LLVM source in air-gapped environments."
+    },
+    {
+      "SPDXID": "SPDXRef-llvm-project",
+      "name": "llvm-project",
+      "versionInfo": "22.1.1",
+      "supplier": "Organization: LLVM Project",
+      "downloadLocation": "https://github.com/llvm/llvm-project/releases/tag/llvmorg-22.1.1",
+      "filesAnalyzed": false,
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "9c6f37f6f5f68d38f435d25f770fc48c62d92b2412205767a16dac2c942f0c95"
+        }
+      ],
+      "licenseConcluded": "Apache-2.0 WITH LLVM-exception",
+      "licenseDeclared": "Apache-2.0 WITH LLVM-exception",
+      "copyrightText": "Copyright (c) 2003-2026 University of Illinois at Urbana-Champaign and LLVM Contributors",
+      "primaryPackagePurpose": "SOURCE",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:github/llvm/llvm-project@llvmorg-22.1.1"
+        }
+      ],
+      "comment": "Vendored as split parts: llvm-project-22.1.1.src.tar.xz.part-aa + part-ab in llvm-src/. SHA256 is for the reassembled tarball."
+    },
+    {
+      "SPDXID": "SPDXRef-llvm-part-aa",
+      "name": "llvm-project-22.1.1.src.tar.xz.part-aa",
+      "versionInfo": "22.1.1",
+      "supplier": "Organization: NimaShafie",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "31af8ac3969ae5638d2a60eafed8734044fd4ce27158a6ebe2c627395214175f"
+        }
+      ],
+      "licenseConcluded": "Apache-2.0 WITH LLVM-exception",
+      "licenseDeclared": "Apache-2.0 WITH LLVM-exception",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "ARCHIVE",
+      "comment": "Split part 1 of 2 of llvm-project-22.1.1.src.tar.xz. Committed to git in llvm-src/."
+    },
+    {
+      "SPDXID": "SPDXRef-llvm-part-ab",
+      "name": "llvm-project-22.1.1.src.tar.xz.part-ab",
+      "versionInfo": "22.1.1",
+      "supplier": "Organization: NimaShafie",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "f9dcb5cad8f9fa16efd5059f610ef241762d9f6b3e2f99b0ac064b6d8cc5610c"
+        }
+      ],
+      "licenseConcluded": "Apache-2.0 WITH LLVM-exception",
+      "licenseDeclared": "Apache-2.0 WITH LLVM-exception",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "ARCHIVE",
+      "comment": "Split part 2 of 2 of llvm-project-22.1.1.src.tar.xz. Committed to git in llvm-src/."
+    },
+    {
+      "SPDXID": "SPDXRef-ninja-source",
+      "name": "ninja",
+      "versionInfo": "1.13.2",
+      "supplier": "Organization: ninja-build",
+      "downloadLocation": "https://github.com/ninja-build/ninja/releases/tag/v1.13.2",
+      "filesAnalyzed": false,
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "974d6b2f4eeefa25625d34da3cb36bdcebe7fbce40f4c16ac0835fd1c0cbae17"
+        }
+      ],
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0",
+      "copyrightText": "Copyright 2011 Google Inc. All Rights Reserved.",
+      "primaryPackagePurpose": "SOURCE",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:github/ninja-build/ninja@v1.13.2"
+        }
+      ],
+      "comment": "Vendored as ninja-1.13.2.tar.gz in ninja-src/. Built as a dependency for the LLVM CMake build. No official upstream SHA256 published; hash is self-computed from vendored tarball."
+    },
+    {
+      "SPDXID": "SPDXRef-cmake-build-dep",
+      "name": "cmake",
+      "versionInfo": "3.14+",
+      "supplier": "NOASSERTION",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-3-Clause",
+      "licenseDeclared": "BSD-3-Clause",
+      "copyrightText": "Copyright 2000-2024 Kitware, Inc. and Contributors",
+      "primaryPackagePurpose": "APPLICATION",
+      "comment": "Transitive build dependency. Required to configure LLVM source build. Must be provided by the host system (not vendored). Minimum version 3.14."
+    },
+    {
+      "SPDXID": "SPDXRef-host-compiler",
+      "name": "host-compiler",
+      "versionInfo": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "APPLICATION",
+      "comment": "Transitive build dependency. MSVC (Windows) or GCC (Linux) required to compile LLVM from source. Provided by host system; not vendored."
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-clang-llvm-source-build"
+    },
+    {
+      "spdxElementId": "SPDXRef-clang-llvm-source-build",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-llvm-project"
+    },
+    {
+      "spdxElementId": "SPDXRef-clang-llvm-source-build",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-ninja-source"
+    },
+    {
+      "spdxElementId": "SPDXRef-llvm-project",
+      "relationshipType": "GENERATED_FROM",
+      "relatedSpdxElement": "SPDXRef-llvm-part-aa"
+    },
+    {
+      "spdxElementId": "SPDXRef-llvm-project",
+      "relationshipType": "GENERATED_FROM",
+      "relatedSpdxElement": "SPDXRef-llvm-part-ab"
+    },
+    {
+      "spdxElementId": "SPDXRef-clang-llvm-source-build",
+      "relationshipType": "BUILD_DEPENDENCY_OF",
+      "relatedSpdxElement": "SPDXRef-cmake-build-dep"
+    },
+    {
+      "spdxElementId": "SPDXRef-clang-llvm-source-build",
+      "relationshipType": "BUILD_DEPENDENCY_OF",
+      "relatedSpdxElement": "SPDXRef-host-compiler"
+    }
+  ]
+}
