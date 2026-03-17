@@ -11,11 +11,34 @@ pre-installed binaries. All dependencies are vendored and installed locally.
 
 ## Tools
 
-| Directory | Purpose |
-|-----------|---------|
-| [`clang-llvm-style-formatter/`](clang-llvm-style-formatter/README.md) | Enforces LLVM C++ coding standards via Git pre-commit hook |
-| [`clang-llvm-source-build/`](clang-llvm-source-build/README.md) | Optional: builds clang-format from LLVM source (~30-60 min) |
-| [`git-bundle/`](git-bundle/README.md) | Transfers Git repositories with nested submodules across air-gapped boundaries |
+| Directory | Purpose | Required? |
+|-----------|---------|-----------|
+| [`clang-llvm-style-formatter/`](clang-llvm-style-formatter/README.md) | Enforces LLVM C++ coding standards via Git pre-commit hook | Yes |
+| [`clang-llvm-source-build/`](clang-llvm-source-build/README.md) | Optional: builds clang-format from LLVM 22.1.1 source (~30-60 min) | No |
+| [`git-bundle/`](git-bundle/README.md) | Transfers Git repositories with nested submodules across air-gapped boundaries | Yes |
+| [`prebuilt/winlibs-gcc-ucrt/`](prebuilt/winlibs-gcc-ucrt/README.md) | Pre-built GCC 15.2.0 + MinGW-w64 13.0.0 UCRT toolchain for Windows | **No — standalone** |
+
+---
+
+## Can I skip `prebuilt/`?
+
+**Yes. The `prebuilt/` directory is fully independent and optional.**
+
+`prebuilt/winlibs-gcc-ucrt/` is a standalone GCC 15.2.0 toolchain for
+developers who need to *compile C++ projects* in an air-gapped Windows
+environment. It has no relationship to any other tool in this devkit:
+
+- `clang-llvm-style-formatter/` — uses Python + pip wheels. No GCC dependency.
+- `clang-llvm-source-build/` — uses the *system* compiler (MSVC/GCC already on
+  the machine) to build clang-format from source. Not the WinLibs GCC.
+- `git-bundle/` — pure Python. No compiler dependency.
+
+If you only need the formatter and git transfer tool, ignore `prebuilt/`
+entirely. All other tools will work exactly as documented.
+
+`prebuilt/winlibs-gcc-ucrt/` ships as **committed pre-built binaries** (split
+into three `.part-*` files in `vendor/` due to size). This is the only module
+in the devkit that commits binary content to git directly.
 
 ---
 
@@ -156,18 +179,28 @@ Compiles `clang-format` from the vendored LLVM 22.1.1 source tarball.
 Use only if Python is unavailable or policy requires source builds.
 Requires: Visual Studio (Windows) or GCC (Linux), CMake 3.14+.
 
+**Method 3 — GCC toolchain for Windows (optional, pre-built binaries)**
+```bash
+cd prebuilt/winlibs-gcc-ucrt
+bash setup.sh x86_64
+source scripts/env-setup.sh x86_64
+```
+Installs GCC 15.2.0 + MinGW-w64 13.0.0 UCRT from vendored split archives.
+Only needed if you require GCC to compile C++ projects on Windows.
+Not required for the formatter or git transfer tool.
+
 ---
 
 ## Design Principles
 
 | Principle | How it is met |
 |-----------|--------------|
-| Air-gapped | All dependencies vendored in-repo (wheels + source tarballs) |
+| Air-gapped | All dependencies vendored in-repo (wheels, source tarballs, pre-built archives) |
 | Minimal production footprint | One `setup.sh` + one submodule pointer per production repo |
 | No admin rights | Installs to per-user/per-repo paths only |
-| No pre-built binaries committed | pip wheel installs at bootstrap time |
 | Cross-platform | Windows 11 (Git Bash / MINGW64) + RHEL 8 |
-| Single entry point for developers | `bash setup.sh` — nothing else required |
+| Single entry point per tool | `bash setup.sh` in each module — nothing else required |
+| Integrity verification | SHA256 pinned in `manifest.json` for all vendored archives, cross-referenced from independent sources where available |
 
 ---
 
@@ -194,15 +227,36 @@ airgap-cpp-devkit/
 │
 ├── clang-llvm-source-build/               ← optional LLVM source build
 │   ├── bootstrap.sh                       ← builds clang-format from source
+│   ├── manifest.json                      ← SHA256 pins for LLVM + Ninja sources
 │   ├── llvm-src/                          ← vendored LLVM 22.1.1 (split parts)
-│   ├── ninja-src/                         ← vendored Ninja 1.13.2
+│   │   ├── llvm-project-22.1.1.src.tar.xz.part-aa
+│   │   └── llvm-project-22.1.1.src.tar.xz.part-ab
+│   ├── ninja-src/                         ← vendored Ninja 1.13.2 source
+│   │   └── ninja-1.13.2.tar.gz
 │   ├── bin/
 │   │   ├── windows/clang-format.exe       ← built output, not committed
 │   │   └── linux/clang-format             ← built output, not committed
 │   └── scripts/
 │
-└── git-bundle/                            ← air-gap git transfer tool
-    ├── bundle.py
-    ├── export.py
-    └── tests/
+├── git-bundle/                            ← air-gap git transfer tool
+│   ├── bundle.py
+│   ├── export.py
+│   └── tests/
+│
+└── prebuilt/                              ← pre-built binary packages (OPTIONAL)
+    ├── README.md                          ← explains the prebuilt/ convention
+    └── winlibs-gcc-ucrt/                  ← GCC 15.2.0 + MinGW-w64 13.0.0 UCRT
+        ├── setup.sh                       ← single entry point: verify + install
+        ├── manifest.json                  ← SHA256 pins (dual-source verified)
+        ├── scripts/
+        │   ├── verify.sh                  ← offline integrity check
+        │   ├── reassemble.sh              ← joins split parts into .7z
+        │   ├── install.sh                 ← extracts toolchain
+        │   └── env-setup.sh               ← source to activate in current shell
+        ├── vendor/                        ← split .7z parts committed to git
+        │   ├── *.part-aa                  ← ~52MB
+        │   ├── *.part-ab                  ← ~52MB
+        │   └── *.part-ac                  ← ~2MB
+        └── docs/
+            └── offline-transfer.md
 ```

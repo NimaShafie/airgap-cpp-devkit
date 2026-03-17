@@ -1,0 +1,46 @@
+{
+  "_comment": "Source build manifest for clang-llvm-source-build. Pins SHA256 for all vendored source archives. LLVM parts are individually hashed plus the reassembled tarball is verified against the official upstream hash. Ninja has no official upstream checksum — hash is self-computed from the vendored tarball at time of pinning.",
+
+  "llvm": {
+    "version": "22.1.1",
+    "release_tag": "llvmorg-22.1.1",
+    "upstream_release": "https://github.com/llvm/llvm-project/releases/tag/llvmorg-22.1.1",
+    "tarball_filename": "llvm-project-22.1.1.src.tar.xz",
+    "split_parts": [
+      {
+        "filename": "llvm-project-22.1.1.src.tar.xz.part-aa",
+        "sha256": "31af8ac3969ae5638d2a60eafed8734044fd4ce27158a6ebe2c627395214175f"
+      },
+      {
+        "filename": "llvm-project-22.1.1.src.tar.xz.part-ab",
+        "sha256": "f9dcb5cad8f9fa16efd5059f610ef241762d9f6b3e2f99b0ac064b6d8cc5610c"
+      }
+    ],
+    "sha256_reassembled": {
+      "value": "9c6f37f6f5f68d38f435d25f770fc48c62d92b2412205767a16dac2c942f0c95",
+      "sources": [
+        {
+          "name": "LLVM official GitHub release page (llvmorg-22.1.1)",
+          "url": "https://github.com/llvm/llvm-project/releases/tag/llvmorg-22.1.1"
+        }
+      ]
+    }
+  },
+
+  "ninja": {
+    "version": "1.13.2",
+    "release_tag": "v1.13.2",
+    "upstream_release": "https://github.com/ninja-build/ninja/releases/tag/v1.13.2",
+    "tarball_filename": "ninja-1.13.2.tar.gz",
+    "sha256": {
+      "value": "974d6b2f4eeefa25625d34da3cb36bdcebe7fbce40f4c16ac0835fd1c0cbae17",
+      "_note": "ninja-build does not publish official SHA256 checksums for release assets. This hash was self-computed from the vendored tarball at time of pinning (2026-03-17). Verify independently by re-downloading from the upstream release and comparing.",
+      "sources": [
+        {
+          "name": "Self-computed from vendored tarball (no official upstream checksum published)",
+          "url": "https://github.com/ninja-build/ninja/releases/tag/v1.13.2"
+        }
+      ]
+    }
+  }
+}
