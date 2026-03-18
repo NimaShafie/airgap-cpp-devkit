@@ -2,15 +2,11 @@
 # =============================================================================
 # grpc-source-build/scripts/reassemble.sh
 #
-# PURPOSE: Verify each split part, reassemble into the original .tar.gz,
-#          then verify the reassembled tarball against the manifest SHA256.
-#
-#          For single-part archives (current gRPC 1.76.0), this is effectively
-#          a verified copy. The pattern is kept consistent with other modules
-#          so it works correctly if parts are ever added in future versions.
+# PURPOSE: Verify parts and reassemble into the original .tar.gz for the
+#          specified gRPC version.
 #
 # USAGE:
-#   bash scripts/reassemble.sh
+#   bash scripts/reassemble.sh [1.76.0|1.78.1]     # default: 1.76.0
 #
 # EXIT CODES:
 #   0 - success
@@ -24,20 +20,31 @@ MODULE_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 MANIFEST="${MODULE_ROOT}/manifest.json"
 VENDOR_DIR="${MODULE_ROOT}/vendor"
 
-get_tarball_filename() {
-  grep '"tarball_filename"' "${MANIFEST}" | head -1 \
-    | sed 's/.*"tarball_filename": *"\([^"]*\)".*/\1/' || true
+VERSION="${1:-1.76.0}"
+
+# ---------------------------------------------------------------------------
+# Manifest parsing
+# ---------------------------------------------------------------------------
+get_field_for_version() {
+  local field="$1"
+  awk -v ver="\"${VERSION}\"" -v fld="\"${field}\"" '
+    $0 ~ ver { found=1 }
+    found && $0 ~ fld {
+      match($0, /"'"${field}"'": *"([^"]+)"/, a)
+      if (a[1] != "") { print a[1]; exit }
+    }
+  ' "${MANIFEST}" || true
 }
 
-get_reassembled_hash() {
-  grep -A 3 '"sha256_reassembled"' "${MANIFEST}" \
-    | grep '"value"' | head -1 \
-    | sed 's/.*"value": *"\([^"]*\)".*/\1/' || true
-}
-
-get_part_filenames() {
-  grep '"filename".*part-' "${MANIFEST}" \
-    | sed 's/.*"filename": *"\([^"]*\)".*/\1/' || true
+get_part_filenames_for_version() {
+  awk -v ver="\"${VERSION}\"" '
+    $0 ~ ver { found=1 }
+    found && /"filename".*part-/ {
+      match($0, /"filename": *"([^"]+)"/, a)
+      if (a[1] != "") print a[1]
+    }
+    found && /"[0-9]+\.[0-9]+\.[0-9]+"/ && $0 !~ ver { exit }
+  ' "${MANIFEST}" || true
 }
 
 get_part_hash() {
@@ -47,12 +54,12 @@ get_part_hash() {
     | sed 's/.*"sha256": *"\([^"]*\)".*/\1/' || true
 }
 
-TARBALL=$(get_tarball_filename)
-EXPECTED_HASH=$(get_reassembled_hash)
+TARBALL=$(get_field_for_version "tarball_filename")
+EXPECTED_HASH=$(get_field_for_version "value")
 OUTPUT="${VENDOR_DIR}/${TARBALL}"
 
 echo "============================================================"
-echo " grpc-source-build -- Reassemble"
+echo " grpc-source-build -- Reassemble v${VERSION}"
 echo " Output: ${OUTPUT}"
 echo "============================================================"
 echo ""
@@ -60,7 +67,7 @@ echo ""
 # ---------------------------------------------------------------------------
 # Step 1: Verify parts
 # ---------------------------------------------------------------------------
-echo "[STEP 1/3] Verifying split parts..."
+echo "[STEP 1/3] Verifying parts..."
 
 PARTS=()
 ALL_OK=true
@@ -87,10 +94,9 @@ while IFS= read -r part_filename; do
     echo "         Actual   : ${actual_hash}" >&2
     ALL_OK=false
   fi
-done < <(get_part_filenames)
+done < <(get_part_filenames_for_version)
 
 if [[ "${ALL_OK}" == "false" ]]; then
-  echo "" >&2
   echo "[ABORT] Part verification failed." >&2
   exit 1
 fi
@@ -101,29 +107,25 @@ echo ""
 # Step 2: Reassemble
 # ---------------------------------------------------------------------------
 echo "[STEP 2/3] Reassembling ${#PARTS[@]} part(s) into ${TARBALL}..."
-
 rm -f "${OUTPUT}"
 cat "${PARTS[@]}" > "${OUTPUT}"
-
 echo "[INFO] Done. Size: $(du -h "${OUTPUT}" | awk '{print $1}')"
 echo ""
 
 # ---------------------------------------------------------------------------
 # Step 3: Verify reassembled tarball
 # ---------------------------------------------------------------------------
-echo "[STEP 3/3] Verifying reassembled tarball SHA256..."
+echo "[STEP 3/3] Verifying reassembled tarball..."
 ACTUAL=$(sha256sum "${OUTPUT}" | awk '{print $1}')
-
-echo "  Expected (manifest): ${EXPECTED_HASH}"
-echo "  Actual             : ${ACTUAL}"
+echo "  Expected: ${EXPECTED_HASH}"
+echo "  Actual  : ${ACTUAL}"
 echo ""
 
 if [[ "${ACTUAL}" == "${EXPECTED_HASH}" ]]; then
-  echo "[PASS] Tarball integrity confirmed."
+  echo "[PASS] v${VERSION} tarball integrity confirmed."
   echo ""
   echo "============================================================"
-  echo " [SUCCESS] Ready to extract."
-  echo " Run: bash setup.sh"
+  echo " [SUCCESS] Ready. Run setup_grpc.bat to build."
   echo "============================================================"
 else
   echo "[FAIL] Tarball hash mismatch." >&2

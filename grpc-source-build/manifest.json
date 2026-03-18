@@ -1,48 +1,63 @@
 {
-  "_comment": "gRPC source build manifest for grpc-source-build. SHA256 is self-computed from the vendored tarball at time of pinning (2026-03-17). gRPC does not publish official SHA256 checksums for source archives.",
+  "_comment": "gRPC source build manifest. Contains entries for all vendored versions. SHA256 hashes are self-computed from vendored tarballs — gRPC does not publish official checksums for source archives.",
 
-  "grpc": {
-    "version": "1.76.0",
-    "release_tag": "v1.76.0",
-    "upstream_release": "https://github.com/grpc/grpc/releases/tag/v1.76.0",
-    "tarball_filename": "grpc_unbuilt_v1.76.0.tar.gz",
-    "extract_root": "grpc_unbuilt_v1.76.0",
-    "source_type": "flat",
-    "_source_note": "Flat source extraction — no .git directory, no git submodules. All third_party/ dependencies are included inline.",
-    "split_parts": [
-      {
-        "filename": "grpc_unbuilt_v1.76.0.tar.gz.part-aa",
-        "sha256": "000a283359a03581c4e944a67d295ba52b760532877efbe605b4bf49a303a8d3"
-      }
-    ],
-    "sha256_reassembled": {
-      "value": "000a283359a03581c4e944a67d295ba52b760532877efbe605b4bf49a303a8d3",
-      "_note": "Single-part archive — part-aa SHA256 equals the reassembled tarball SHA256. gRPC does not publish official checksums; hash self-computed at time of vendoring.",
-      "sources": [
+  "versions": {
+    "1.76.0": {
+      "release_tag": "v1.76.0",
+      "upstream_release": "https://github.com/grpc/grpc/releases/tag/v1.76.0",
+      "tarball_filename": "grpc-1.76.0.tar.gz",
+      "extract_root": "grpc_unbuilt_v1.76.0",
+      "dest_folder": "grpc-1.76.0",
+      "source_type": "flat",
+      "status": "production-tested",
+      "split_parts": [
         {
-          "name": "Self-computed from vendored tarball (2026-03-17)",
-          "url": "https://github.com/grpc/grpc/releases/tag/v1.76.0"
+          "filename": "grpc-1.76.0.tar.gz.part-aa",
+          "sha256": "000a283359a03581c4e944a67d295ba52b760532877efbe605b4bf49a303a8d3"
         }
-      ]
+      ],
+      "sha256_reassembled": {
+        "value": "000a283359a03581c4e944a67d295ba52b760532877efbe605b4bf49a303a8d3",
+        "sources": [
+          {
+            "name": "Self-computed from vendored tarball (2026-03-17)",
+            "url": "https://github.com/grpc/grpc/releases/tag/v1.76.0"
+          }
+        ]
+      }
     },
-    "included_components": {
-      "grpc": "1.76.0",
-      "protobuf": "bundled in third_party/",
-      "abseil-cpp": "bundled in third_party/",
-      "boringssl": "bundled in third_party/",
-      "re2": "bundled in third_party/",
-      "zlib": "bundled in third_party/",
-      "cares": "bundled in third_party/"
+    "1.78.1": {
+      "release_tag": "v1.78.1",
+      "upstream_release": "https://github.com/grpc/grpc/releases/tag/v1.78.1",
+      "tarball_filename": "grpc-1.78.1.tar.gz",
+      "extract_root": "grpc-1.78.1",
+      "dest_folder": "grpc-1.78.1",
+      "source_type": "flat",
+      "status": "candidate-testing",
+      "split_parts": [
+        {
+          "filename": "grpc-1.78.1.tar.gz.part-aa",
+          "sha256": "3bb18f315a09e5a14cd9d3b5b76529fd0cd8d4c52b02fee2d9f32e409e63934d"
+        }
+      ],
+      "sha256_reassembled": {
+        "value": "3bb18f315a09e5a14cd9d3b5b76529fd0cd8d4c52b02fee2d9f32e409e63934d",
+        "sources": [
+          {
+            "name": "Self-computed from vendored tarball (2026-03-17)",
+            "url": "https://github.com/grpc/grpc/releases/tag/v1.78.1"
+          }
+        ]
+      }
     }
   },
 
   "build_requirements": {
     "windows": {
       "cmake": ">=3.16",
-      "visual_studio": "2022",
+      "visual_studio": "2022 Insiders",
       "msvc": ">=19.44",
       "script": "setup_grpc.bat"
-    },
-    "_note": "After running setup.sh to extract the source tree, use setup_grpc.bat (Windows) to configure and build with CMake."
+    }
   }
 }

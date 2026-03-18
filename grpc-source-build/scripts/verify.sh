@@ -3,13 +3,9 @@
 # grpc-source-build/scripts/verify.sh
 #
 # PURPOSE: Offline SHA256 verification of vendored gRPC source archive.
-#          No network access required.
-#
-#   - If the reassembled .tar.gz exists in vendor/: verifies it.
-#   - If only split parts exist: verifies each part.
 #
 # USAGE:
-#   bash scripts/verify.sh
+#   bash scripts/verify.sh [1.76.0|1.78.1]     # default: 1.76.0
 #
 # EXIT CODES:
 #   0 - all checks passed
@@ -23,23 +19,31 @@ MODULE_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 MANIFEST="${MODULE_ROOT}/manifest.json"
 VENDOR_DIR="${MODULE_ROOT}/vendor"
 
+VERSION="${1:-1.76.0}"
+
 # ---------------------------------------------------------------------------
-# Parse manifest
+# Parse manifest for the requested version
 # ---------------------------------------------------------------------------
-get_tarball_filename() {
-  grep '"tarball_filename"' "${MANIFEST}" | head -1 \
-    | sed 's/.*"tarball_filename": *"\([^"]*\)".*/\1/' || true
+get_field_for_version() {
+  local field="$1"
+  awk -v ver="\"${VERSION}\"" -v fld="\"${field}\"" '
+    $0 ~ ver { found=1 }
+    found && $0 ~ fld {
+      match($0, /"'"${field}"'": *"([^"]+)"/, a)
+      if (a[1] != "") { print a[1]; exit }
+    }
+  ' "${MANIFEST}" || true
 }
 
-get_reassembled_hash() {
-  grep -A 3 '"sha256_reassembled"' "${MANIFEST}" \
-    | grep '"value"' | head -1 \
-    | sed 's/.*"value": *"\([^"]*\)".*/\1/' || true
-}
-
-get_part_filenames() {
-  grep '"filename".*part-' "${MANIFEST}" \
-    | sed 's/.*"filename": *"\([^"]*\)".*/\1/' || true
+get_part_filenames_for_version() {
+  awk -v ver="\"${VERSION}\"" '
+    $0 ~ ver { found=1 }
+    found && /"filename".*part-/ {
+      match($0, /"filename": *"([^"]+)"/, a)
+      if (a[1] != "") print a[1]
+    }
+    found && /"[0-9]+\.[0-9]+\.[0-9]+"/ && $0 !~ ver { exit }
+  ' "${MANIFEST}" || true
 }
 
 get_part_hash() {
@@ -49,17 +53,19 @@ get_part_hash() {
     | sed 's/.*"sha256": *"\([^"]*\)".*/\1/' || true
 }
 
-TARBALL=$(get_tarball_filename)
-EXPECTED_HASH=$(get_reassembled_hash)
+TARBALL=$(get_field_for_version "tarball_filename")
+EXPECTED_HASH=$(get_field_for_version "value")
 TARBALL_PATH="${VENDOR_DIR}/${TARBALL}"
 
 echo "============================================================"
 echo " grpc-source-build -- Offline Verify"
+echo " Version: ${VERSION}"
 echo "============================================================"
 echo ""
 
 if [[ -z "${TARBALL}" || -z "${EXPECTED_HASH}" ]]; then
-  echo "[ERROR] Could not parse manifest.json" >&2
+  echo "[ERROR] Could not parse manifest.json for version ${VERSION}" >&2
+  echo "        Available versions: 1.76.0, 1.78.1" >&2
   exit 1
 fi
 
@@ -77,13 +83,13 @@ if [[ -f "${TARBALL_PATH}" ]]; then
     echo "[PASS] Tarball integrity confirmed."
     exit 0
   else
-    echo "[FAIL] Hash mismatch. Delete and re-run setup.sh." >&2
+    echo "[FAIL] Hash mismatch." >&2
     exit 1
   fi
 fi
 
 # ---------------------------------------------------------------------------
-# Otherwise verify parts
+# Verify parts
 # ---------------------------------------------------------------------------
 echo "[MODE] No tarball found -- verifying split parts."
 echo ""
@@ -113,18 +119,17 @@ while IFS= read -r part_filename; do
     echo "         Actual   : ${actual_hash}" >&2
     ALL_OK=false
   fi
-done < <(get_part_filenames)
+done < <(get_part_filenames_for_version)
 
 echo ""
 
 if [[ "${FOUND}" -eq 0 ]]; then
-  echo "[ERROR] No parts found in vendor/. Clone may be incomplete." >&2
+  echo "[ERROR] No parts found in vendor/ for version ${VERSION}." >&2
   exit 1
 fi
 
 if [[ "${ALL_OK}" == "true" ]]; then
-  echo "[PASS] All ${FOUND} part(s) verified."
-  echo " Next step: bash setup.sh"
+  echo "[PASS] All ${FOUND} part(s) verified for v${VERSION}."
   exit 0
 else
   echo "[FAIL] One or more parts failed verification." >&2
