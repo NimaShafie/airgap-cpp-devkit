@@ -16,7 +16,7 @@
   "externalDocumentRefs": [
     {
       "externalDocumentId": "DocumentRef-clang-llvm-source-build",
-      "spdxDocument": "https://github.com/NimaShafie/airgap-cpp-devkit/clang-llvm-source-build/sbom.spdx.json",
+      "spdxDocument": "https://github.com/NimaShafie/airgap-cpp-devkit/clang-llvm/source-build/sbom.spdx.json",
       "checksum": {
         "algorithm": "SHA1",
         "checksumValue": "c71a06217bc8be5b563c61e8dc7720cb166af8f6"
@@ -24,7 +24,7 @@
     },
     {
       "externalDocumentId": "DocumentRef-clang-llvm-style-formatter",
-      "spdxDocument": "https://github.com/NimaShafie/airgap-cpp-devkit/clang-llvm-style-formatter/sbom.spdx.json",
+      "spdxDocument": "https://github.com/NimaShafie/airgap-cpp-devkit/clang-llvm/style-formatter/sbom.spdx.json",
       "checksum": {
         "algorithm": "SHA1",
         "checksumValue": "8fc5f78713f618112cbe8c0c58b39d6068e082d5"

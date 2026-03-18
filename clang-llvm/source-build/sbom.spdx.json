@@ -11,7 +11,7 @@
   },
   "name": "airgap-cpp-devkit-clang-llvm-source-build",
   "dataLicense": "CC0-1.0",
-  "documentNamespace": "https://github.com/NimaShafie/airgap-cpp-devkit/clang-llvm-source-build/sbom.spdx.json",
+  "documentNamespace": "https://github.com/NimaShafie/airgap-cpp-devkit/clang-llvm/source-build/sbom.spdx.json",
   "documentDescribes": ["SPDXRef-clang-llvm-source-build"],
   "packages": [
     {
