@@ -1,0 +1,12 @@
+# grpc-source-build/.gitignore
+
+# Reassembled tarball — produced locally by reassemble.sh, never committed
+vendor/*.tar.gz
+vendor/*.tar.xz
+vendor/*.zip
+
+# Extracted source tree — produced locally by setup.sh, never committed
+src/
+
+# Parts ARE committed (tracked in git, verified by manifest SHA256)
+# vendor/*.part-aa, *.part-ab, etc. — do NOT add these to .gitignore
