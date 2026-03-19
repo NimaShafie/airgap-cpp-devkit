@@ -127,10 +127,6 @@ find "${SRC_DIR}" -mindepth 1 -maxdepth 1 \
 
 # ============================================================================
 # STEP 1 — Extract
-# Uses GNU tar's built-in --checkpoint mechanism for progress reporting.
-# --checkpoint=500 fires every 500 * 512-byte blocks = every ~250 KB.
-# --checkpoint-action=dot prints a single character each time.
-# No background jobs or polling needed — works reliably on Windows Git Bash.
 # ============================================================================
 echo "[1/3] Extracting tarball  (~${TARBALL_MB} MB compressed -> ~1 GB raw)"
 echo ""
@@ -138,45 +134,12 @@ echo ""
 rm -rf "${STAGE_DIR}"
 mkdir -p "${STAGE_DIR}"
 
-# Print a progress bar using checkpoint dots.
-# Each dot = ~250 KB of tarball read. Total dots ~ TARBALL_MB * 4.
-TOTAL_DOTS=$(( TARBALL_MB * 4 ))
-BAR_WIDTH=50
-DOT_COUNT=0
-
-# Write dots to a temp file; a subshell reads and renders the bar.
-DOT_PIPE="${STAGE_DIR}/.progress"
-mkfifo "${DOT_PIPE}" 2>/dev/null || true
-
-# Progress renderer — reads one char at a time from the pipe
-_render_bar() {
-    local pipe="$1" total="$2" width="$3" mb="$4"
-    local n=0 filled empty bar
-    while IFS= read -r -n1 c <"${pipe}"; do
-        [[ -z "${c}" ]] && break
-        n=$(( n + 1 ))
-        filled=$(( n * width / (total + 1) ))
-        [[ ${filled} -gt ${width} ]] && filled=${width}
-        empty=$(( width - filled ))
-        bar="$(printf '%*s' "${filled}" '' | tr ' ' '#')$(printf '%*s' "${empty}" '' | tr ' ' '-')"
-        done_mb=$(( n * mb / (total + 1) ))
-        printf "\r  [%s] %3d / %3d MB" "${bar}" "${done_mb}" "${mb}"
-    done
-    printf "\r  [%-${width}s] %3d / %3d MB  done\n" \
-        "$(printf '%*s' "${width}" '' | tr ' ' '#')" "${mb}" "${mb}"
+echo "  Extracting (this may take several minutes)..."
+tar -xf "${TARBALL}" -C "${STAGE_DIR}" || {
+    echo "ERROR: tar extraction failed." >&2
+    exit 1
 }
-
-_render_bar "${DOT_PIPE}" "${TOTAL_DOTS}" "${BAR_WIDTH}" "${TARBALL_MB}" &
-RENDER_PID=$!
-
-tar -xf "${TARBALL}" -C "${STAGE_DIR}" \
-    --checkpoint=500 \
-    --checkpoint-action="ttyout=." \
-    2>/dev/null >"${DOT_PIPE}" || true
-
-echo "" > "${DOT_PIPE}" 2>/dev/null || true   # signal end
-wait "${RENDER_PID}" 2>/dev/null || true
-rm -f "${DOT_PIPE}"
+echo "  [##################################################] ${TARBALL_MB} / ${TARBALL_MB} MB  done"
 echo ""
 
 # ---------------------------------------------------------------------------
@@ -281,34 +244,33 @@ _strip() {
     printf "  %-36s scanning..." "${label}"
 
     # Collect all dirs to strip into a list file
-    find "${root}" -mindepth 1 -depth -type d         \( -name test    -o -name tests              -o -name unittests -o -name unittest         -o -name benchmarks -o -name benchmark \)         2>/dev/null > "${listfile}" || true
+    find "${root}" -mindepth 1 -depth -type d \
+        \( -name test    -o -name tests \
+           -o -name unittests -o -name unittest \
+           -o -name benchmarks -o -name benchmark \) \
+        2>/dev/null > "${listfile}" || true
 
     # docs/ only at depth >= 2 (protect top-level llvm/docs/)
-    find "${root}" -mindepth 2 -depth -type d -name docs         2>/dev/null >> "${listfile}" || true
+    find "${root}" -mindepth 2 -depth -type d -name docs \
+        2>/dev/null >> "${listfile}" || true
 
     local total
     total=$(wc -l < "${listfile}" | tr -d ' ')
-    printf "
-  %-36s found %s dirs to strip -- deleting..." "${label}" "${total}"
+    printf "\n  %-36s found %s dirs to strip -- deleting..." "${label}" "${total}"
 
     if [[ "${total}" -gt 0 ]]; then
-        # Delete in batches; each batch prints a dot so screen stays live
         local deleted=0
         while IFS= read -r dir; do
             [[ -d "${dir}" ]] && rm -rf "${dir}" 2>/dev/null || true
             deleted=$(( deleted + 1 ))
-            # Print a progress update every 50 deletions
             if (( deleted % 50 == 0 )); then
-                printf "
-  %-36s deleted %s / %s dirs..." "${label}" "${deleted}" "${total}"
+                printf "\n  %-36s deleted %s / %s dirs..." "${label}" "${deleted}" "${total}"
             fi
         done < "${listfile}"
     fi
 
     rm -f "${listfile}"
-    printf "
-  %-36s done (%s dirs stripped)          
-" "${label}" "${total}"
+    printf "\n  %-36s done (%s dirs stripped)\n" "${label}" "${total}"
 }
 
 before_mb="$(du -sm "${SRC_DIR}/llvm" 2>/dev/null | cut -f1)"
