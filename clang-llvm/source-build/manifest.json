@@ -1,6 +1,5 @@
 {
-  "_comment": "Source build manifest for clang-llvm-source-build. Pins SHA256 for all vendored source archives. LLVM parts are individually hashed plus the reassembled tarball is verified against the official upstream hash. Ninja has no official upstream checksum — hash is self-computed from the vendored tarball at time of pinning.",
-
+  "_comment": "Source build manifest for clang-llvm-source-build. Pins SHA256 for all vendored source archives and built binaries. LLVM parts are individually hashed plus the reassembled tarball is verified against the official upstream hash. Ninja has no official upstream checksum — hash is self-computed from the vendored tarball at time of pinning.",
   "llvm": {
     "version": "22.1.1",
     "release_tag": "llvmorg-22.1.1",
@@ -26,7 +25,6 @@
       ]
     }
   },
-
   "ninja": {
     "version": "1.13.2",
     "release_tag": "v1.13.2",
@@ -42,5 +40,25 @@
         }
       ]
     }
+  },
+  "clang_tidy": {
+    "version": "22.1.1",
+    "platform": "linux-x86_64",
+    "built_from": "llvmorg-22.1.1",
+    "compiler": "GCC 8.5.0 (Red Hat 8.5.0-28)",
+    "build_type": "Release",
+    "binary_filename": "bin/linux/clang-tidy",
+    "sha256_binary": "6f73d9b61f03c2c06ed0832ec9fd5ba8625a2482bdb7f915d90e6911614f31fd",
+    "split_parts": [
+      {
+        "filename": "bin/linux/clang-tidy.part-aa",
+        "sha256": "8bd83458c3df4ab4420973ff0d7280b8cfce058437a15a16bb0fcdf589eb94b3"
+      },
+      {
+        "filename": "bin/linux/clang-tidy.part-ab",
+        "sha256": "700c2177368d3dd979b41d361ef0c2210d37f60759f1738ea4a65bb306a8a4d3"
+      }
+    ],
+    "_note": "Binary built from LLVM source on Rocky Linux 8 / RHEL 8 x86_64. Strip applied post-build. Reassemble with: cat bin/linux/clang-tidy.part-* > bin/linux/clang-tidy && chmod +x bin/linux/clang-tidy"
   }
 }
