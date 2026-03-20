@@ -14,3 +14,5 @@ llvm-src/.reassembled.tar.xz
 llvm-src/SOURCE_INFO.txt
 .llvm-extract-stage/
 ninja-src/build/
+llvm-src/*.tar.xz
+llvm-src/*.tar.xz.part*
