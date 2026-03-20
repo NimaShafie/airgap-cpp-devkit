@@ -1,0 +1,188 @@
+{
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "spdxVersion": "SPDX-2.3",
+  "creationInfo": {
+    "created": "2026-03-20T00:00:00Z",
+    "creators": [
+      "Organization: NimaShafie",
+      "Tool: airgap-cpp-devkit/scripts/generate-sbom.sh"
+    ],
+    "comment": "SBOM for lcov-source-build module. Covers lcov 2.4 and all vendored Perl dependencies."
+  },
+  "name": "lcov-source-build",
+  "dataLicense": "CC0-1.0",
+  "documentNamespace": "https://github.com/NimaShafie/airgap-cpp-devkit/lcov-source-build/sbom.spdx.json",
+  "documentDescribes": ["SPDXRef-lcov-source-build"],
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-lcov-source-build",
+      "name": "lcov-source-build",
+      "versionInfo": "2.4",
+      "supplier": "Organization: NimaShafie",
+      "downloadLocation": "https://github.com/NimaShafie/airgap-cpp-devkit",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "APPLICATION",
+      "comment": "Code coverage reporting module for air-gapped RHEL 8 / Linux environments. Vendors lcov 2.4 and all required Perl dependencies as pre-built tarballs. SHA256 verified via manifest.json."
+    },
+    {
+      "SPDXID": "SPDXRef-lcov",
+      "name": "lcov",
+      "versionInfo": "2.4",
+      "supplier": "Organization: linux-test-project",
+      "downloadLocation": "https://github.com/linux-test-project/lcov/releases/tag/v2.4",
+      "filesAnalyzed": false,
+      "licenseConcluded": "GPL-2.0-only",
+      "licenseDeclared": "GPL-2.0-only",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "APPLICATION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:github/linux-test-project/lcov@v2.4"
+        }
+      ],
+      "comment": "Vendored as vendor/lcov-2.4.tar.gz. SHA256: 5f349f8d01fa6dac1d48307df9d172d423bc938f81e590004848150aa69db0bb"
+    },
+    {
+      "SPDXID": "SPDXRef-perl-capture-tiny",
+      "name": "Capture-Tiny",
+      "versionInfo": "0.50",
+      "supplier": "Organization: CPAN",
+      "downloadLocation": "https://metacpan.org/dist/Capture-Tiny",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "LIBRARY",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:cpan/DAGOLDEN/Capture-Tiny@0.50"
+        }
+      ],
+      "comment": "Vendored inside vendor/perl-libs.tar.gz. Required by lcov 2.x at runtime."
+    },
+    {
+      "SPDXID": "SPDXRef-perl-datetime",
+      "name": "DateTime",
+      "versionInfo": "1.66",
+      "supplier": "Organization: CPAN",
+      "downloadLocation": "https://metacpan.org/dist/DateTime",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Artistic-2.0",
+      "licenseDeclared": "Artistic-2.0",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "LIBRARY",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:cpan/DROLSKY/DateTime@1.66"
+        }
+      ],
+      "comment": "Vendored inside vendor/perl-libs.tar.gz. Required by lcov 2.x at runtime."
+    },
+    {
+      "SPDXID": "SPDXRef-perl-datetime-timezone",
+      "name": "DateTime-TimeZone",
+      "versionInfo": "2.67",
+      "supplier": "Organization: CPAN",
+      "downloadLocation": "https://metacpan.org/dist/DateTime-TimeZone",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Artistic-2.0",
+      "licenseDeclared": "Artistic-2.0",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "LIBRARY",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:cpan/DROLSKY/DateTime-TimeZone@2.67"
+        }
+      ],
+      "comment": "Vendored inside vendor/perl-libs.tar.gz. Required by DateTime at runtime."
+    },
+    {
+      "SPDXID": "SPDXRef-perl-time-hires",
+      "name": "Time-HiRes",
+      "versionInfo": "1.9758",
+      "supplier": "Organization: CPAN",
+      "downloadLocation": "https://metacpan.org/dist/Time-HiRes",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Artistic-1.0-Perl",
+      "licenseDeclared": "Artistic-1.0-Perl",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "LIBRARY",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:rpm/rockylinux/perl-Time-HiRes@1.9758-2.el8?arch=x86_64"
+        }
+      ],
+      "comment": "System package installed via dnf from RHEL 8 AppStream. Not vendored — must be present on target system."
+    },
+    {
+      "SPDXID": "SPDXRef-perl-json",
+      "name": "perl-JSON",
+      "versionInfo": "2.97.001",
+      "supplier": "Organization: CPAN",
+      "downloadLocation": "https://metacpan.org/dist/JSON",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Artistic-1.0-Perl",
+      "licenseDeclared": "Artistic-1.0-Perl",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "LIBRARY",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:rpm/rockylinux/perl-JSON@2.97.001-2.el8?arch=noarch"
+        }
+      ],
+      "comment": "System package installed via dnf from RHEL 8 AppStream. Not vendored — must be present on target system."
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-lcov-source-build"
+    },
+    {
+      "spdxElementId": "SPDXRef-lcov-source-build",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-lcov"
+    },
+    {
+      "spdxElementId": "SPDXRef-lcov-source-build",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-perl-capture-tiny"
+    },
+    {
+      "spdxElementId": "SPDXRef-lcov-source-build",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-perl-datetime"
+    },
+    {
+      "spdxElementId": "SPDXRef-lcov-source-build",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-perl-datetime-timezone"
+    },
+    {
+      "spdxElementId": "SPDXRef-lcov-source-build",
+      "relationshipType": "RUNTIME_DEPENDENCY_OF",
+      "relatedSpdxElement": "SPDXRef-perl-time-hires"
+    },
+    {
+      "spdxElementId": "SPDXRef-lcov-source-build",
+      "relationshipType": "RUNTIME_DEPENDENCY_OF",
+      "relatedSpdxElement": "SPDXRef-perl-json"
+    }
+  ]
+}

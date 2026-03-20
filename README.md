@@ -16,14 +16,15 @@ pre-installed binaries. All dependencies are vendored and installed locally.
 | [`clang-llvm/style-formatter/`](clang-llvm/style-formatter/README.md) | Enforces LLVM C++ coding standards via Git pre-commit hook | Yes |
 | [`clang-llvm/source-build/`](clang-llvm/source-build/README.md) | Optional: builds clang-format from LLVM 22.1.1 source (~30-60 min) | No |
 | [`git-bundle/`](git-bundle/README.md) | Transfers Git repositories with nested submodules across air-gapped boundaries | Yes |
+| [`lcov-source-build/`](lcov-source-build/README.md) | Code coverage reporting via lcov 2.4 + gcov, vendored Perl deps included | No |
 | [`prebuilt/winlibs-gcc-ucrt/`](prebuilt/winlibs-gcc-ucrt/README.md) | Pre-built GCC 15.2.0 + MinGW-w64 13.0.0 UCRT toolchain for Windows | **No — standalone** |
 | [`grpc-source-build/`](grpc-source-build/README.md) | Vendored gRPC source build for Windows (v1.76.0 production-tested, v1.78.1 candidate) | **No — standalone** |
 
 ---
 
-## Can I skip `prebuilt/` or `grpc-source-build/`?
+## Can I skip `prebuilt/`, `grpc-source-build/`, or `lcov-source-build/`?
 
-**Yes. Both are fully independent and optional.**
+**Yes. All three are fully independent and optional.**
 
 `prebuilt/winlibs-gcc-ucrt/` is a standalone GCC 15.2.0 toolchain for
 developers who need to *compile C++ projects* in an air-gapped Windows
@@ -40,12 +41,20 @@ tool in this devkit. The entire build is self-contained — vendored source,
 SHA256 verification, and a single `.bat` entry point that handles extraction,
 VS environment init, CMake configure/build, and demo launch.
 
-If you only need the formatter and git transfer tool, ignore both `prebuilt/`
-and `grpc-source-build/` entirely.
+`lcov-source-build/` provides code coverage reporting for C++ projects compiled
+with GCC's `-fprofile-arcs -ftest-coverage` flags. It vendors lcov 2.4 and all
+required Perl dependencies (`Capture::Tiny`, `DateTime`, `DateTime::TimeZone`)
+as pre-built tarballs — no internet access, no CPAN, no system Perl packages
+beyond what RHEL 8 base provides.
+
+If you only need the formatter and git transfer tool, ignore `prebuilt/`,
+`grpc-source-build/`, and `lcov-source-build/` entirely.
 
 `prebuilt/winlibs-gcc-ucrt/` ships as **committed pre-built binaries** (split
 `.part-*` files). `grpc-source-build/` ships as **committed source archives**
-(split `.part-*` files). Both use the same vendor/manifest/SHA256 pattern.
+(split `.part-*` files). `lcov-source-build/` ships as **committed pre-built
+tarballs** (`lcov-2.4.tar.gz` + `perl-libs.tar.gz`). All use the same
+vendor/manifest/SHA256 pattern.
 
 ---
 
@@ -206,6 +215,16 @@ builds with CMake, and launches the HelloWorld demo. Prompts for version
 selection (v1.76.0 production-tested, v1.78.1 candidate).
 Requires: Visual Studio 2022 Insiders with Desktop C++ workload, Git Bash.
 
+**Method 5 — lcov code coverage (optional, RHEL 8 / Linux)**
+```bash
+bash lcov-source-build/bootstrap.sh
+source lcov-source-build/scripts/env-setup.sh
+```
+Extracts vendored lcov 2.4 and Perl dependency tarballs. Sets `PERL5LIB` and
+`PATH` so `lcov` and `genhtml` are immediately available. No internet access,
+no CPAN, no EPEL required. System prerequisites (`perl-Time-HiRes`,
+`perl-JSON`) are available in the RHEL 8 base AppStream repo.
+
 ---
 
 ## Design Principles
@@ -216,7 +235,7 @@ Requires: Visual Studio 2022 Insiders with Desktop C++ workload, Git Bash.
 | Minimal production footprint | One `setup.sh` + one submodule pointer per production repo |
 | No admin rights | Installs to per-user/per-repo paths only |
 | Cross-platform | Windows 11 (Git Bash / MINGW64) + RHEL 8 |
-| Single entry point per tool | `bash setup.sh` or `setup_grpc.bat` — nothing else required |
+| Single entry point per tool | `bash bootstrap.sh` or `setup_grpc.bat` — nothing else required |
 | Integrity verification | SHA256 pinned in `manifest.json` for all vendored archives, cross-referenced from independent sources where available |
 
 ---
@@ -268,6 +287,17 @@ airgap-cpp-devkit/
 │   ├── export.py
 │   ├── sbom.spdx.json                     <- SPDX 2.3 SBOM
 │   └── tests/
+│
+├── lcov-source-build/                     <- code coverage reporting (Linux)
+│   ├── bootstrap.sh                       <- extracts tarballs + verifies
+│   ├── manifest.json                      <- SHA256 pins for lcov + perl-libs
+│   ├── scripts/
+│   │   ├── download.sh                    <- internet machine: populate vendor/
+│   │   ├── verify.sh                      <- SHA256 + version check
+│   │   └── env-setup.sh                   <- source to activate lcov in shell
+│   └── vendor/
+│       ├── lcov-2.4.tar.gz                <- vendored lcov 2.4 (committed, 1.1 MB)
+│       └── perl-libs.tar.gz               <- vendored Perl deps (committed, 4.6 MB)
 │
 ├── prebuilt/                              <- pre-built binary packages (OPTIONAL)
 │   ├── README.md                          <- explains the prebuilt/ convention

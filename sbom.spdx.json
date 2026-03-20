@@ -2,7 +2,7 @@
   "SPDXID": "SPDXRef-DOCUMENT",
   "spdxVersion": "SPDX-2.3",
   "creationInfo": {
-    "created": "2026-03-17T00:00:00Z",
+    "created": "2026-03-20T00:00:00Z",
     "creators": [
       "Organization: NimaShafie",
       "Tool: airgap-cpp-devkit/scripts/generate-sbom.sh"
@@ -36,6 +36,14 @@
       "checksum": {
         "algorithm": "SHA1",
         "checksumValue": "03fdab7e3a5c5bbcbc6aa68bd5380bdb52e0b460"
+      }
+    },
+    {
+      "externalDocumentId": "DocumentRef-lcov-source-build",
+      "spdxDocument": "https://github.com/NimaShafie/airgap-cpp-devkit/lcov-source-build/sbom.spdx.json",
+      "checksum": {
+        "algorithm": "SHA1",
+        "checksumValue": "0000000000000000000000000000000000000000"
       }
     },
     {
@@ -101,6 +109,19 @@
       "comment": "Core subproject. Transfers Git repositories with nested submodules across air-gapped boundaries. Pure Python, no third-party dependencies. See DocumentRef-git-bundle for full component SBOM."
     },
     {
+      "SPDXID": "SPDXRef-subproject-lcov-source-build",
+      "name": "lcov-source-build",
+      "versionInfo": "2.4",
+      "supplier": "Organization: NimaShafie",
+      "downloadLocation": "https://github.com/NimaShafie/airgap-cpp-devkit",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "APPLICATION",
+      "comment": "Optional subproject. Code coverage reporting via lcov 2.4 + gcov for RHEL 8 / Linux. Vendored lcov source and Perl dependencies (Capture::Tiny, DateTime, DateTime::TimeZone) as pre-built tarballs. No internet access, CPAN, or EPEL required. See DocumentRef-lcov-source-build for full component SBOM."
+    },
+    {
       "SPDXID": "SPDXRef-subproject-winlibs-gcc-ucrt",
       "name": "prebuilt-winlibs-gcc-ucrt",
       "versionInfo": "15.2.0posix-13.0.0-ucrt-r6",
@@ -138,6 +159,11 @@
     {
       "spdxElementId": "SPDXRef-airgap-cpp-devkit",
       "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-subproject-lcov-source-build"
+    },
+    {
+      "spdxElementId": "SPDXRef-airgap-cpp-devkit",
+      "relationshipType": "CONTAINS",
       "relatedSpdxElement": "SPDXRef-subproject-winlibs-gcc-ucrt"
     },
     {
@@ -154,6 +180,11 @@
       "spdxElementId": "SPDXRef-subproject-git-bundle",
       "relationshipType": "DESCRIBED_BY",
       "relatedSpdxElement": "DocumentRef-git-bundle:SPDXRef-git-bundle"
+    },
+    {
+      "spdxElementId": "SPDXRef-subproject-lcov-source-build",
+      "relationshipType": "DESCRIBED_BY",
+      "relatedSpdxElement": "DocumentRef-lcov-source-build:SPDXRef-lcov-source-build"
     },
     {
       "spdxElementId": "SPDXRef-subproject-winlibs-gcc-ucrt",
