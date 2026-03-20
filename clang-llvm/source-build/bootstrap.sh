@@ -153,7 +153,7 @@ else
             echo "    • Run from Git Bash (VS environment set up automatically)"
             echo ""
             bash "${SCRIPT_DIR}/scripts/build-clang-tidy.sh" \
-                ${REBUILD:+--rebuild}
+                $([[ "${REBUILD}" == "true" ]] && echo "--rebuild" || true)
 
             [[ -x "${OUTPUT_TIDY}" ]] || {
                 echo "ERROR: clang-tidy not found at ${OUTPUT_TIDY} after build." >&2

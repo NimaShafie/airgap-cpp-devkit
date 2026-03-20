@@ -188,7 +188,7 @@ echo ""
 echo "[2/3] Restructuring source layout"
 echo ""
 
-for component in llvm clang cmake third-party; do
+for component in llvm clang clang-tools-extra cmake third-party; do
     [[ -d "${EXTRACTED}/${component}" ]] || {
         echo "ERROR: '${component}/' missing from extracted tarball." >&2
         exit 1
@@ -196,7 +196,7 @@ for component in llvm clang cmake third-party; do
 done
 
 # Remove any stale destination dirs from a previous partial run
-for stale in "${SRC_DIR}/llvm" "${SRC_DIR}/cmake" "${SRC_DIR}/third-party"; do
+for stale in "${SRC_DIR}/llvm" "${SRC_DIR}/clang-tools-extra" "${SRC_DIR}/cmake" "${SRC_DIR}/third-party"; do
     if [[ -d "${stale}" ]]; then
         printf "  %-36s removing stale copy...\n" "$(basename "${stale}")/"
         rm -rf "${stale}" || {
@@ -224,6 +224,7 @@ _move "${EXTRACTED}/llvm"        "${SRC_DIR}/llvm"             "llvm/"
 # NOW create tools/ inside the moved llvm/, then move clang into it
 mkdir -p "${SRC_DIR}/llvm/tools"
 _move "${EXTRACTED}/clang"       "${SRC_DIR}/llvm/tools/clang" "llvm/tools/clang/"
+_move "${EXTRACTED}/clang-tools-extra" "${SRC_DIR}/clang-tools-extra" "clang-tools-extra/"
 _move "${EXTRACTED}/cmake"       "${SRC_DIR}/cmake"            "cmake/"
 _move "${EXTRACTED}/third-party" "${SRC_DIR}/third-party"      "third-party/"
 
@@ -302,6 +303,7 @@ VERIFY_OK=true
 for check in \
     "${SRC_DIR}/llvm/CMakeLists.txt" \
     "${SRC_DIR}/llvm/tools/clang/CMakeLists.txt" \
+    "${SRC_DIR}/clang-tools-extra/CMakeLists.txt" \
     "${SRC_DIR}/cmake" \
     "${SRC_DIR}/third-party"; do
     if [[ -e "${check}" ]]; then
