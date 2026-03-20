@@ -25,7 +25,7 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "Top-level subproject. Builds clang-format from LLVM source and installs a pre-built clang-tidy binary in air-gapped environments."
+      "comment": "Top-level subproject. Builds clang-format and clang-tidy from LLVM source (Windows) or installs pre-built clang-tidy binary (Linux) in air-gapped environments."
     },
     {
       "SPDXID": "SPDXRef-llvm-project",
@@ -51,7 +51,7 @@
           "referenceLocator": "pkg:github/llvm/llvm-project@llvmorg-22.1.1"
         }
       ],
-      "comment": "Vendored as split parts: llvm-project-22.1.1.src.tar.xz.part-aa + part-ab in llvm-src/. SHA256 is for the reassembled tarball."
+      "comment": "Vendored as split parts: llvm-project-22.1.1.src.tar.xz.part-aa + part-ab in llvm-src/. SHA256 is for the reassembled tarball. Used as build source for clang-format (both platforms) and clang-tidy (Windows)."
     },
     {
       "SPDXID": "SPDXRef-llvm-part-aa",
@@ -118,7 +118,7 @@
       "comment": "Vendored as ninja-1.13.2.tar.gz in ninja-src/. Built as a dependency for the LLVM CMake build. No official upstream SHA256 published; hash is self-computed from vendored tarball."
     },
     {
-      "SPDXID": "SPDXRef-clang-tidy-binary",
+      "SPDXID": "SPDXRef-clang-tidy-linux",
       "name": "clang-tidy",
       "versionInfo": "22.1.1",
       "supplier": "Organization: NimaShafie",
@@ -160,7 +160,7 @@
       "licenseDeclared": "Apache-2.0 WITH LLVM-exception",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "ARCHIVE",
-      "comment": "Split part 1 of 2 of the pre-built clang-tidy binary (~52 MB). Committed to git in bin/linux/."
+      "comment": "Split part 1 of 2 of the pre-built Linux clang-tidy binary (~52 MB). Committed to git in bin/linux/."
     },
     {
       "SPDXID": "SPDXRef-clang-tidy-part-ab",
@@ -179,7 +179,27 @@
       "licenseDeclared": "Apache-2.0 WITH LLVM-exception",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "ARCHIVE",
-      "comment": "Split part 2 of 2 of the pre-built clang-tidy binary (~31 MB). Committed to git in bin/linux/."
+      "comment": "Split part 2 of 2 of the pre-built Linux clang-tidy binary (~31 MB). Committed to git in bin/linux/."
+    },
+    {
+      "SPDXID": "SPDXRef-clang-tidy-windows",
+      "name": "clang-tidy.exe",
+      "versionInfo": "22.1.1",
+      "supplier": "Organization: NimaShafie",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0 WITH LLVM-exception",
+      "licenseDeclared": "Apache-2.0 WITH LLVM-exception",
+      "copyrightText": "Copyright (c) 2003-2026 University of Illinois at Urbana-Champaign and LLVM Contributors",
+      "primaryPackagePurpose": "APPLICATION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:github/llvm/llvm-project@llvmorg-22.1.1"
+        }
+      ],
+      "comment": "clang-tidy built from source on Windows x86_64 via scripts/build-clang-tidy.sh. Compiler: MSVC 14.50.35717 (VS Insiders 18), CMake 4.1.2. Not committed to git — each developer builds locally from the vendored LLVM source. No SHA256 checksum here; see manifest.json clang_tidy_windows block."
     },
     {
       "SPDXID": "SPDXRef-cmake-build-dep",
@@ -192,7 +212,7 @@
       "licenseDeclared": "BSD-3-Clause",
       "copyrightText": "Copyright 2000-2024 Kitware, Inc. and Contributors",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "Transitive build dependency. Required to configure LLVM source build. Must be provided by the host system (not vendored). Minimum version 3.14."
+      "comment": "Transitive build dependency. Required to configure LLVM source build. Must be provided by the host system (not vendored). Minimum version 3.14; tested with CMake 4.1.2 on Windows."
     },
     {
       "SPDXID": "SPDXRef-host-compiler",
@@ -205,7 +225,7 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "Transitive build dependency. MSVC (Windows) or GCC (Linux) required to compile LLVM from source. Provided by host system; not vendored."
+      "comment": "Transitive build dependency. MSVC (Windows, tested: 14.50.35717 via VS Insiders 18) or GCC (Linux, tested: 8.5.0 on RHEL 8) required to compile LLVM from source. Provided by host system; not vendored."
     }
   ],
   "relationships": [
@@ -227,7 +247,12 @@
     {
       "spdxElementId": "SPDXRef-clang-llvm-source-build",
       "relationshipType": "CONTAINS",
-      "relatedSpdxElement": "SPDXRef-clang-tidy-binary"
+      "relatedSpdxElement": "SPDXRef-clang-tidy-linux"
+    },
+    {
+      "spdxElementId": "SPDXRef-clang-llvm-source-build",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-clang-tidy-windows"
     },
     {
       "spdxElementId": "SPDXRef-llvm-project",
@@ -240,14 +265,19 @@
       "relatedSpdxElement": "SPDXRef-llvm-part-ab"
     },
     {
-      "spdxElementId": "SPDXRef-clang-tidy-binary",
+      "spdxElementId": "SPDXRef-clang-tidy-linux",
       "relationshipType": "GENERATED_FROM",
       "relatedSpdxElement": "SPDXRef-clang-tidy-part-aa"
     },
     {
-      "spdxElementId": "SPDXRef-clang-tidy-binary",
+      "spdxElementId": "SPDXRef-clang-tidy-linux",
       "relationshipType": "GENERATED_FROM",
       "relatedSpdxElement": "SPDXRef-clang-tidy-part-ab"
+    },
+    {
+      "spdxElementId": "SPDXRef-clang-tidy-windows",
+      "relationshipType": "GENERATED_FROM",
+      "relatedSpdxElement": "SPDXRef-llvm-project"
     },
     {
       "spdxElementId": "SPDXRef-clang-llvm-source-build",

@@ -41,7 +41,7 @@
       ]
     }
   },
-  "clang_tidy": {
+  "clang_tidy_linux": {
     "version": "22.1.1",
     "platform": "linux-x86_64",
     "built_from": "llvmorg-22.1.1",
@@ -60,5 +60,15 @@
       }
     ],
     "_note": "Binary built from LLVM source on Rocky Linux 8 / RHEL 8 x86_64. Strip applied post-build. Reassemble with: cat bin/linux/clang-tidy.part-* > bin/linux/clang-tidy && chmod +x bin/linux/clang-tidy"
+  },
+  "clang_tidy_windows": {
+    "version": "22.1.1",
+    "platform": "windows-x86_64",
+    "built_from": "llvmorg-22.1.1",
+    "compiler": "MSVC 14.50.35717 (VS Insiders 18)",
+    "build_type": "Release",
+    "binary_filename": "bin/windows/clang-tidy.exe",
+    "sha256_binary": "PENDING — fill in after first successful build",
+    "_note": "Built from LLVM source on Windows 11 x86_64 via build-clang-tidy.sh. Not vendored as a committed binary — each developer builds from the vendored LLVM source. Run: sha256sum bin/windows/clang-tidy.exe and update this field after building."
   }
 }
