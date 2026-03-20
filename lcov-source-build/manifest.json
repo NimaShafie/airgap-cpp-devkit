@@ -1,0 +1,21 @@
+{
+  "module": "lcov-source-build",
+  "lcov_version": "2.4",
+  "lcov_tarball": {
+    "file": "vendor/lcov-2.4.tar.gz",
+    "sha256": "5f349f8d01fa6dac1d48307df9d172d423bc938f81e590004848150aa69db0bb"
+  },
+  "perl_libs_tarball": {
+    "file": "vendor/perl-libs.tar.gz",
+    "sha256": "9c85f9e956b3cc009052704e5a1cfd6063a2123e2cc4b7cc6fc9d2329a5beada"
+  },
+  "perl_modules": [
+    "Capture::Tiny 0.50",
+    "DateTime 1.66",
+    "DateTime::TimeZone 2.67"
+  ],
+  "system_deps": [
+    "perl-Time-HiRes",
+    "perl-JSON"
+  ]
+}
