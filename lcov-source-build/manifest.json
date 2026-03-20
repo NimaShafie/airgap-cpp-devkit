@@ -7,12 +7,13 @@
   },
   "perl_libs_tarball": {
     "file": "vendor/perl-libs.tar.gz",
-    "sha256": "9c85f9e956b3cc009052704e5a1cfd6063a2123e2cc4b7cc6fc9d2329a5beada"
+    "sha256": "a8b5a1c6d3c471c23b33ff793414dca2a537706d81b93d44d6b0f98e42df6cd3"
   },
   "perl_modules": [
     "Capture::Tiny 0.50",
     "DateTime 1.66",
-    "DateTime::TimeZone 2.67"
+    "DateTime::TimeZone 2.67",
+    "TimeDate 2.34"
   ],
   "system_deps": [
     "perl-Time-HiRes",
