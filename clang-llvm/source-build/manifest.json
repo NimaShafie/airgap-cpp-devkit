@@ -101,5 +101,15 @@
     "binary_filename": "bin/windows/clang-tidy.exe",
     "sha256_binary": "4e4dc42c11e407038b5b15c5bf91980e9c7a4a3ed17486b37963de8c5a5e15e4",
     "_note": "Binary fits in a single file (46 MB) — no splitting required. Committed directly to git in bin/windows/. Verify with: sha256sum bin/windows/clang-tidy.exe"
+  },
+  "ninja_windows": {
+    "version": "1.13.2",
+    "platform": "windows-x86_64",
+    "built_from": "ninja-1.13.2",
+    "compiler": "MSVC 19.50.35726.0 (VS Insiders 18)",
+    "build_type": "bootstrap",
+    "binary_filename": "prebuilt-binaries/clang-llvm/ninja.exe",
+    "sha256_binary": "b3dfdbddb242f3400b2965a6d3acfa94c449d4ac8b11cec68290c624fc3c57e5",
+    "_note": "Single file (656 KB) — committed directly to prebuilt-binaries submodule."
   }
 }

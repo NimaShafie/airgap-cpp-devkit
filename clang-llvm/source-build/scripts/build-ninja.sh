@@ -113,9 +113,48 @@ if [[ "${OS}" == "windows" ]]; then
         CXX_BIN="cl"
         echo "  Compiler : MSVC ($(cl 2>&1 | head -1))"
     else
-        echo "ERROR: MSVC (cl.exe) not found." >&2
-        echo "  Run from an x64 Native Tools Command Prompt for VS." >&2
-        exit 1
+        # Auto-detect cl.exe via vswhere or filesystem scan
+        VSWHERE=""
+        for vsp in             "/c/Program Files (x86)/Microsoft Visual Studio/Installer/vswhere.exe"             "/c/Program Files/Microsoft Visual Studio/Installer/vswhere.exe"; do
+            [[ -f "${vsp}" ]] && { VSWHERE="${vsp}"; break; }
+        done
+        if [[ -n "${VSWHERE}" ]]; then
+            VS_INSTALL="$("${VSWHERE}" -latest -prerelease -products '*'                 -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64                 -property installationPath 2>/dev/null | tr -d '
+')"
+            if [[ -n "${VS_INSTALL}" ]]; then
+                VS_BASH="$(cygpath -u "${VS_INSTALL}" 2>/dev/null ||                     printf '%s' "${VS_INSTALL}" | sed 's|\\|/|g; s|^C:|/c|i')"
+                MSVC_ROOT="${VS_BASH}/VC/Tools/MSVC"
+                if [[ -d "${MSVC_ROOT}" ]]; then
+                    MSVC_VER="$(ls -1 "${MSVC_ROOT}" 2>/dev/null | sort -V | tail -1)"
+                    _cl="${MSVC_ROOT}/${MSVC_VER}/bin/Hostx64/x64/cl.exe"
+                    [[ -f "${_cl}" ]] && CC="${_cl}"
+                fi
+            fi
+        fi
+        if [[ -z "${CC:-}" ]]; then
+            while IFS= read -r _cl; do
+                [[ -f "${_cl}" ]] && { CC="${_cl}"; break; }
+            done < <(find                 "/c/Program Files/Microsoft Visual Studio"                 "/c/Program Files (x86)/Microsoft Visual Studio"                 -name "cl.exe" -path "*/Hostx64/x64/cl.exe"                 2>/dev/null | sort -t/ -k9 -V -r)
+        fi
+        if [[ -z "${CC:-}" ]]; then
+            echo "ERROR: MSVC (cl.exe) not found." >&2
+            echo "  Install Visual Studio 2022 with C++ workload." >&2
+            exit 1
+        fi
+        # Set up MSVC + Windows SDK environment
+        MSVC_ROOT_DIR="$(dirname "$(dirname "$(dirname "$(dirname "${CC}")")")")"
+        WINSDK_ROOT=""
+        for sdk in "/c/Program Files (x86)/Windows Kits/10" "/c/Program Files/Windows Kits/10"; do
+            [[ -d "${sdk}/lib" ]] && { WINSDK_ROOT="${sdk}"; break; }
+        done
+        if [[ -n "${WINSDK_ROOT}" ]]; then
+            WINSDK_VER="$(ls -1 "${WINSDK_ROOT}/lib" 2>/dev/null | sort -V | tail -1)"
+            _w() { cygpath -w "$1" 2>/dev/null || printf '%s' "$1" | sed 's|/c/|C:\\|; s|/|\\|g'; }
+            export LIB="$(_w "${MSVC_ROOT_DIR}/lib/x64");$(_w "${WINSDK_ROOT}/lib/${WINSDK_VER}/um/x64");$(_w "${WINSDK_ROOT}/lib/${WINSDK_VER}/ucrt/x64")"
+            export INCLUDE="$(_w "${MSVC_ROOT_DIR}/include");$(_w "${WINSDK_ROOT}/include/${WINSDK_VER}/shared");$(_w "${WINSDK_ROOT}/include/${WINSDK_VER}/um");$(_w "${WINSDK_ROOT}/include/${WINSDK_VER}/ucrt")"
+            export PATH="${MSVC_ROOT_DIR}/bin/Hostx64/x64:${WINSDK_ROOT}/bin/${WINSDK_VER}/x64:${PATH}"
+        fi
+        echo "  Auto-detected MSVC: ${CC}"
     fi
 else
     for cxx in g++ c++ clang++; do

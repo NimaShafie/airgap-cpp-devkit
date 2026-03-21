@@ -53,6 +53,8 @@ done
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SUBMODULE_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+REPO_ROOT="$(cd "${SUBMODULE_ROOT}/../.." && pwd)"
+PREBUILT_DIR="${REPO_ROOT}/prebuilt-binaries/clang-llvm"
 SRC_DIR="${SUBMODULE_ROOT}/llvm-src"
 BUILD_DIR="${SRC_DIR}/build"
 
@@ -164,6 +166,8 @@ fi
 # Check vendored bin/
 if [[ -z "${NINJA_BIN}" ]]; then
     for candidate in \
+        "${PREBUILT_DIR}/ninja.exe" \
+        "${PREBUILT_DIR}/ninja-linux" \
         "${SUBMODULE_ROOT}/bin/windows/ninja.exe" \
         "${SUBMODULE_ROOT}/bin/linux/ninja"; do
         if [[ -x "${candidate}" ]]; then
