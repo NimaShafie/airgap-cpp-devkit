@@ -43,7 +43,7 @@
       "spdxDocument": "https://github.com/NimaShafie/airgap-cpp-devkit/lcov-source-build/sbom.spdx.json",
       "checksum": {
         "algorithm": "SHA1",
-        "checksumValue": "0000000000000000000000000000000000000000"
+        "checksumValue": "3325c377d33b7aed01b771143d022bf4431e96b0"
       }
     },
     {
