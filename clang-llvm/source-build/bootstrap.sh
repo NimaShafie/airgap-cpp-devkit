@@ -68,6 +68,11 @@ esac
 
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 PREBUILT_DIR="${REPO_ROOT}/prebuilt-binaries/clang-llvm"
+
+# Source shared install-mode library
+source "${REPO_ROOT}/scripts/install-mode.sh"
+install_mode_init "clang-llvm" "22.1.1"
+install_log_capture_start
 OUTPUT_FMT_WIN="${PREBUILT_DIR}/clang-format.exe"
 OUTPUT_TIDY_WIN="${PREBUILT_DIR}/clang-tidy.exe"
 OUTPUT_FMT_LIN="${SCRIPT_DIR}/bin/linux/clang-format"
@@ -192,6 +197,35 @@ echo ""
 # ==========================================================================
 # Summary
 # ==========================================================================
+# ---------------------------------------------------------------------------
+# Install binaries to system/user path
+# ---------------------------------------------------------------------------
+mkdir -p "${INSTALL_BIN_DIR}"
+
+_install_bin() {
+    local src="$1" name="$2"
+    if [[ -x "${src}" ]]; then
+        cp -f "${src}" "${INSTALL_BIN_DIR}/${name}"
+        chmod +x "${INSTALL_BIN_DIR}/${name}"
+        echo "  Installed: ${INSTALL_BIN_DIR}/${name}"
+    fi
+}
+
+case "${OS}" in
+    windows)
+        _install_bin "${OUTPUT_FMT}"  "clang-format.exe"
+        _install_bin "${OUTPUT_TIDY}" "clang-tidy.exe"
+        ;;
+    linux)
+        _install_bin "${OUTPUT_FMT}"  "clang-format"
+        _install_bin "${OUTPUT_TIDY}" "clang-tidy"
+        ;;
+esac
+
+install_receipt_write "success"     "clang-format:${INSTALL_BIN_DIR}/clang-format"     "clang-tidy:${INSTALL_BIN_DIR}/clang-tidy"
+
+install_mode_print_footer "success"     "clang-format:${INSTALL_BIN_DIR}/clang-format"     "clang-tidy:${INSTALL_BIN_DIR}/clang-tidy"
+
 echo "=================================================================="
 echo "  All done."
 echo "  clang-format : ${OUTPUT_FMT}"
