@@ -5,27 +5,54 @@ setlocal EnableDelayedExpansion
 REM ====================================================
 REM setup_grpc.bat
 REM Single entry point for gRPC air-gap source build.
-REM Supports multiple vendored versions with version selector.
 REM
-REM WHAT THIS DOES:
-REM   1. Prompts user to select gRPC version
-REM   2. Verifies vendored source parts via SHA256 (bash)
-REM   3. Reassembles .tar.gz from parts (bash)
-REM   4. Extracts source tree to src\ (bash)
-REM   5. Initializes VS 2022 Insiders developer environment
-REM   6. Copies source to C:\Users\Public\FTE_Software\grpc-<version>
-REM   7. Builds gRPC with CMake
-REM   8. Builds and launches the HelloWorld demo
+REM Called by setup_grpc.sh (bash wrapper) which handles:
+REM   - Admin/user install mode detection
+REM   - Install path selection
+REM   - Logging and install receipt
+REM
+REM Can also be run directly from cmd.exe:
+REM   setup_grpc.bat --version 1.76.0 --dest "C:\Program Files\airgap-cpp-devkit\grpc-1.76.0"
+REM
+REM If --dest is not provided, falls back to interactive prompt
+REM and installs to C:\Users\Public\FTE_Software (legacy behavior).
 REM
 REM REQUIREMENTS:
 REM   - Git Bash (bash.exe) on PATH
 REM   - Visual Studio 2022 Insiders with Desktop C++ workload
-REM   - Run from: grpc-source-build\ directory
+REM   - Run from: grpc-source-build\ directory (or via setup_grpc.sh)
 REM ====================================================
 
 REM -----------------------------
-REM Step 0: Version selector
+REM Step 0: Parse arguments
 REM -----------------------------
+set "GRPC_VERSION="
+set "DEST_OVERRIDE="
+
+:parse_args
+if "%~1"=="" goto done_args
+if /I "%~1"=="--version" (
+    set "GRPC_VERSION=%~2"
+    shift
+    shift
+    goto parse_args
+)
+if /I "%~1"=="--dest" (
+    set "DEST_OVERRIDE=%~2"
+    shift
+    shift
+    goto parse_args
+)
+shift
+goto parse_args
+:done_args
+
+REM -----------------------------
+REM Step 1: Version selection
+REM (skipped if --version was passed)
+REM -----------------------------
+if not "!GRPC_VERSION!"=="" goto version_set
+
 echo.
 echo ============================================================
 echo  gRPC Air-Gap Source Build
@@ -39,14 +66,24 @@ set /p VERSION_CHOICE=" Select version (1 or 2): "
 
 if "!VERSION_CHOICE!"=="1" (
     set "GRPC_VERSION=1.76.0"
-    set "GRPC_FOLDER=grpc-1.76.0"
-    set "EXTRACT_ROOT=grpc_unbuilt_v1.76.0"
 ) else if "!VERSION_CHOICE!"=="2" (
     set "GRPC_VERSION=1.78.1"
+) else (
+    echo [ERROR] Invalid selection. Enter 1 or 2.
+    pause
+    exit /b 1
+)
+
+:version_set
+if "!GRPC_VERSION!"=="1.76.0" (
+    set "GRPC_FOLDER=grpc-1.76.0"
+    set "EXTRACT_ROOT=grpc_unbuilt_v1.76.0"
+) else if "!GRPC_VERSION!"=="1.78.1" (
     set "GRPC_FOLDER=grpc-1.78.1"
     set "EXTRACT_ROOT=grpc-1.78.1"
 ) else (
-    echo [ERROR] Invalid selection. Enter 1 or 2.
+    echo [ERROR] Unknown version: !GRPC_VERSION!
+    echo         Supported: 1.76.0, 1.78.1
     pause
     exit /b 1
 )
@@ -56,24 +93,65 @@ echo [INFO] Selected: gRPC v!GRPC_VERSION!
 echo.
 
 REM -----------------------------
-REM Step 1: Define paths
+REM Step 2: Determine install dest
 REM -----------------------------
+if not "!DEST_OVERRIDE!"=="" (
+    set "DEST_GRPC=!DEST_OVERRIDE!"
+    echo [INFO] Install destination (from caller): !DEST_GRPC!
+) else (
+    REM Legacy fallback: detect admin rights, set path accordingly
+    net session >nul 2>&1
+    if !errorlevel! equ 0 (
+        set "DEST_ROOT=C:\Program Files\airgap-cpp-devkit"
+        echo [INFO] Admin rights detected. Installing system-wide.
+    ) else (
+        set "DEST_ROOT=%LOCALAPPDATA%\airgap-cpp-devkit"
+        echo [WARNING] No admin rights. Installing for current user only.
+        echo           Other users on this machine will NOT have access.
+        echo           Re-run as Administrator for system-wide install.
+    )
+    set "DEST_GRPC=!DEST_ROOT!\!GRPC_FOLDER!"
+    echo [INFO] Install destination: !DEST_GRPC!
+)
+
 set "SOURCE_GRPC_FOLDER=src\!EXTRACT_ROOT!\"
-set "DEST_ROOT=C:\Users\Public\FTE_Software"
-set "DEST_GRPC=%DEST_ROOT%\!GRPC_FOLDER!"
-set "OUTPUT_DIR=%DEST_GRPC%\outputs"
-set "GRPC_EXAMPLES=%DEST_GRPC%\examples\cpp\helloworld"
-set "GRPC_PROTOS=%DEST_GRPC%\examples\protos"
-set "TARGET_CMAKE=%DEST_GRPC%\examples\cpp\cmake"
+set "OUTPUT_DIR=!DEST_GRPC!\outputs"
+set "GRPC_EXAMPLES=!DEST_GRPC!\examples\cpp\helloworld"
+set "GRPC_PROTOS=!DEST_GRPC!\examples\protos"
+set "TARGET_CMAKE=!DEST_GRPC!\examples\cpp\cmake"
 set "DEMO_DIR=%USERPROFILE%\Desktop\grpc_demo"
-set "DEMO_HELLO=%DEMO_DIR%\helloworld"
-set "GEN_DIR=%DEMO_HELLO%\generated"
-set "DEMO_PROTOS=%DEMO_DIR%\protos"
-set "LINK_CMAKE=%DEMO_DIR%\cmake"
-set "VSDEVCMD=C:\Program Files\Microsoft Visual Studio\18\Insiders\Common7\Tools\VsDevCmd.bat"
+set "DEMO_HELLO=!DEMO_DIR!\helloworld"
+set "GEN_DIR=!DEMO_HELLO!\generated"
+set "DEMO_PROTOS=!DEMO_DIR!\protos"
+set "LINK_CMAKE=!DEMO_DIR!\cmake"
 
 REM -----------------------------
-REM Step 2: Locate bash.exe
+REM Step 3: Locate VS VsDevCmd.bat
+REM (search standard paths + fallback)
+REM -----------------------------
+set "VSDEVCMD="
+for %%P in (
+    "C:\Program Files\Microsoft Visual Studio\18\Insiders\Common7\Tools\VsDevCmd.bat"
+    "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat"
+    "C:\Program Files\Microsoft Visual Studio\2022\Professional\Common7\Tools\VsDevCmd.bat"
+    "C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\Tools\VsDevCmd.bat"
+    "C:\Program Files\Microsoft Visual Studio\2022\BuildTools\Common7\Tools\VsDevCmd.bat"
+    "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\Tools\VsDevCmd.bat"
+) do (
+    if exist %%P (
+        set "VSDEVCMD=%%~P"
+        goto found_vsdevcmd
+    )
+)
+echo [ERROR] VsDevCmd.bat not found in any standard VS install location.
+echo         Install Visual Studio 2022 (any edition) with C++ workload.
+pause
+exit /b 1
+:found_vsdevcmd
+echo [INFO] Found VS: !VSDEVCMD!
+
+REM -----------------------------
+REM Step 4: Locate bash.exe
 REM -----------------------------
 echo *** Locating Git Bash ***
 where bash.exe >nul 2>&1
@@ -86,7 +164,7 @@ if errorlevel 1 (
 echo [OK] bash.exe found.
 
 REM -----------------------------
-REM Step 3: Verify vendor parts via SHA256
+REM Step 5: Verify vendor parts
 REM -----------------------------
 echo.
 echo *** Verifying vendored source parts for v!GRPC_VERSION! ***
@@ -98,7 +176,7 @@ if errorlevel 1 (
 )
 
 REM -----------------------------
-REM Step 4: Reassemble .tar.gz from parts
+REM Step 6: Reassemble .tar.gz
 REM -----------------------------
 echo.
 echo *** Reassembling source archive ***
@@ -110,7 +188,7 @@ if errorlevel 1 (
 )
 
 REM -----------------------------
-REM Step 5: Extract source tree to src\
+REM Step 7: Extract source tree
 REM -----------------------------
 echo.
 echo *** Extracting source tree ***
@@ -127,18 +205,11 @@ if exist "src\!EXTRACT_ROOT!\" (
 )
 
 REM -----------------------------
-REM Step 6: Initialize VS Developer environment
+REM Step 8: Initialize VS environment
 REM -----------------------------
 echo.
 echo *** Initializing Visual Studio Developer Environment ***
-if not exist "%VSDEVCMD%" (
-    echo [ERROR] VsDevCmd.bat not found at:
-    echo         %VSDEVCMD%
-    echo         Adjust the VSDEVCMD path in this script if VS is installed elsewhere.
-    pause
-    exit /b 1
-)
-call "%VSDEVCMD%"
+call "!VSDEVCMD!"
 if errorlevel 1 (
     echo [ERROR] Failed to initialize VS developer environment.
     pause
@@ -147,9 +218,9 @@ if errorlevel 1 (
 echo [OK] VS developer environment initialized.
 
 REM -----------------------------
-REM Step 7: Create required demo directories
+REM Step 9: Create demo directories
 REM -----------------------------
-for %%D in ("%DEMO_DIR%" "%DEMO_HELLO%" "%DEMO_PROTOS%") do (
+for %%D in ("!DEMO_DIR!" "!DEMO_HELLO!" "!DEMO_PROTOS!") do (
     if not exist %%D (
         mkdir %%D
         if errorlevel 1 (
@@ -161,55 +232,42 @@ for %%D in ("%DEMO_DIR%" "%DEMO_HELLO%" "%DEMO_PROTOS%") do (
 )
 
 REM -----------------------------
-REM Step 8: Copy source to destination
+REM Step 10: Copy source to dest
 REM -----------------------------
-if not exist "%DEST_GRPC%\" (
-    echo [INFO] Copying gRPC folder...
-
+if not exist "!DEST_GRPC!\" (
+    echo [INFO] Copying gRPC source to install location...
     set "SOURCE_GRPC_FOLDER=%CD%\%SOURCE_GRPC_FOLDER%"
-
-    echo [DEBUG] Source: "!SOURCE_GRPC_FOLDER!"
-    echo [DEBUG] Destination: "%DEST_GRPC%"
-
     if exist "!SOURCE_GRPC_FOLDER!\" (
-        xcopy /E /I /Y "!SOURCE_GRPC_FOLDER!\*" "%DEST_GRPC%"
+        xcopy /E /I /Y "!SOURCE_GRPC_FOLDER!\*" "!DEST_GRPC!"
         if errorlevel 1 (
             echo [ERROR] Failed to copy gRPC folder.
             pause
             exit /b 1
         )
-        echo [OK] gRPC v!GRPC_VERSION! copied to %DEST_GRPC%.
+        echo [OK] gRPC v!GRPC_VERSION! copied to !DEST_GRPC!.
     ) else (
-        echo [ERROR] Source folder not found: "!SOURCE_GRPC_FOLDER!"
-        echo         Extraction may have failed -- check src\ directory.
+        echo [ERROR] Source folder not found: !SOURCE_GRPC_FOLDER!
         pause
         exit /b 1
     )
 ) else (
-    echo [INFO] gRPC folder already exists at "%DEST_GRPC%".
-)
-
-if not exist "%DEST_GRPC%\" (
-    echo [ERROR] Folder "%DEST_GRPC%" not found.
-    pause
-    exit /b 1
+    echo [INFO] gRPC folder already exists at "!DEST_GRPC!".
 )
 
 REM -----------------------------
-REM Step 9: Check if binaries need building
+REM Step 11: Check/build binaries
 REM -----------------------------
 echo.
 echo *** Verifying necessary binaries ***
 set "NEEDS_BUILD=0"
-if not exist "%OUTPUT_DIR%\bin\grpc_cpp_plugin.exe" (
-    echo [WARNING] grpc_cpp_plugin.exe not found in "%OUTPUT_DIR%\bin".
+if not exist "!OUTPUT_DIR!\bin\grpc_cpp_plugin.exe" (
+    echo [WARNING] grpc_cpp_plugin.exe not found. Proceeding with build...
     set "NEEDS_BUILD=1"
 ) else (
-    echo [INFO] Found grpc_cpp_plugin.exe in "%OUTPUT_DIR%\bin".
+    echo [INFO] Found grpc_cpp_plugin.exe.
 )
 
 if "!NEEDS_BUILD!"=="1" (
-    echo [INFO] Required binaries missing. Proceeding with build...
     goto BuildGRPC
 ) else (
     set /p choice="Binaries present. Rebuild gRPC? (y/n): "
@@ -222,31 +280,25 @@ if "!NEEDS_BUILD!"=="1" (
 )
 
 :BuildGRPC
-REM -----------------------------
-REM Step 10: Build gRPC
-REM -----------------------------
 echo.
 echo *** Building gRPC v!GRPC_VERSION! ***
-set "MY_INSTALL_DIR=%DEST_GRPC%"
-set "Path=%Path%;%MY_INSTALL_DIR%\bin"
-cd "%DEST_GRPC%"
+set "MY_INSTALL_DIR=!DEST_GRPC!"
+set "Path=%Path%;!MY_INSTALL_DIR!\bin"
+cd "!DEST_GRPC!"
 if errorlevel 1 (
-    echo [ERROR] Unable to cd to gRPC installation.
+    echo [ERROR] Unable to cd to !DEST_GRPC!
     pause
     exit /b 1
 )
-
 if not exist "cmake\build\" ( mkdir "cmake\build" )
 cd "cmake\build"
 if exist * ( del * /Q )
-
-cmake -DgRPC_INSTALL=ON -DgRPC_BUILD_TESTS=OFF -DCMAKE_CXX_STANDARD=17 -DCMAKE_INSTALL_PREFIX="%MY_INSTALL_DIR%" ..\..
+cmake -DgRPC_INSTALL=ON -DgRPC_BUILD_TESTS=OFF -DCMAKE_CXX_STANDARD=17 -DCMAKE_INSTALL_PREFIX="!MY_INSTALL_DIR!" ..\..
 if errorlevel 1 (
     echo [ERROR] CMake configuration failed.
     pause
     exit /b 1
 )
-
 cmake --build . --config Release --target install -j 4
 if errorlevel 1 (
     echo [ERROR] gRPC build failed.
@@ -255,88 +307,50 @@ if errorlevel 1 (
 )
 
 :CopyFiles
-REM -----------------------------
-REM Step 11: Copy demo files
-REM -----------------------------
 echo.
 echo *** Copying binaries to outputs folder ***
-xcopy /E /I /Y "%MY_INSTALL_DIR%\bin\*" "%OUTPUT_DIR%\bin\"
-xcopy /E /I /Y "%MY_INSTALL_DIR%\lib\*" "%OUTPUT_DIR%\lib\"
+xcopy /E /I /Y "!MY_INSTALL_DIR!\bin\*" "!OUTPUT_DIR!\bin\"
+xcopy /E /I /Y "!MY_INSTALL_DIR!\lib\*" "!OUTPUT_DIR!\lib\"
 echo [OK] Binaries copied.
 
 echo.
 echo [INFO] Copying HelloWorld demo files...
-xcopy /E /I /H /Y "%GRPC_EXAMPLES%\*" "%DEMO_HELLO%\"
+xcopy /E /I /H /Y "!GRPC_EXAMPLES!\*" "!DEMO_HELLO!\"
 if errorlevel 1 (
     echo [ERROR] Failed to copy HelloWorld demo files.
     pause
     exit /b 1
 )
-
-if not exist "%LINK_CMAKE%\common.cmake" (
-    xcopy /E /I /H /Y "%TARGET_CMAKE%\*" "%LINK_CMAKE%\"
-    if errorlevel 1 (
-        echo [ERROR] Failed to copy cmake folder.
-        pause
-        exit /b 1
-    )
+if not exist "!LINK_CMAKE!\common.cmake" (
+    xcopy /E /I /H /Y "!TARGET_CMAKE!\*" "!LINK_CMAKE!\"
 )
 echo [OK] Demo files copied.
 
-REM -----------------------------
-REM Step 12: Update CMakeLists.txt
-REM -----------------------------
 echo.
 echo *** Updating HelloWorld CMakeLists.txt ***
-powershell -Command "(Get-Content '%DEMO_HELLO%\CMakeLists.txt') -replace '../../protos/helloworld\.proto', '../protos/helloworld\.proto' | Set-Content '%DEMO_HELLO%\CMakeLists.txt'"
-if errorlevel 1 (
-    echo [ERROR] Failed to update CMakeLists.txt.
-    pause
-    exit /b 1
-)
+powershell -Command "(Get-Content '!DEMO_HELLO!\CMakeLists.txt') -replace '../../protos/helloworld\.proto', '../protos/helloworld\.proto' | Set-Content '!DEMO_HELLO!\CMakeLists.txt'"
 echo [OK] CMakeLists.txt updated.
 
-REM -----------------------------
-REM Step 13: Generate Protobuf Sources
-REM -----------------------------
 echo.
 echo *** Generating protobuf sources ***
-if not exist "%GRPC_PROTOS%\helloworld.proto" (
-    echo [ERROR] helloworld.proto not found in "%GRPC_PROTOS%".
-    pause
-    exit /b 1
-)
-copy /Y "%GRPC_PROTOS%\helloworld.proto" "%DEMO_PROTOS%\helloworld.proto" >nul
-cd "%DEMO_PROTOS%"
-if not exist "%GEN_DIR%" ( mkdir "%GEN_DIR%" )
-"%OUTPUT_DIR%\bin\protoc.exe" -I "%DEMO_PROTOS%" --cpp_out="%GEN_DIR%" --grpc_out="%GEN_DIR%" --plugin=protoc-gen-grpc="%OUTPUT_DIR%\bin\grpc_cpp_plugin.exe" helloworld.proto
+copy /Y "!GRPC_PROTOS!\helloworld.proto" "!DEMO_PROTOS!\helloworld.proto" >nul
+cd "!DEMO_PROTOS!"
+if not exist "!GEN_DIR!" ( mkdir "!GEN_DIR!" )
+"!OUTPUT_DIR!\bin\protoc.exe" -I "!DEMO_PROTOS!" --cpp_out="!GEN_DIR!" --grpc_out="!GEN_DIR!" --plugin=protoc-gen-grpc="!OUTPUT_DIR!\bin\grpc_cpp_plugin.exe" helloworld.proto
 if errorlevel 1 (
     echo [ERROR] Protoc generation failed.
     pause
     exit /b 1
 )
-if not exist "%GEN_DIR%\helloworld.pb.h" (
-    echo [ERROR] helloworld.pb.h not found.
-    pause
-    exit /b 1
-)
-if not exist "%GEN_DIR%\helloworld.grpc.pb.h" (
-    echo [ERROR] helloworld.grpc.pb.h not found.
-    pause
-    exit /b 1
-)
 echo [OK] Protobuf sources generated.
 
-REM -----------------------------
-REM Step 14: Build HelloWorld Demo
-REM -----------------------------
 echo.
 echo *** Building HelloWorld demo ***
-cd "%DEMO_HELLO%"
+cd "!DEMO_HELLO!"
 if exist ".build" ( rmdir /S /Q ".build" )
 mkdir ".build"
 cd ".build"
-cmake -G "Visual Studio 18 2026" -A x64 -DCMAKE_PREFIX_PATH="%DEST_GRPC%" ..
+cmake -G "Visual Studio 18 2026" -A x64 -DCMAKE_PREFIX_PATH="!DEST_GRPC!" ..
 if errorlevel 1 (
     echo [ERROR] CMake configuration for demo failed.
     pause
@@ -350,23 +364,18 @@ if errorlevel 1 (
 )
 echo [OK] Demo built successfully.
 
-REM -----------------------------
-REM Step 15: Launch Demo
-REM -----------------------------
 echo.
 echo *********************
-echo All tasks completed successfully!
-echo gRPC v!GRPC_VERSION! installed at: %DEST_GRPC%
-echo Build outputs: %OUTPUT_DIR%
-echo Demo built in: %DEMO_HELLO%\.build\Release
+echo  gRPC v!GRPC_VERSION! — Build Complete
+echo  Install location : !DEST_GRPC!
+echo  Build outputs    : !OUTPUT_DIR!
+echo  Demo             : !DEMO_HELLO!\.build\Release
+echo *********************
 echo.
 echo Launching greeter_server.exe...
-start powershell.exe -NoExit -Command "cd '%DEMO_HELLO%\.build\Release'; .\greeter_server.exe"
+start powershell.exe -NoExit -Command "cd '!DEMO_HELLO!\.build\Release'; .\greeter_server.exe"
 echo Launching greeter_client.exe...
-start powershell.exe -NoExit -Command "cd '%DEMO_HELLO%\.build\Release'; .\greeter_client.exe"
+start powershell.exe -NoExit -Command "cd '!DEMO_HELLO!\.build\Release'; .\greeter_client.exe"
 echo.
 echo Please verify that both server and client are running as expected.
-echo *********************
 pause
-ENDOFFILE
-echo "done"

@@ -3,32 +3,21 @@
 # =============================================================================
 # prebuilt/winlibs-gcc-ucrt/scripts/verify.sh
 #
-# PURPOSE: Offline SHA256 verification. No network access required.
-#
-#   - If the reassembled .7z exists in vendor/: verifies it against the
-#     pinned sha256_reassembled value in manifest.json.
-#   - If only split parts exist: verifies each part against its pinned hash.
-#
-# Typical flow on air-gapped machine:
-#   1. Clone repo (parts already in vendor/)
-#   2. bash scripts/verify.sh          <- verifies parts
-#   3. bash scripts/reassemble.sh      <- joins parts, verifies reassembled .7z
-#   4. bash scripts/install.sh         <- installs (calls verify internally)
+# Offline SHA256 verification of split parts (from prebuilt-binaries
+# submodule) or the reassembled .7z (from vendor/).
 #
 # USAGE:
 #   bash scripts/verify.sh [x86_64|i686]     # default: x86_64
-#
-# EXIT CODES:
-#   0 - all checks passed
-#   1 - any mismatch or missing file
 # =============================================================================
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MODULE_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+REPO_ROOT="$(cd "${MODULE_ROOT}/../.." && pwd)"
 MANIFEST="${MODULE_ROOT}/manifest.json"
 VENDOR_DIR="${MODULE_ROOT}/vendor"
+PREBUILT_DIR="${REPO_ROOT}/prebuilt-binaries/winlibs-gcc-ucrt"
 
 ARCH="${1:-x86_64}"
 if [[ "${ARCH}" != "x86_64" && "${ARCH}" != "i686" ]]; then
@@ -38,16 +27,13 @@ fi
 
 get_assembled_filename() {
   grep -A 2 "\"${ARCH}\"" "${MANIFEST}" \
-    | grep '"filename"' \
-    | grep -v 'part-' \
-    | head -1 \
+    | grep '"filename"' | grep -v 'part-' | head -1 \
     | sed 's/.*"filename": *"\([^"]*\)".*/\1/'
 }
 
 get_reassembled_hash() {
   grep -A 5 '"sha256_reassembled"' "${MANIFEST}" \
-    | grep '"value"' \
-    | head -1 \
+    | grep '"value"' | head -1 \
     | sed 's/.*"value": *"\([^"]*\)".*/\1/'
 }
 
@@ -73,34 +59,37 @@ echo " Arch : ${ARCH}"
 echo "============================================================"
 echo ""
 
+# If assembled .7z exists in vendor/, verify that
 if [[ -f "${ASSEMBLED_PATH}" ]]; then
   echo "[MODE] Reassembled archive found -- verifying .7z..."
-  echo "       File: ${ASSEMBLED_PATH}"
-  echo ""
-
   ACTUAL=$(sha256sum "${ASSEMBLED_PATH}" | awk '{print $1}')
-  echo "  Expected (manifest): ${EXPECTED_ASSEMBLED_SHA256}"
-  echo "  Actual             : ${ACTUAL}"
-  echo ""
-
+  echo "  Expected: ${EXPECTED_ASSEMBLED_SHA256}"
+  echo "  Actual  : ${ACTUAL}"
   if [[ "${ACTUAL}" == "${EXPECTED_ASSEMBLED_SHA256}" ]]; then
-    echo "[PASS] Reassembled archive integrity confirmed."
+    echo "[PASS] Archive integrity confirmed."
     exit 0
   else
-    echo "[FAIL] Hash mismatch on reassembled archive." >&2
-    echo "       Delete it and re-run reassemble.sh." >&2
+    echo "[FAIL] Hash mismatch." >&2
     exit 1
   fi
 fi
 
-echo "[MODE] No reassembled archive found -- verifying split parts..."
+# Otherwise verify parts from prebuilt-binaries submodule
+echo "[MODE] Verifying split parts from prebuilt-binaries submodule..."
+echo "       Parts dir: ${PREBUILT_DIR}/"
 echo ""
+
+if [[ ! -d "${PREBUILT_DIR}" ]] || [[ -z "$(ls -A "${PREBUILT_DIR}" 2>/dev/null)" ]]; then
+  echo "[ERROR] prebuilt-binaries submodule not initialized." >&2
+  echo "        Run: bash scripts/setup-prebuilt-submodule.sh" >&2
+  exit 1
+fi
 
 ALL_OK=true
 FOUND=0
 
 while IFS= read -r part_filename; do
-  part_path="${VENDOR_DIR}/${part_filename}"
+  part_path="${PREBUILT_DIR}/${part_filename}"
   expected_hash=$(get_part_hash "${part_filename}")
 
   if [[ ! -f "${part_path}" ]]; then
@@ -123,19 +112,14 @@ while IFS= read -r part_filename; do
 done < <(get_part_filenames)
 
 echo ""
-
 if [[ "${FOUND}" -eq 0 ]]; then
-  echo "[ERROR] No parts found in vendor/. Clone may be incomplete." >&2
+  echo "[ERROR] No parts found in ${PREBUILT_DIR}/." >&2
   exit 1
 fi
-
 if [[ "${ALL_OK}" == "true" ]]; then
   echo "[PASS] All ${FOUND} parts verified."
-  echo ""
-  echo " Next step: bash scripts/reassemble.sh ${ARCH}"
-  exit 0
+  echo " Next: bash scripts/reassemble.sh ${ARCH}"
 else
   echo "[FAIL] One or more parts failed verification." >&2
-  echo "       Re-clone the repository and try again." >&2
   exit 1
 fi
