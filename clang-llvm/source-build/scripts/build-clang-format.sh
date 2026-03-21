@@ -194,6 +194,8 @@ if [[ -z "${NINJA_BIN}" ]]; then
 
         # Pick up newly built binary
         for candidate in \
+            "${PREBUILT_DIR}/ninja.exe" \
+            "${PREBUILT_DIR}/ninja-linux" \
             "${SUBMODULE_ROOT}/bin/windows/ninja.exe" \
             "${SUBMODULE_ROOT}/bin/linux/ninja"; do
             if [[ -x "${candidate}" ]]; then

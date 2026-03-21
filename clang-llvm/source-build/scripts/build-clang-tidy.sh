@@ -190,6 +190,8 @@ if [[ -z "${NINJA_BIN}" ]]; then
         bash "${SCRIPT_DIR}/build-ninja.sh"
         echo ""
         for candidate in \
+            "${PREBUILT_DIR}/ninja.exe" \
+            "${PREBUILT_DIR}/ninja-linux" \
             "${SUBMODULE_ROOT}/bin/windows/ninja.exe" \
             "${SUBMODULE_ROOT}/bin/linux/ninja"; do
             if [[ -x "${candidate}" ]]; then
