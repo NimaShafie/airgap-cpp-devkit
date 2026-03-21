@@ -67,10 +67,9 @@ fi
 echo "[INFO] Installing lcov to ${LCOV_INSTALL}..."
 mkdir -p "${LCOV_BIN}" "${PERL_LIBS}"
 
-# Copy lcov binaries
-cp -f "${LCOV_STAGE}/bin/lcov"    "${LCOV_BIN}/lcov"
-cp -f "${LCOV_STAGE}/bin/genhtml" "${LCOV_BIN}/genhtml"
-chmod +x "${LCOV_BIN}/lcov" "${LCOV_BIN}/genhtml"
+# Copy all lcov binaries and helper scripts
+cp -rf "${LCOV_STAGE}/bin/." "${LCOV_BIN}/"
+chmod +x "${LCOV_BIN}/"*
 
 # Copy lcov lib (lcovutil.pm and other lcov-internal modules)
 cp -rf "${LCOV_STAGE}/lib/." "${LCOV_INSTALL}/lib/"
