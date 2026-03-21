@@ -26,6 +26,7 @@ HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Walk up to find the config directory.
 SUBMODULE_ROOT=""
 for candidate in \
+    "${REPO_ROOT}/clang-llvm/style-formatter" \
     "${REPO_ROOT}/.llvm-hooks" \
     "${HOOK_DIR}/../.." \
     "${HOOK_DIR}/.."; do
