@@ -47,7 +47,7 @@ echo ""
 get_tidy_binary_filename() {
     # Returns the value of "binary_filename" under the clang_tidy block,
     # stripping the leading "bin/linux/" prefix since we address by BIN_DIR.
-    awk '/"clang_tidy"/{found=1} found && /"binary_filename"/{
+    awk '/"clang_tidy_linux"/{found=1} found && /"binary_filename"/{
         match($0, /"binary_filename": *"([^"]+)"/, a)
         n = split(a[1], parts, "/")
         print parts[n]
@@ -56,7 +56,7 @@ get_tidy_binary_filename() {
 }
 
 get_tidy_binary_hash() {
-    awk '/"clang_tidy"/{found=1} found && /"sha256_binary"/{
+    awk '/"clang_tidy_linux"/{found=1} found && /"sha256_binary"/{
         match($0, /"sha256_binary": *"([^"]+)"/, a); print a[1]; exit
     }' "${MANIFEST}"
 }
@@ -65,7 +65,7 @@ get_tidy_part_filenames() {
     # Returns only the basename of each part filename under clang_tidy.
     # The manifest stores them as "bin/linux/clang-tidy.part-xx".
     awk '
-        /"clang_tidy"/{intidy=1}
+        /"clang_tidy_linux"/{intidy=1}
         intidy && /"split_parts"/{inparts=1}
         inparts && /"filename"/{
             match($0, /"filename": *"([^"]+)"/, a)
@@ -80,7 +80,7 @@ get_tidy_part_hash() {
     local part_basename="$1"
     # The manifest uses the full path as the key value; match on basename.
     awk -v target="${part_basename}" '
-        /"clang_tidy"/{intidy=1}
+        /"clang_tidy_linux"/{intidy=1}
         intidy && index($0, target) && /"filename"/{found=1; next}
         found && /"sha256"/{
             match($0, /"sha256": *"([^"]+)"/, a); print a[1]; exit
