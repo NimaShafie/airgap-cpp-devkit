@@ -7,15 +7,9 @@
 #          or build from vendored source (--build-from-source).
 #
 # USAGE:
-#   bash cmake/bootstrap.sh                   # prebuilt (default)
+#   bash cmake/bootstrap.sh                    # prebuilt (default)
 #   bash cmake/bootstrap.sh --build-from-source
-#   bash cmake/bootstrap.sh --rebuild         # force re-install
-#
-# INSTALL LOCATIONS (via scripts/install-mode.sh):
-#   Admin  Linux   : /opt/airgap-cpp-devkit/cmake/
-#   Admin  Windows : C:\Program Files\airgap-cpp-devkit\cmake\
-#   User   Linux   : ~/.local/share/airgap-cpp-devkit/cmake/
-#   User   Windows : %LOCALAPPDATA%\airgap-cpp-devkit\cmake\
+#   bash cmake/bootstrap.sh --rebuild          # force re-install
 # =============================================================================
 
 set -euo pipefail
@@ -28,11 +22,9 @@ CMAKE_VERSION="4.3.0"
 # ---------------------------------------------------------------------------
 # Source install-mode library
 # ---------------------------------------------------------------------------
-# shellcheck source=../scripts/install-mode.sh
 source "${REPO_ROOT}/scripts/install-mode.sh"
-
-INSTALL_DIR="$(get_install_dir cmake)"
-INSTALL_MODE="$(get_install_mode)"
+install_mode_init "cmake" "${CMAKE_VERSION}"
+install_log_capture_start
 
 # ---------------------------------------------------------------------------
 # Parse arguments
@@ -58,23 +50,10 @@ case "$(uname -s)" in
 esac
 
 # ---------------------------------------------------------------------------
-# Banner
-# ---------------------------------------------------------------------------
-echo ""
-echo "╔══════════════════════════════════════════════════════════════════╗"
-echo "║  airgap-cpp-devkit — CMake ${CMAKE_VERSION} Bootstrap                  ║"
-echo "╠══════════════════════════════════════════════════════════════════╣"
-echo "║  Platform : ${PLATFORM}                                               ║"
-echo "║  Mode     : $(${BUILD_FROM_SOURCE} && echo 'build-from-source' || echo 'prebuilt (default)  ')                          ║"
-echo "║  Install  : ${INSTALL_MODE}                                              ║"
-echo "╚══════════════════════════════════════════════════════════════════╝"
-echo ""
-
-# ---------------------------------------------------------------------------
 # Check if already installed
 # ---------------------------------------------------------------------------
-CMAKE_BIN="${INSTALL_DIR}/bin/cmake"
-[[ "${PLATFORM}" == "windows" ]] && CMAKE_BIN="${INSTALL_DIR}/bin/cmake.exe"
+CMAKE_BIN="${INSTALL_BIN_DIR}/cmake"
+[[ "${PLATFORM}" == "windows" ]] && CMAKE_BIN="${INSTALL_BIN_DIR}/cmake.exe"
 
 if [[ -f "${CMAKE_BIN}" ]] && [[ "${REBUILD}" == "false" ]]; then
     INSTALLED_VER=$("${CMAKE_BIN}" --version 2>/dev/null | head -1 | awk '{print $3}' || echo "unknown")
@@ -94,13 +73,15 @@ if [[ ! -d "${PREBUILT_DIR}" ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Verify SHA256 of parts against manifest.json
+# SHA256 verification helper
 # ---------------------------------------------------------------------------
-MANIFEST="${REPO_ROOT}/cmake/manifest.json"
-
 _verify_sha256() {
     local file="$1"
     local expected="$2"
+    if [[ ! -f "${file}" ]]; then
+        echo "[ERROR] File not found: ${file}"
+        exit 1
+    fi
     local actual
     actual="$(sha256sum "${file}" | awk '{print $1}')"
     if [[ "${actual}" != "${expected}" ]]; then
@@ -110,6 +91,26 @@ _verify_sha256() {
         exit 1
     fi
     echo "[OK]   SHA256 verified: $(basename "${file}")"
+}
+
+# ---------------------------------------------------------------------------
+# Extract zip — tries 7z, then PowerShell Expand-Archive (Windows 11 native)
+# ---------------------------------------------------------------------------
+_extract_zip() {
+    local zip_file="$1"
+    local dest_dir="$2"
+    mkdir -p "${dest_dir}"
+    if command -v 7z &>/dev/null; then
+        echo "[INFO] Extracting with 7z..."
+        7z x "${zip_file}" -o"${dest_dir}" -y > /dev/null
+    else
+        echo "[INFO] Extracting with PowerShell Expand-Archive..."
+        local win_zip win_dest
+        win_zip="$(cygpath -w "${zip_file}")"
+        win_dest="$(cygpath -w "${dest_dir}")"
+        powershell.exe -NoProfile -Command \
+            "Expand-Archive -LiteralPath '${win_zip}' -DestinationPath '${win_dest}' -Force"
+    fi
 }
 
 # ---------------------------------------------------------------------------
@@ -132,12 +133,13 @@ if [[ "${BUILD_FROM_SOURCE}" == "false" ]]; then
         echo "[INFO] Reassembling archive..."
         cat "${PART_AA}" "${PART_AB}" > "${ASSEMBLED}"
 
-        echo "[INFO] Extracting to ${INSTALL_DIR}..."
-        mkdir -p "${INSTALL_DIR}"
+        echo "[INFO] Extracting..."
         tar -xzf "${ASSEMBLED}" -C "${WORK_DIR}"
-        # The tarball extracts to cmake-4.3.0-linux-x86_64/
         EXTRACTED_DIR="${WORK_DIR}/cmake-${CMAKE_VERSION}-linux-x86_64"
-        cp -r "${EXTRACTED_DIR}/." "${INSTALL_DIR}/"
+
+        echo "[INFO] Installing to ${INSTALL_PREFIX}..."
+        mkdir -p "${INSTALL_PREFIX}"
+        cp -r "${EXTRACTED_DIR}/." "${INSTALL_PREFIX}/"
 
     elif [[ "${PLATFORM}" == "windows" ]]; then
         PART_AA="${PREBUILT_DIR}/cmake-${CMAKE_VERSION}-windows-x86_64.zip.part-aa"
@@ -151,13 +153,23 @@ if [[ "${BUILD_FROM_SOURCE}" == "false" ]]; then
         echo "[INFO] Reassembling archive..."
         cat "${PART_AA}" "${PART_AB}" > "${ASSEMBLED}"
 
-        echo "[INFO] Extracting to ${INSTALL_DIR}..."
-        mkdir -p "${INSTALL_DIR}"
-        unzip -q "${ASSEMBLED}" -d "${WORK_DIR}"
+        _extract_zip "${ASSEMBLED}" "${WORK_DIR}"
+
         # The zip extracts to cmake-4.3.0-windows-x86_64/
         EXTRACTED_DIR="${WORK_DIR}/cmake-${CMAKE_VERSION}-windows-x86_64"
-        cp -r "${EXTRACTED_DIR}/." "${INSTALL_DIR}/"
+        if [[ ! -d "${EXTRACTED_DIR}" ]]; then
+            echo "[ERROR] Expected extracted directory not found: ${EXTRACTED_DIR}"
+            echo "        Contents of work dir:"
+            ls "${WORK_DIR}"
+            exit 1
+        fi
+
+        echo "[INFO] Installing to ${INSTALL_PREFIX}..."
+        mkdir -p "${INSTALL_PREFIX}"
+        cp -r "${EXTRACTED_DIR}/." "${INSTALL_PREFIX}/"
     fi
+
+    BUILD_TYPE="prebuilt"
 
 # ---------------------------------------------------------------------------
 # SOURCE BUILD PATH
@@ -169,7 +181,6 @@ else
     echo "[INFO] Verifying source tarball..."
     _verify_sha256 "${SOURCE_TARBALL}" "f51b3c729f85d8dde46a92c071d2826ea6afb77d850f46894125de7cc51baa77"
 
-    # Require a C++ compiler
     if ! command -v g++ &>/dev/null && ! command -v c++ &>/dev/null; then
         echo "[ERROR] No C++ compiler found. Install GCC first:"
         echo "        Linux  : sudo dnf install gcc-c++"
@@ -184,54 +195,55 @@ else
     tar -xzf "${SOURCE_TARBALL}" -C "${BUILD_WORK}"
     SRC_DIR="${BUILD_WORK}/cmake-${CMAKE_VERSION}"
 
-    echo "[INFO] Bootstrapping CMake from source (this takes ~10-20 min)..."
+    echo "[INFO] Bootstrapping CMake from source (~10-20 min)..."
     mkdir -p "${BUILD_WORK}/cmake-build"
     cd "${BUILD_WORK}/cmake-build"
 
     "${SRC_DIR}/bootstrap" \
-        --prefix="${INSTALL_DIR}" \
+        --prefix="${INSTALL_PREFIX}" \
         --parallel="$(nproc 2>/dev/null || echo 4)"
 
     echo "[INFO] Building..."
     make -j"$(nproc 2>/dev/null || echo 4)"
 
-    echo "[INFO] Installing to ${INSTALL_DIR}..."
+    echo "[INFO] Installing to ${INSTALL_PREFIX}..."
     make install
 
     cd "${REPO_ROOT}"
+    BUILD_TYPE="source"
 fi
 
 # ---------------------------------------------------------------------------
-# Write install receipt
-# ---------------------------------------------------------------------------
-mkdir -p "${INSTALL_DIR}"
-cat > "${INSTALL_DIR}/.airgap-receipt" <<EOF
-tool=cmake
-version=${CMAKE_VERSION}
-installed=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-mode=${INSTALL_MODE}
-build=$(${BUILD_FROM_SOURCE} && echo "source" || echo "prebuilt")
-EOF
-
-# ---------------------------------------------------------------------------
-# Verify installed binary
+# Verify installed binary works
 # ---------------------------------------------------------------------------
 echo ""
 echo "[INFO] Verifying installation..."
-if "${CMAKE_BIN}" --version &>/dev/null; then
-    INSTALLED_VER=$("${CMAKE_BIN}" --version | head -1)
-    echo "[✓] ${INSTALLED_VER}"
-    echo "[✓] Installed at: ${INSTALL_DIR}"
-else
+if ! "${CMAKE_BIN}" --version &>/dev/null; then
     echo "[ERROR] cmake binary not functional after install."
     exit 1
 fi
+INSTALLED_VER=$("${CMAKE_BIN}" --version | head -1 | awk '{print $3}')
 
+# ---------------------------------------------------------------------------
+# Write receipt
+# ---------------------------------------------------------------------------
+install_receipt_write "success" \
+    "cmake:${CMAKE_BIN}"
+
+echo "Build type   : ${BUILD_TYPE}" >> "${INSTALL_RECEIPT}"
+
+# ---------------------------------------------------------------------------
+# Print footer
+# ---------------------------------------------------------------------------
+install_mode_print_footer "success" \
+    "cmake:${CMAKE_BIN}"
+
+echo "  cmake ${INSTALLED_VER} installed successfully."
 echo ""
 echo "  Add to PATH if needed:"
 if [[ "${PLATFORM}" == "linux" ]]; then
-    echo "    export PATH=\"${INSTALL_DIR}/bin:\$PATH\""
+    echo "    export PATH=\"${INSTALL_BIN_DIR}:\$PATH\""
 else
-    echo "    export PATH=\"$(cygpath -u "${INSTALL_DIR}")/bin:\$PATH\""
+    echo "    export PATH=\"$(cygpath -u "${INSTALL_BIN_DIR}" 2>/dev/null || echo "${INSTALL_BIN_DIR}"):\$PATH\""
 fi
 echo ""
