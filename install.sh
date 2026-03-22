@@ -1,470 +1,431 @@
 #!/usr/bin/env bash
 # Author: Nima Shafie
 # =============================================================================
-# scripts/install-mode.sh
+# install.sh
 #
-# PURPOSE: Shared library sourced by all airgap-cpp-devkit bootstrap/setup
-#          scripts. Detects whether the current user has admin/root privileges,
-#          selects appropriate system-wide or per-user install paths, and
-#          provides helpers for install receipt and log file generation.
+# Top-level orchestrator for airgap-cpp-devkit.
+# Installs all tools in the correct order and wires PATH into ~/.bashrc.
+#
+# REQUIRED tools (installed automatically):
+#   - clang-llvm  (clang-format + clang-tidy)
+#   - cmake       4.3.0
+#   - lcov        2.4  (Linux only)
+#   - style-formatter  (pre-commit hook)
+#
+# OPTIONAL tools (prompted):
+#   - winlibs-gcc-ucrt  (Windows only)
+#   - grpc-source-build (Windows only)
 #
 # USAGE:
-#   Source this file early in any bootstrap/setup script:
-#     source "${REPO_ROOT}/scripts/install-mode.sh"
-#     install_mode_init "<tool-name>" "<tool-version>"
+#   bash install.sh [--prefix <path>] [--rebuild] [--yes]
 #
-#   Optional --prefix override (call before install_mode_init):
-#     INSTALL_PREFIX_OVERRIDE="/custom/path"
-#     install_mode_init "<tool-name>" "<tool-version>"
-#
-#   Then use the exported variables:
-#     INSTALL_MODE       — "admin", "user", or "custom"
-#     INSTALL_PREFIX     — root install directory
-#     INSTALL_BIN_DIR    — where binaries go
-#     INSTALL_LOG_FILE   — full path to the timestamped log file
-#     INSTALL_RECEIPT    — full path to the install receipt file
-#
-#   Helpers:
-#     install_mode_print_header    — print the mode banner
-#     install_mode_print_footer    — print the result banner
-#     install_receipt_write        — write the receipt file
-#     install_log_capture_start    — tee all output to log file
-#     install_env_register         — register bin dir in shared env.sh
-#     im_progress_start <msg>      — start elapsed-time ticker
-#     im_progress_stop  <msg>      — stop ticker, print final status
-#
-# INSTALL PATHS:
-#   Admin  Linux   : /opt/airgap-cpp-devkit/<tool>/
-#   Admin  Windows : C:\Program Files\airgap-cpp-devkit\<tool>\
-#   User   Linux   : ~/.local/share/airgap-cpp-devkit/<tool>/
-#   User   Windows : %LOCALAPPDATA%\airgap-cpp-devkit\<tool>\
-#   Custom         : path from --prefix / INSTALL_PREFIX_OVERRIDE
-#
-#   Log files:
-#   Windows : %TEMP%\airgap-cpp-devkit\logs\
-#   Linux   : /var/log/airgap-cpp-devkit/  (falls back to ~/airgap-cpp-devkit-logs/)
+# OPTIONS:
+#   --prefix <path>   Override install prefix for all tools
+#   --rebuild         Force reinstall of all tools
+#   --yes             Non-interactive: use defaults, skip confirmation screen
 # =============================================================================
 
-[[ -n "${_INSTALL_MODE_LOADED:-}" ]] && return 0
-_INSTALL_MODE_LOADED=1
+set -euo pipefail
 
-# Box inner width (visual columns between the border chars)
-_IM_BOX_WIDTH=98
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="${SCRIPT_DIR}"
 
 # ---------------------------------------------------------------------------
-# Internal helpers
+# Parse arguments
 # ---------------------------------------------------------------------------
-_im_os() {
-    case "$(uname -s)" in
-        MINGW*|MSYS*|CYGWIN*) echo "windows" ;;
-        Linux*)                echo "linux"   ;;
-        Darwin*)               echo "macos"   ;;
-        *)                     echo "unknown" ;;
+PREFIX_OVERRIDE=""
+REBUILD=false
+AUTO_YES=false
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --prefix)  PREFIX_OVERRIDE="$2"; shift 2 ;;
+        --rebuild) REBUILD=true; shift ;;
+        --yes)     AUTO_YES=true; shift ;;
+        -h|--help)
+            sed -n '2,/^[^#]/{/^#/!q; s/^# \?//; p}' "$0"
+            exit 0 ;;
+        *) echo "ERROR: Unknown argument: $1" >&2; exit 1 ;;
     esac
-}
-
-_im_can_write_system() {
-    local test_path="$1"
-    mkdir -p "${test_path}" 2>/dev/null || true
-    local test_file="${test_path}/.airgap_write_test_$$"
-    if touch "${test_file}" 2>/dev/null; then
-        rm -f "${test_file}" 2>/dev/null || true
-        return 0
-    fi
-    return 1
-}
-
-_im_localappdata() {
-    if [[ -n "${LOCALAPPDATA:-}" ]]; then
-        cygpath -u "${LOCALAPPDATA}" 2>/dev/null || \
-            printf '%s' "${LOCALAPPDATA}" | sed 's|\\|/|g; s|^C:|/c|i'
-    else
-        echo "${HOME}/AppData/Local"
-    fi
-}
-
-_im_temp_dir() {
-    local os="$(_im_os)"
-    if [[ "${os}" == "windows" ]]; then
-        if [[ -n "${TEMP:-}" ]]; then
-            cygpath -u "${TEMP}" 2>/dev/null || \
-                printf '%s' "${TEMP}" | sed 's|\\|/|g; s|^C:|/c|i'
-        else
-            echo "${HOME}/AppData/Local/Temp"
-        fi
-    else
-        echo "/tmp"
-    fi
-}
+done
 
 # ---------------------------------------------------------------------------
-# _im_box_line <string>
-#
-# Prints a single box content row: ║<content padded to _IM_BOX_WIDTH cols>║
-#
-# All characters are ASCII so byte count == visual column count.
-# Strings longer than _IM_BOX_WIDTH are truncated with "...".
+# Detect platform
 # ---------------------------------------------------------------------------
-_im_box_line() {
+case "$(uname -s)" in
+    MINGW*|MSYS*|CYGWIN*) OS="windows" ;;
+    Linux*)                OS="linux"   ;;
+    *) echo "ERROR: Unsupported platform." >&2; exit 1 ;;
+esac
+
+# ---------------------------------------------------------------------------
+# Source install-mode library (for box helpers + im_progress_*)
+# ---------------------------------------------------------------------------
+source "${REPO_ROOT}/scripts/install-mode.sh"
+
+# ---------------------------------------------------------------------------
+# Box helpers (local — install-mode not fully init'd yet)
+# ---------------------------------------------------------------------------
+_W=98
+_box_top()  { local l=""; local i; for((i=0;i<_W;i++)); do l+="═"; done; printf '╔%s╗\n' "${l}"; }
+_box_mid()  { local l=""; local i; for((i=0;i<_W;i++)); do l+="═"; done; printf '╠%s╣\n' "${l}"; }
+_box_bot()  { local l=""; local i; for((i=0;i<_W;i++)); do l+="═"; done; printf '╚%s╝\n' "${l}"; }
+_box_line() {
     local str="$1"
-    local width="${_IM_BOX_WIDTH}"
-
-    # Truncate if needed (pure ASCII — byte len == visual len)
-    if (( ${#str} > width )); then
-        str="${str:0:$(( width - 3 ))}..."
-    fi
-
-    # Pad to exact width
-    local pad=$(( width - ${#str} ))
-    local padding
-    padding="$(printf '%*s' "${pad}" '')"
-    printf '║%s%s║\n' "${str}" "${padding}"
+    if (( ${#str} > _W )); then str="${str:0:$(( _W - 3 ))}..."; fi
+    local pad=$(( _W - ${#str} ))
+    printf '║%s%*s║\n' "${str}" "${pad}" ""
 }
-
-_im_box_rule() {
-    # Prints a full-width horizontal rule using the given char (default ═)
-    local char="${1:-═}"
-    local line=""
-    local i
-    for (( i=0; i<_IM_BOX_WIDTH; i++ )); do line+="${char}"; done
-    printf '║%s║\n' "${line}"
-}
-
-_im_box_top()    { local l=""; local i; for((i=0;i<_IM_BOX_WIDTH;i++)); do l+="═"; done; printf '╔%s╗\n' "${l}"; }
-_im_box_mid()    { local l=""; local i; for((i=0;i<_IM_BOX_WIDTH;i++)); do l+="═"; done; printf '╠%s╣\n' "${l}"; }
-_im_box_bottom() { local l=""; local i; for((i=0;i<_IM_BOX_WIDTH;i++)); do l+="═"; done; printf '╚%s╝\n' "${l}"; }
+_box_blank() { printf '║%*s║\n' "${_W}" ""; }
 
 # ---------------------------------------------------------------------------
-# install_mode_init <tool_name> <tool_version> [--prefix <path>]
+# Determine install prefix candidates
 # ---------------------------------------------------------------------------
-install_mode_init() {
-    local tool_name="${1:-unknown}"
-    local tool_version="${2:-unknown}"
-    shift 2 || true
-
-    # Parse optional --prefix
-    local prefix_override="${INSTALL_PREFIX_OVERRIDE:-}"
-    while [[ $# -gt 0 ]]; do
-        case "$1" in
-            --prefix) prefix_override="$2"; shift 2 ;;
-            *) shift ;;
-        esac
-    done
-
-    local os
-    os="$(_im_os)"
-    local timestamp
-    timestamp="$(date +"%Y%m%d-%H%M%S")"
-
-    local sys_prefix user_prefix
-    case "${os}" in
+_get_sys_prefix() {
+    case "${OS}" in
         windows)
             local pf
             pf="$(cygpath -u "${PROGRAMFILES:-/c/Program Files}" 2>/dev/null || echo "/c/Program Files")"
-            sys_prefix="${pf}/airgap-cpp-devkit/${tool_name}"
-            user_prefix="$(_im_localappdata)/airgap-cpp-devkit/${tool_name}"
+            echo "${pf}/airgap-cpp-devkit"
             ;;
-        linux|macos)
-            sys_prefix="/opt/airgap-cpp-devkit/${tool_name}"
-            user_prefix="${HOME}/.local/share/airgap-cpp-devkit/${tool_name}"
-            ;;
-        *)
-            sys_prefix="/opt/airgap-cpp-devkit/${tool_name}"
-            user_prefix="${HOME}/.local/share/airgap-cpp-devkit/${tool_name}"
-            ;;
+        linux) echo "/opt/airgap-cpp-devkit" ;;
     esac
+}
 
-    if [[ -n "${prefix_override}" ]]; then
-        export INSTALL_MODE="custom"
-        export INSTALL_PREFIX="${prefix_override}"
-    elif _im_can_write_system "${sys_prefix}"; then
-        export INSTALL_MODE="admin"
-        export INSTALL_PREFIX="${sys_prefix}"
-    else
-        export INSTALL_MODE="user"
-        export INSTALL_PREFIX="${user_prefix}"
-    fi
-
-    export INSTALL_BIN_DIR="${INSTALL_PREFIX}/bin"
-    export INSTALL_TOOL_NAME="${tool_name}"
-    export INSTALL_TOOL_VERSION="${tool_version}"
-    export INSTALL_TIMESTAMP="${timestamp}"
-    export INSTALL_OS="${os}"
-
-    local log_base
-    case "${os}" in
+_get_user_prefix() {
+    case "${OS}" in
         windows)
-            log_base="$(_im_temp_dir)/airgap-cpp-devkit/logs"
+            local lad
+            lad="$(cygpath -u "${LOCALAPPDATA:-${HOME}/AppData/Local}" 2>/dev/null || echo "${HOME}/AppData/Local")"
+            echo "${lad}/airgap-cpp-devkit"
             ;;
-        linux|macos)
-            if _im_can_write_system "/var/log/airgap-cpp-devkit"; then
-                log_base="/var/log/airgap-cpp-devkit"
-            else
-                log_base="${HOME}/airgap-cpp-devkit-logs"
-            fi
-            ;;
-        *)
-            log_base="${HOME}/airgap-cpp-devkit-logs"
-            ;;
+        linux) echo "${HOME}/.local/share/airgap-cpp-devkit" ;;
     esac
-    mkdir -p "${log_base}" 2>/dev/null || true
-    export INSTALL_LOG_DIR="${log_base}"
-    export INSTALL_LOG_FILE="${log_base}/${tool_name}-${timestamp}.log"
-    export INSTALL_RECEIPT="${INSTALL_PREFIX}/INSTALL_RECEIPT.txt"
-
-    install_mode_print_header
 }
 
+SYS_PREFIX="$(_get_sys_prefix)"
+USER_PREFIX="$(_get_user_prefix)"
+
 # ---------------------------------------------------------------------------
-# install_mode_print_header
+# CONFIRMATION SCREEN
 # ---------------------------------------------------------------------------
-install_mode_print_header() {
-    local mode_label scope_label mode_icon
-    case "${INSTALL_MODE}" in
-        admin)
-            mode_label="SYSTEM-WIDE  (admin / root)"
-            scope_label="ALL users on this machine"
-            mode_icon="[OK]"
-            ;;
-        custom)
-            mode_label="CUSTOM PREFIX  (--prefix override)"
-            scope_label="Custom path: ${INSTALL_PREFIX}"
-            mode_icon="[>>]"
-            ;;
-        *)
-            mode_label="CURRENT USER ONLY  (no admin rights detected)"
-            scope_label="THIS user only — other users will NOT have access"
-            mode_icon="[!!]"
-            ;;
-    esac
+if [[ "${AUTO_YES}" == "false" ]]; then
 
     echo ""
-    _im_box_top
-    _im_box_line "  airgap-cpp-devkit — Install Mode"
-    _im_box_mid
-    _im_box_line "  Tool        : ${INSTALL_TOOL_NAME} ${INSTALL_TOOL_VERSION}"
-    _im_box_line "  Mode        : ${mode_icon}  ${mode_label}"
-    _im_box_line "  Install dir : ${INSTALL_PREFIX}"
-    _im_box_line "  Available to: ${scope_label}"
-    _im_box_line "  Log file    : ${INSTALL_LOG_FILE}"
-    _im_box_bottom
+    _box_top
+    _box_line "  airgap-cpp-devkit — Installation Wizard"
+    _box_mid
+    _box_line "  Platform : ${OS}   Date : $(date '+%Y-%m-%d %H:%M:%S')"
+    _box_blank
+    _box_line "  REQUIRED (installed automatically):"
+    _box_line "    [1] clang-llvm    clang-format + clang-tidy 22.1.1"
+    _box_line "    [2] cmake         4.3.0"
+    if [[ "${OS}" == "linux" ]]; then
+    _box_line "    [3] lcov          2.4"
+    fi
+    _box_line "    [4] style-formatter   pre-commit hook"
+    _box_blank
+    if [[ "${OS}" == "windows" ]]; then
+    _box_line "  OPTIONAL (you will be prompted):"
+    _box_line "    [5] winlibs-gcc-ucrt   GCC 15.2.0 + MinGW-w64 (requires 7z)"
+    _box_line "    [6] grpc-source-build  gRPC C++ (requires Visual Studio)"
+    _box_blank
+    fi
+    _box_mid
+    _box_line "  INSTALL MODE"
+    _box_blank
+    _box_line "  [A] System-wide (admin)   -> ${SYS_PREFIX}"
+    _box_line "  [U] Current user only     -> ${USER_PREFIX}"
+    _box_line "  [C] Custom prefix         -> specify your own path"
+    _box_blank
+    _box_bot
     echo ""
 
-    if [[ "${INSTALL_MODE}" == "user" ]]; then
-        echo "  [!!] NOTE: Running without admin/root privileges."
-        echo "       Tools will be installed to your personal directory only."
-        echo "       To install system-wide, re-run as admin/root:"
-        case "${INSTALL_OS}" in
-            windows) echo "         Right-click Git Bash -> 'Run as administrator'" ;;
-            linux)   echo "         sudo bash $(basename "$0")" ;;
+    # --- Install mode choice ---
+    while true; do
+        printf "  Choose install mode [A/U/C]: "
+        read -r MODE_CHOICE
+        case "${MODE_CHOICE^^}" in
+            A)
+                export INSTALL_PREFIX_OVERRIDE="${SYS_PREFIX}"
+                echo "  [OK] System-wide install: ${SYS_PREFIX}"
+                break ;;
+            U)
+                export INSTALL_PREFIX_OVERRIDE="${USER_PREFIX}"
+                echo "  [OK] User install: ${USER_PREFIX}"
+                break ;;
+            C)
+                printf "  Enter custom prefix path: "
+                read -r CUSTOM_PATH
+                if [[ -z "${CUSTOM_PATH}" ]]; then
+                    echo "  [!!] Path cannot be empty."
+                else
+                    export INSTALL_PREFIX_OVERRIDE="${CUSTOM_PATH}"
+                    echo "  [OK] Custom install: ${CUSTOM_PATH}"
+                    break
+                fi ;;
+            *) echo "  [!!] Invalid choice. Enter A, U, or C." ;;
         esac
-        echo "       Or specify a custom path:"
-        echo "         bash $(basename "$0") --prefix /your/path"
-        echo ""
-    fi
-}
-
-# ---------------------------------------------------------------------------
-# install_mode_print_footer <status> [<label:path> ...]
-# ---------------------------------------------------------------------------
-install_mode_print_footer() {
-    local status="${1:-success}"
-    shift || true
-
-    local status_label status_icon
-    if [[ "${status}" == "success" ]]; then
-        status_label="SUCCESS"
-        status_icon="[OK]"
-    else
-        status_label="FAILED"
-        status_icon="[!!]"
-    fi
-
-    echo ""
-    _im_box_top
-    _im_box_line "  ${status_icon}  ${INSTALL_TOOL_NAME} ${INSTALL_TOOL_VERSION} — ${status_label}"
-    _im_box_mid
-    _im_box_line "  Install mode : ${INSTALL_MODE}"
-    _im_box_line "  Install path : ${INSTALL_PREFIX}"
-    for pair in "$@"; do
-        local label="${pair%%:*}"
-        local path="${pair#*:}"
-        _im_box_line "  ${label} : ${path}"
     done
-    _im_box_mid
-    _im_box_line "  Log     : ${INSTALL_LOG_FILE}"
-    _im_box_line "  Receipt : ${INSTALL_RECEIPT}"
-    _im_box_bottom
+
     echo ""
 
-    if [[ "${INSTALL_MODE}" == "user" ]]; then
-        echo "  [!!] Installed to user path — NOT available to other users."
-        echo "       Re-run as admin/root to install system-wide."
-        echo ""
-    fi
-}
+    # --- Optional tools ---
+    INSTALL_WINLIBS=false
+    INSTALL_GRPC=false
+    GRPC_VERSION="1.78.1"
 
-# ---------------------------------------------------------------------------
-# install_receipt_write <status> [<label:path> ...]
-# ---------------------------------------------------------------------------
-install_receipt_write() {
-    local status="${1:-success}"
-    shift || true
+    if [[ "${OS}" == "windows" ]]; then
+        printf "  Install winlibs-gcc-ucrt? (GCC 15.2.0, requires 7z) [y/N]: "
+        read -r reply
+        [[ "${reply^^}" == "Y" ]] && INSTALL_WINLIBS=true
 
-    mkdir -p "${INSTALL_PREFIX}" 2>/dev/null || true
-
-    {
-        echo "airgap-cpp-devkit — Install Receipt"
-        echo "===================================="
-        echo ""
-        echo "Tool         : ${INSTALL_TOOL_NAME}"
-        echo "Version      : ${INSTALL_TOOL_VERSION}"
-        echo "Status       : ${status}"
-        echo "Install mode : ${INSTALL_MODE}"
-        echo "Install path : ${INSTALL_PREFIX}"
-        echo "Date         : $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-        echo "User         : $(whoami 2>/dev/null || echo unknown)"
-        echo "Hostname     : $(hostname 2>/dev/null || echo unknown)"
-        echo "OS           : ${INSTALL_OS}"
-        echo "Log file     : ${INSTALL_LOG_FILE}"
-        echo ""
-        if [[ $# -gt 0 ]]; then
-            echo "Installed binaries:"
-            for pair in "$@"; do
-                local label="${pair%%:*}"
-                local path="${pair#*:}"
-                echo "  ${label} : ${path}"
-                if [[ -f "${path}" || -f "${path}.exe" ]]; then
-                    local actual_path="${path}"
-                    [[ -f "${path}.exe" ]] && actual_path="${path}.exe"
-                    local sha256
-                    sha256="$(sha256sum "${actual_path}" 2>/dev/null | awk '{print $1}' || echo "unavailable")"
-                    echo "    SHA256 : ${sha256}"
-                fi
-            done
-        fi
-        echo ""
-        echo "Available to all users : $([[ "${INSTALL_MODE}" == "admin" ]] && echo "YES" || echo "NO — current user only")"
-        echo ""
-        if [[ "${INSTALL_MODE}" == "user" ]]; then
-            echo "WARNING: This installation is only accessible to the current user."
-            echo "         To make available system-wide, re-run as admin/root."
-        fi
-    } > "${INSTALL_RECEIPT}" 2>/dev/null || {
-        echo "[install-mode] WARNING: Could not write receipt to ${INSTALL_RECEIPT}" >&2
-    }
-
-    echo "[install-mode] Receipt written: ${INSTALL_RECEIPT}"
-}
-
-# ---------------------------------------------------------------------------
-# install_log_capture_start
-# ---------------------------------------------------------------------------
-install_log_capture_start() {
-    mkdir -p "${INSTALL_LOG_DIR}" 2>/dev/null || true
-
-    {
-        echo "airgap-cpp-devkit — Install Log"
-        echo "================================"
-        echo "Tool      : ${INSTALL_TOOL_NAME} ${INSTALL_TOOL_VERSION}"
-        echo "Mode      : ${INSTALL_MODE}"
-        echo "Prefix    : ${INSTALL_PREFIX}"
-        echo "Date      : $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-        echo "User      : $(whoami 2>/dev/null || echo unknown)"
-        echo "Hostname  : $(hostname 2>/dev/null || echo unknown)"
-        echo "================================"
-        echo ""
-    } >> "${INSTALL_LOG_FILE}" 2>/dev/null || true
-
-    exec > >(tee -a "${INSTALL_LOG_FILE}") 2>&1
-
-    echo "[install-mode] Logging to: ${INSTALL_LOG_FILE}"
-    echo ""
-}
-
-# ---------------------------------------------------------------------------
-# im_progress_start <message>
-#
-# Prints a spinner line that updates in-place every second with elapsed time.
-# Call im_progress_stop when the operation finishes.
-# ---------------------------------------------------------------------------
-_IM_PROGRESS_PID=""
-_IM_PROGRESS_START_TIME=""
-
-im_progress_start() {
-    local msg="${1:-Working}"
-    _IM_PROGRESS_START_TIME="$(date +%s)"
-    local spin='|/-\'
-    # Write directly to /dev/tty so the spinner bypasses any tee pipe
-    printf "  [....] %s" "${msg}" > /dev/tty
-    (
-        local i=0
-        while true; do
-            local now elapsed mins secs frame
-            now="$(date +%s)"
-            elapsed=$(( now - _IM_PROGRESS_START_TIME ))
-            mins=$(( elapsed / 60 ))
-            secs=$(( elapsed % 60 ))
-            frame="${spin:$(( i % 4 )):1}"
-            printf "\r  [ %s  ] %s  (%02d:%02d elapsed)" \
-                "${frame}" "${msg}" "${mins}" "${secs}" > /dev/tty
-            (( i++ )) || true
-            sleep 1
-        done
-    ) &
-    _IM_PROGRESS_PID=$!
-    disown "${_IM_PROGRESS_PID}" 2>/dev/null || true
-}
-
-im_progress_stop() {
-    local final_msg="${1:-Done}"
-    if [[ -n "${_IM_PROGRESS_PID:-}" ]]; then
-        kill "${_IM_PROGRESS_PID}" 2>/dev/null || true
-        wait "${_IM_PROGRESS_PID}" 2>/dev/null || true
-        _IM_PROGRESS_PID=""
-    fi
-    local now elapsed mins secs
-    now="$(date +%s)"
-    elapsed=$(( now - ${_IM_PROGRESS_START_TIME:-now} ))
-    mins=$(( elapsed / 60 ))
-    secs=$(( elapsed % 60 ))
-    # Clear line fully before printing final status — write to /dev/tty
-    printf "\r%-120s\r" " " > /dev/tty
-    printf "  [OK]  %s  (%02d:%02d)\n" "${final_msg}" "${mins}" "${secs}" > /dev/tty
-    _IM_PROGRESS_START_TIME=""
-}
-
-# ---------------------------------------------------------------------------
-# install_env_register <bin_dir>
-#
-# Appends bin_dir to the shared env.sh (one level above tool install dir).
-# The install.sh orchestrator wires this file into ~/.bashrc once.
-# ---------------------------------------------------------------------------
-install_env_register() {
-    local bin_dir="$1"
-    local env_dir
-    env_dir="$(dirname "${INSTALL_PREFIX}")"
-    local env_file="${env_dir}/env.sh"
-
-    mkdir -p "${env_dir}" 2>/dev/null || true
-
-    if [[ ! -f "${env_file}" ]]; then
-        {
-            echo "# airgap-cpp-devkit — PATH environment"
-            echo "# Auto-generated by install-mode.sh — do not edit manually."
-            echo "# Source this file from ~/.bashrc to put all tools on PATH:"
-            echo "#   source \"${env_file}\""
+        printf "  Install grpc-source-build? (requires Visual Studio) [y/N]: "
+        read -r reply
+        if [[ "${reply^^}" == "Y" ]]; then
+            INSTALL_GRPC=true
             echo ""
-        } > "${env_file}"
+            echo "  gRPC version:"
+            echo "    [1] 1.76.0  (production-tested)"
+            echo "    [2] 1.78.1  (latest, default)"
+            printf "  Choose [1/2, default=2]: "
+            read -r ver_choice
+            case "${ver_choice}" in
+                1) GRPC_VERSION="1.76.0" ;;
+                *) GRPC_VERSION="1.78.1" ;;
+            esac
+            echo "  [OK] gRPC version: ${GRPC_VERSION}"
+        fi
+        echo ""
     fi
 
-    local export_line="export PATH=\"${bin_dir}:\${PATH}\""
-    if ! grep -qF "${bin_dir}" "${env_file}" 2>/dev/null; then
-        echo "${export_line}" >> "${env_file}"
-        echo "[install-mode] Registered PATH: ${bin_dir} -> ${env_file}"
+    # --- Final confirmation ---
+    echo ""
+    _box_top
+    _box_line "  Ready to install — please confirm"
+    _box_mid
+    _box_line "  Install prefix : ${INSTALL_PREFIX_OVERRIDE}"
+    _box_line "  Rebuild        : ${REBUILD}"
+    _box_blank
+    _box_line "  Tools to install:"
+    _box_line "    [OK] clang-llvm, cmake, style-formatter"
+    [[ "${OS}" == "linux" ]] && _box_line "    [OK] lcov"
+    [[ "${INSTALL_WINLIBS}" == "true" ]] && _box_line "    [OK] winlibs-gcc-ucrt"
+    [[ "${INSTALL_GRPC}" == "true" ]]    && _box_line "    [OK] grpc-source-build ${GRPC_VERSION}"
+    _box_bot
+    echo ""
+    printf "  Press Enter to begin installation, or Ctrl+C to cancel..."
+    read -r
+
+else
+    # --yes mode: use defaults
+    if [[ -n "${PREFIX_OVERRIDE}" ]]; then
+        export INSTALL_PREFIX_OVERRIDE="${PREFIX_OVERRIDE}"
     else
-        echo "[install-mode] PATH already registered: ${bin_dir}"
+        export INSTALL_PREFIX_OVERRIDE="${USER_PREFIX}"
+    fi
+    INSTALL_WINLIBS=false
+    INSTALL_GRPC=false
+    GRPC_VERSION="1.78.1"
+    echo ""
+    echo "  [--yes] Non-interactive mode. Installing to: ${INSTALL_PREFIX_OVERRIDE}"
+    echo ""
+fi
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+INSTALLED_TOOLS=()
+FAILED_TOOLS=()
+SKIPPED_TOOLS=()
+
+_run_bootstrap() {
+    local label="$1" script="$2"
+    shift 2
+    local extra_args=("$@")
+
+    echo ""
+    echo "  ── ${label} ──────────────────────────────────────────────────────"
+
+    local rebuild_arg=()
+    [[ "${REBUILD}" == "true" ]] && rebuild_arg=("--rebuild")
+
+    if bash "${script}" \
+        --prefix "${INSTALL_PREFIX_OVERRIDE}" \
+        "${rebuild_arg[@]}" \
+        "${extra_args[@]}"; then
+        INSTALLED_TOOLS+=("${label}")
+    else
+        FAILED_TOOLS+=("${label}")
+        echo ""
+        echo "  [!!] ${label} FAILED — continuing with remaining tools."
+    fi
+}
+
+# ---------------------------------------------------------------------------
+# Banner
+# ---------------------------------------------------------------------------
+echo ""
+_box_top
+_box_line "  airgap-cpp-devkit — Installing"
+_box_mid
+_box_line "  Platform : ${OS}   Prefix : ${INSTALL_PREFIX_OVERRIDE}"
+_box_bot
+echo ""
+
+# ---------------------------------------------------------------------------
+# Step 1: prebuilt-binaries submodule
+# ---------------------------------------------------------------------------
+echo "  [1/6] Checking prebuilt-binaries submodule..."
+if ! git -C "${REPO_ROOT}" submodule status prebuilt-binaries 2>/dev/null | grep -q "^[^-]"; then
+    im_progress_start "Initialising prebuilt-binaries submodule"
+    git -C "${REPO_ROOT}" submodule update --init --recursive prebuilt-binaries
+    im_progress_stop "Submodule ready"
+else
+    echo "  [OK]  prebuilt-binaries already initialized."
+fi
+
+# ---------------------------------------------------------------------------
+# Step 2: clang-llvm
+# ---------------------------------------------------------------------------
+echo ""
+echo "  [2/6] Installing clang-llvm (required)..."
+_run_bootstrap "clang-llvm" \
+    "${REPO_ROOT}/clang-llvm/source-build/bootstrap.sh"
+
+# ---------------------------------------------------------------------------
+# Step 3: cmake
+# ---------------------------------------------------------------------------
+echo ""
+echo "  [3/6] Installing cmake (required)..."
+_run_bootstrap "cmake" \
+    "${REPO_ROOT}/cmake/bootstrap.sh"
+
+# ---------------------------------------------------------------------------
+# Step 4: lcov (Linux only)
+# ---------------------------------------------------------------------------
+if [[ "${OS}" == "linux" ]]; then
+    echo ""
+    echo "  [4/6] Installing lcov (required on Linux)..."
+    _run_bootstrap "lcov" \
+        "${REPO_ROOT}/lcov-source-build/bootstrap.sh"
+else
+    echo ""
+    echo "  [4/6] lcov — skipped (Linux only)"
+    SKIPPED_TOOLS+=("lcov (Linux only)")
+fi
+
+# ---------------------------------------------------------------------------
+# Step 5: style-formatter
+# ---------------------------------------------------------------------------
+echo ""
+echo "  [5/6] Installing style-formatter (required)..."
+_run_bootstrap "style-formatter" \
+    "${REPO_ROOT}/clang-llvm/style-formatter/bootstrap.sh"
+
+# ---------------------------------------------------------------------------
+# Step 6: optional tools
+# ---------------------------------------------------------------------------
+echo ""
+echo "  [6/6] Optional tools..."
+
+if [[ "${OS}" == "windows" ]]; then
+    if [[ "${INSTALL_WINLIBS}" == "true" ]]; then
+        _run_bootstrap "winlibs-gcc-ucrt" \
+            "${REPO_ROOT}/prebuilt/winlibs-gcc-ucrt/setup.sh"
+    else
+        echo "  [--]  Skipped: winlibs-gcc-ucrt"
+        SKIPPED_TOOLS+=("winlibs-gcc-ucrt")
     fi
 
-    echo "${env_file}"
-}
+    if [[ "${INSTALL_GRPC}" == "true" ]]; then
+        _run_bootstrap "grpc-${GRPC_VERSION}" \
+            "${REPO_ROOT}/grpc-source-build/setup_grpc.sh" \
+            "--version" "${GRPC_VERSION}"
+    else
+        echo "  [--]  Skipped: grpc-source-build"
+        SKIPPED_TOOLS+=("grpc-source-build")
+    fi
+else
+    echo "  [--]  winlibs-gcc-ucrt  — skipped (Windows only)"
+    echo "  [--]  grpc-source-build — skipped (Windows only)"
+    SKIPPED_TOOLS+=("winlibs-gcc-ucrt (Windows only)" "grpc-source-build (Windows only)")
+fi
+
+# ---------------------------------------------------------------------------
+# Wire env.sh into ~/.bashrc
+# ---------------------------------------------------------------------------
+echo ""
+echo "  Wiring env.sh into ~/.bashrc..."
+
+ENV_DIR="${INSTALL_PREFIX_OVERRIDE}"
+ENV_FILE="${ENV_DIR}/env.sh"
+BASHRC="${HOME}/.bashrc"
+
+if [[ -f "${ENV_FILE}" ]]; then
+    SOURCE_LINE="source \"${ENV_FILE}\""
+    if grep -qF "${ENV_FILE}" "${BASHRC}" 2>/dev/null; then
+        echo "  [OK]  env.sh already wired into ${BASHRC}"
+    else
+        echo "" >> "${BASHRC}"
+        echo "# airgap-cpp-devkit — added by install.sh" >> "${BASHRC}"
+        echo "${SOURCE_LINE}" >> "${BASHRC}"
+        echo "  [OK]  Added to ${BASHRC}: ${SOURCE_LINE}"
+    fi
+else
+    echo "  [!!]  env.sh not found at ${ENV_FILE}"
+    echo "        PATH not wired — source manually after install completes."
+fi
+
+# ---------------------------------------------------------------------------
+# Final summary
+# ---------------------------------------------------------------------------
+echo ""
+_box_top
+_box_line "  airgap-cpp-devkit — Installation Complete"
+_box_mid
+_box_line "  Platform : ${OS}   Date : $(date '+%Y-%m-%d %H:%M:%S')"
+_box_mid
+
+if [[ ${#INSTALLED_TOOLS[@]} -gt 0 ]]; then
+    _box_line "  Installed:"
+    for t in "${INSTALLED_TOOLS[@]}"; do
+        _box_line "    [OK]  ${t}"
+    done
+fi
+
+if [[ ${#SKIPPED_TOOLS[@]} -gt 0 ]]; then
+    _box_line "  Skipped:"
+    for t in "${SKIPPED_TOOLS[@]}"; do
+        _box_line "    [--]  ${t}"
+    done
+fi
+
+if [[ ${#FAILED_TOOLS[@]} -gt 0 ]]; then
+    _box_line "  FAILED:"
+    for t in "${FAILED_TOOLS[@]}"; do
+        _box_line "    [!!]  ${t}"
+    done
+fi
+
+_box_mid
+_box_line "  Prefix  : ${INSTALL_PREFIX_OVERRIDE}"
+[[ -f "${ENV_FILE}" ]] && _box_line "  env.sh  : ${ENV_FILE}"
+_box_bot
+
+echo ""
+if [[ ${#FAILED_TOOLS[@]} -gt 0 ]]; then
+    echo "  [!!] Some tools failed. Check logs in:"
+    case "${OS}" in
+        windows) echo "         %TEMP%\\airgap-cpp-devkit\\logs\\" ;;
+        linux)   echo "         /var/log/airgap-cpp-devkit/" ;;
+    esac
+    echo ""
+    exit 1
+fi
+
+echo "  Restart your shell or run:"
+[[ -f "${ENV_FILE}" ]] && echo "    source \"${ENV_FILE}\""
+echo ""
+echo "  All installed tools will then be available on PATH."
+echo ""
