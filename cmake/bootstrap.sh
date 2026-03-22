@@ -101,10 +101,8 @@ _extract_zip() {
     local dest_dir="$2"
     mkdir -p "${dest_dir}"
     if command -v 7z &>/dev/null; then
-        echo "[INFO] Extracting with 7z..."
         7z x "${zip_file}" -o"${dest_dir}" -y > /dev/null
     else
-        echo "[INFO] Extracting with PowerShell Expand-Archive..."
         local win_zip win_dest
         win_zip="$(cygpath -w "${zip_file}")"
         win_dest="$(cygpath -w "${dest_dir}")"
@@ -130,16 +128,20 @@ if [[ "${BUILD_FROM_SOURCE}" == "false" ]]; then
         _verify_sha256 "${PART_AA}" "57d532fe7e398e16c16b07a01313a74cf71b03b9ddb39493f337e3598d7838e5"
         _verify_sha256 "${PART_AB}" "0fe83ca763e44f555794cce952c7a6bc7484841a8ecff4de23a43f2e863dd738"
 
-        echo "[INFO] Reassembling archive..."
+        im_progress_start "Reassembling archive"
         cat "${PART_AA}" "${PART_AB}" > "${ASSEMBLED}"
+        im_progress_stop "Archive reassembled"
 
-        echo "[INFO] Extracting..."
+        im_progress_start "Extracting cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz"
         tar -xzf "${ASSEMBLED}" -C "${WORK_DIR}"
+        im_progress_stop "Extraction complete"
+
         EXTRACTED_DIR="${WORK_DIR}/cmake-${CMAKE_VERSION}-linux-x86_64"
 
-        echo "[INFO] Installing to ${INSTALL_PREFIX}..."
+        im_progress_start "Installing to ${INSTALL_PREFIX}"
         mkdir -p "${INSTALL_PREFIX}"
         cp -r "${EXTRACTED_DIR}/." "${INSTALL_PREFIX}/"
+        im_progress_stop "Installation complete"
 
     elif [[ "${PLATFORM}" == "windows" ]]; then
         PART_AA="${PREBUILT_DIR}/cmake-${CMAKE_VERSION}-windows-x86_64.zip.part-aa"
@@ -150,12 +152,14 @@ if [[ "${BUILD_FROM_SOURCE}" == "false" ]]; then
         _verify_sha256 "${PART_AA}" "4ac8f0d10b7d771e28fa5ecba9f5683756b6327ebfdbd66c552f430c3655ba59"
         _verify_sha256 "${PART_AB}" "bf4abc210d2c83ce6542de3158cbd8239e09c24605718095b68d1f1c1094a113"
 
-        echo "[INFO] Reassembling archive..."
+        im_progress_start "Reassembling archive"
         cat "${PART_AA}" "${PART_AB}" > "${ASSEMBLED}"
+        im_progress_stop "Archive reassembled"
 
+        im_progress_start "Extracting cmake-${CMAKE_VERSION}-windows-x86_64.zip"
         _extract_zip "${ASSEMBLED}" "${WORK_DIR}"
+        im_progress_stop "Extraction complete"
 
-        # The zip extracts to cmake-4.3.0-windows-x86_64/
         EXTRACTED_DIR="${WORK_DIR}/cmake-${CMAKE_VERSION}-windows-x86_64"
         if [[ ! -d "${EXTRACTED_DIR}" ]]; then
             echo "[ERROR] Expected extracted directory not found: ${EXTRACTED_DIR}"
@@ -164,9 +168,10 @@ if [[ "${BUILD_FROM_SOURCE}" == "false" ]]; then
             exit 1
         fi
 
-        echo "[INFO] Installing to ${INSTALL_PREFIX}..."
+        im_progress_start "Installing to ${INSTALL_PREFIX}"
         mkdir -p "${INSTALL_PREFIX}"
         cp -r "${EXTRACTED_DIR}/." "${INSTALL_PREFIX}/"
+        im_progress_stop "Installation complete"
     fi
 
     BUILD_TYPE="prebuilt"
@@ -191,23 +196,29 @@ else
     BUILD_WORK="$(mktemp -d)"
     trap 'rm -rf "${BUILD_WORK}"' EXIT
 
-    echo "[INFO] Extracting source tarball..."
+    im_progress_start "Extracting source tarball"
     tar -xzf "${SOURCE_TARBALL}" -C "${BUILD_WORK}"
+    im_progress_stop "Source extracted"
+
     SRC_DIR="${BUILD_WORK}/cmake-${CMAKE_VERSION}"
 
     echo "[INFO] Bootstrapping CMake from source (~10-20 min)..."
     mkdir -p "${BUILD_WORK}/cmake-build"
     cd "${BUILD_WORK}/cmake-build"
 
+    im_progress_start "Running CMake bootstrap"
     "${SRC_DIR}/bootstrap" \
         --prefix="${INSTALL_PREFIX}" \
         --parallel="$(nproc 2>/dev/null || echo 4)"
+    im_progress_stop "Bootstrap complete"
 
-    echo "[INFO] Building..."
+    im_progress_start "Building CMake (this may take 10-20 min)"
     make -j"$(nproc 2>/dev/null || echo 4)"
+    im_progress_stop "Build complete"
 
-    echo "[INFO] Installing to ${INSTALL_PREFIX}..."
+    im_progress_start "Installing to ${INSTALL_PREFIX}"
     make install
+    im_progress_stop "Installation complete"
 
     cd "${REPO_ROOT}"
     BUILD_TYPE="source"
@@ -231,6 +242,8 @@ install_receipt_write "success" \
     "cmake:${CMAKE_BIN}"
 
 echo "Build type   : ${BUILD_TYPE}" >> "${INSTALL_RECEIPT}"
+
+install_env_register "${INSTALL_BIN_DIR}"
 
 # ---------------------------------------------------------------------------
 # Print footer

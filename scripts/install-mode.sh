@@ -24,6 +24,9 @@
 #     install_mode_print_header    — print the mode banner
 #     install_receipt_write        — write the receipt file
 #     install_log_capture_start    — tee all output to log file
+#     install_env_register         — register bin dir in shared env.sh
+#     im_progress_start            — start a progress ticker
+#     im_progress_stop             — stop the progress ticker
 #
 # INSTALL PATHS:
 #
@@ -103,17 +106,58 @@ _im_temp_dir() {
 }
 
 # ---------------------------------------------------------------------------
-# Internal: truncate a string to fit inside the box (max 64 chars)
-# Appends "…" if truncated. Use for any value that may contain long paths.
+# Internal: print a box content line, exactly fitting the 68-column box.
+#
+# The box looks like:  ║<66 visual columns>║
+# Each ║ is 3 bytes but 1 visual column.
+#
+# Strategy: measure the visual width of the string (accounting for multi-byte
+# Unicode), truncate to 66 visual columns with … if needed, then pad with
+# spaces to reach exactly 66 visual columns, then wrap with ║...║.
+#
+# _im_visual_len <string>  — returns visual column count
+# _im_box_line   <string>  — prints ║<string padded to 66 cols>║
 # ---------------------------------------------------------------------------
-_im_truncate() {
+_im_visual_len() {
     local str="$1"
-    local max="${2:-64}"
-    if [[ ${#str} -gt ${max} ]]; then
-        echo "${str:0:$(( max - 1 ))}…"
-    else
-        echo "${str}"
+    # Replace each multi-byte Unicode char (non-ASCII) with a single char
+    # to get visual width. We do this by stripping bytes and counting chars.
+    local stripped
+    stripped="$(printf '%s' "${str}" | sed 's/[^\x00-\x7F]/?/g')"
+    # Each non-ASCII sequence was replaced by one '?' = 1 visual col
+    echo "${#stripped}"
+}
+
+_im_box_line() {
+    local str="$1"
+    local box_width=66
+    local vlen
+    vlen="$(_im_visual_len "${str}")"
+
+    # Truncate if too long
+    if (( vlen > box_width )); then
+        # Need to truncate. Walk chars until visual width hits box_width-1.
+        local result="" i=0 char vl_so_far=0
+        while IFS= read -r -n1 char; do
+            local clen
+            clen="$(_im_visual_len "${char}")"
+            if (( vl_so_far + clen + 1 > box_width )); then
+                result+="…"
+                break
+            fi
+            result+="${char}"
+            (( vl_so_far += clen ))
+        done < <(printf '%s' "${str}")
+        str="${result}"
+        vlen="$(_im_visual_len "${str}")"
     fi
+
+    # Pad with spaces to reach exactly box_width visual columns
+    local pad=$(( box_width - vlen ))
+    local padding
+    padding="$(printf '%*s' "${pad}" '')"
+
+    printf '║%s%s║\n' "${str}" "${padding}"
 }
 
 # ---------------------------------------------------------------------------
@@ -192,41 +236,31 @@ install_mode_print_header() {
     if [[ "${INSTALL_MODE}" == "admin" ]]; then
         mode_label="SYSTEM-WIDE  (admin / root)"
         scope_label="ALL users on this machine"
-        mode_icon="✓"
+        mode_icon="[OK]"
     else
         mode_label="CURRENT USER ONLY  (no admin rights detected)"
         scope_label="THIS user only — other users will NOT have access"
-        mode_icon="⚠"
+        mode_icon="[!!]"
     fi
-
-    # Each content string must fit in 64 chars (box inner width).
-    # Prefix is 2 chars ("  "), so max value length varies per label width.
-    # We truncate the variable portion to keep total <= 64.
-    local line_tool line_mode line_dir line_scope line_log
-    line_tool="$(_im_truncate "  Tool        : ${INSTALL_TOOL_NAME} ${INSTALL_TOOL_VERSION}")"
-    line_mode="$(_im_truncate "  Mode        : ${mode_icon}  ${mode_label}")"
-    line_dir="$(_im_truncate  "  Install dir : ${INSTALL_PREFIX}")"
-    line_scope="$(_im_truncate "  Available to: ${scope_label}")"
-    line_log="$(_im_truncate  "  Log file    : ${INSTALL_LOG_FILE}")"
 
     echo ""
     echo "╔══════════════════════════════════════════════════════════════════╗"
-    printf "║  %-64s║\n" "  airgap-cpp-devkit — Install Mode"
+    _im_box_line "  airgap-cpp-devkit — Install Mode"
     echo "╠══════════════════════════════════════════════════════════════════╣"
-    printf "║%-66s║\n" "${line_tool}"
-    printf "║%-66s║\n" "${line_mode}"
-    printf "║%-66s║\n" "${line_dir}"
-    printf "║%-66s║\n" "${line_scope}"
-    printf "║%-66s║\n" "${line_log}"
+    _im_box_line "  Tool        : ${INSTALL_TOOL_NAME} ${INSTALL_TOOL_VERSION}"
+    _im_box_line "  Mode        : ${mode_icon}  ${mode_label}"
+    _im_box_line "  Install dir : ${INSTALL_PREFIX}"
+    _im_box_line "  Available to: ${scope_label}"
+    _im_box_line "  Log file    : ${INSTALL_LOG_FILE}"
     echo "╚══════════════════════════════════════════════════════════════════╝"
     echo ""
 
     if [[ "${INSTALL_MODE}" == "user" ]]; then
-        echo "  ⚠  NOTE: Running without admin/root privileges."
+        echo "  [!!] NOTE: Running without admin/root privileges."
         echo "     Tools will be installed to your personal directory only."
         echo "     To install system-wide for all users, re-run as admin/root:"
         case "${INSTALL_OS}" in
-            windows) echo "       Right-click Git Bash → 'Run as administrator'" ;;
+            windows) echo "       Right-click Git Bash -> 'Run as administrator'" ;;
             linux)   echo "       sudo bash $(basename "$0")" ;;
         esac
         echo ""
@@ -243,41 +277,32 @@ install_mode_print_footer() {
     local status_label status_icon
     if [[ "${status}" == "success" ]]; then
         status_label="SUCCESS"
-        status_icon="✓"
+        status_icon="[OK]"
     else
         status_label="FAILED"
-        status_icon="✗"
+        status_icon="[!!]"
     fi
-
-    local line_title line_mode line_path line_log line_receipt
-    line_title="$(_im_truncate   "  ${status_icon}  ${INSTALL_TOOL_NAME} ${INSTALL_TOOL_VERSION} — ${status_label}")"
-    line_mode="$(_im_truncate    "  Install mode : ${INSTALL_MODE}")"
-    line_path="$(_im_truncate    "  Install path : ${INSTALL_PREFIX}")"
-    line_log="$(_im_truncate     "  Log  : ${INSTALL_LOG_FILE}")"
-    line_receipt="$(_im_truncate "  Receipt : ${INSTALL_RECEIPT}")"
 
     echo ""
     echo "╔══════════════════════════════════════════════════════════════════╗"
-    printf "║%-66s║\n" "${line_title}"
+    _im_box_line "  ${status_icon}  ${INSTALL_TOOL_NAME} ${INSTALL_TOOL_VERSION} — ${status_label}"
     echo "╠══════════════════════════════════════════════════════════════════╣"
-    printf "║%-66s║\n" "${line_mode}"
-    printf "║%-66s║\n" "${line_path}"
+    _im_box_line "  Install mode : ${INSTALL_MODE}"
+    _im_box_line "  Install path : ${INSTALL_PREFIX}"
     for pair in "$@"; do
         local label="${pair%%:*}"
         local path="${pair#*:}"
-        local line_bin
-        line_bin="$(_im_truncate "  ${label} : ${path}")"
-        printf "║%-66s║\n" "${line_bin}"
+        _im_box_line "  ${label} : ${path}"
     done
     echo "╠══════════════════════════════════════════════════════════════════╣"
-    printf "║%-66s║\n" "${line_log}"
-    printf "║%-66s║\n" "${line_receipt}"
+    _im_box_line "  Log     : ${INSTALL_LOG_FILE}"
+    _im_box_line "  Receipt : ${INSTALL_RECEIPT}"
     echo "╚══════════════════════════════════════════════════════════════════╝"
     echo ""
 
     if [[ "${INSTALL_MODE}" == "user" ]]; then
-        echo "  ⚠  Installed to user path — NOT available to other users."
-        echo "     Re-run as admin/root to install system-wide."
+        echo "  [!!] Installed to user path — NOT available to other users."
+        echo "       Re-run as admin/root to install system-wide."
         echo ""
     fi
 }
@@ -361,29 +386,82 @@ install_log_capture_start() {
 }
 
 # ---------------------------------------------------------------------------
+# im_progress_start <message>
+#
+# Prints a status line and starts a background ticker that updates a
+# single line in-place every second, showing elapsed time.
+# Call im_progress_stop when the operation completes.
+#
+# Usage:
+#   im_progress_start "Extracting archive"
+#   do_slow_thing
+#   im_progress_stop "Done"
+# ---------------------------------------------------------------------------
+_IM_PROGRESS_PID=""
+
+im_progress_start() {
+    local msg="${1:-Working}"
+    local start_time
+    start_time="$(date +%s)"
+
+    # Print initial line (no newline so we can overwrite it)
+    printf "\r  [....] %s" "${msg}"
+
+    # Spinner chars
+    local spin='|/-\'
+
+    (
+        local i=0
+        while true; do
+            local now
+            now="$(date +%s)"
+            local elapsed=$(( now - start_time ))
+            local mins=$(( elapsed / 60 ))
+            local secs=$(( elapsed % 60 ))
+            local frame="${spin:$(( i % 4 )):1}"
+            printf "\r  [%s] %s  (%02d:%02d elapsed)" \
+                "${frame}" "${msg}" "${mins}" "${secs}"
+            (( i++ )) || true
+            sleep 1
+        done
+    ) &
+    _IM_PROGRESS_PID=$!
+    # Suppress job control output
+    disown "${_IM_PROGRESS_PID}" 2>/dev/null || true
+}
+
+im_progress_stop() {
+    local final_msg="${1:-Done}"
+    if [[ -n "${_IM_PROGRESS_PID}" ]]; then
+        kill "${_IM_PROGRESS_PID}" 2>/dev/null || true
+        wait "${_IM_PROGRESS_PID}" 2>/dev/null || true
+        _IM_PROGRESS_PID=""
+    fi
+    # Clear the spinner line and print final status
+    printf "\r  [OK]  %s\n" "${final_msg}"
+}
+
+# ---------------------------------------------------------------------------
 # install_env_register <bin_dir>
 #
-# Appends the given bin_dir to the shared airgap-cpp-devkit env file so all
-# tools are on PATH after a single source. The env file path depends on
-# install mode:
+# Appends the given bin_dir to the shared airgap-cpp-devkit env.sh so all
+# tools are on PATH after a single source. The env file sits one level above
+# the tool install dir:
 #   admin  Linux   : /opt/airgap-cpp-devkit/env.sh
 #   admin  Windows : /c/Program Files/airgap-cpp-devkit/env.sh
 #   user   Linux   : ~/.local/share/airgap-cpp-devkit/env.sh
 #   user   Windows : %LOCALAPPDATA%/airgap-cpp-devkit/env.sh
 #
-# The install.sh orchestrator sources this file and wires it into ~/.bashrc.
+# The install.sh orchestrator wires this file into ~/.bashrc once.
 # ---------------------------------------------------------------------------
 install_env_register() {
     local bin_dir="$1"
-
-    # Derive env file location from install prefix (one level up from tool dir)
     local env_dir
     env_dir="$(dirname "${INSTALL_PREFIX}")"
     local env_file="${env_dir}/env.sh"
 
     mkdir -p "${env_dir}" 2>/dev/null || true
 
-    # Write header if file doesn't exist yet
     if [[ ! -f "${env_file}" ]]; then
         {
             echo "# airgap-cpp-devkit — PATH environment"
@@ -394,11 +472,10 @@ install_env_register() {
         } > "${env_file}"
     fi
 
-    # Only append if this bin_dir isn't already registered
     local export_line="export PATH=\"${bin_dir}:\${PATH}\""
     if ! grep -qF "${bin_dir}" "${env_file}" 2>/dev/null; then
         echo "${export_line}" >> "${env_file}"
-        echo "[install-mode] Registered PATH: ${bin_dir} → ${env_file}"
+        echo "[install-mode] Registered PATH: ${bin_dir} -> ${env_file}"
     else
         echo "[install-mode] PATH already registered: ${bin_dir}"
     fi
