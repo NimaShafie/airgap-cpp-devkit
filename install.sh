@@ -43,7 +43,7 @@ while [[ $# -gt 0 ]]; do
         --rebuild) REBUILD=true; shift ;;
         --yes)     AUTO_YES=true; shift ;;
         -h|--help)
-            grep '^#' "$0" | grep -v '^#!/' | sed 's/^# \?//'
+            sed -n '2,/^[^#]/{/^#/!q; s/^# \?//; p}' "$0"
             exit 0 ;;
         *) echo "ERROR: Unknown argument: $1" >&2; exit 1 ;;
     esac

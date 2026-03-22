@@ -13,9 +13,7 @@
 #   install_dir defaults to: <module_root>/toolchain/<arch>
 #
 # REQUIREMENTS:
-#   7z (7-Zip) must be on PATH. On Windows Git Bash, install 7-Zip and add
-#   "C:/Program Files/7-Zip" to PATH, or place 7z.exe in a PATH directory.
-#
+#   7z (7-Zip) — searched on PATH and in known install locations automatically.
 #   The reassembled .7z must already exist in vendor/ — run setup.sh or
 #   reassemble.sh first.
 # =============================================================================
@@ -34,6 +32,38 @@ if [[ "${ARCH}" != "x86_64" && "${ARCH}" != "i686" ]]; then
 fi
 
 INSTALL_DIR="${2:-${MODULE_ROOT}/toolchain/${ARCH}}"
+
+# ---------------------------------------------------------------------------
+# Locate 7z — PATH first, then known fallback locations
+# ---------------------------------------------------------------------------
+_7Z=""
+_7Z_CANDIDATES=(
+    "$(command -v 7z 2>/dev/null || true)"
+    "/c/Program Files/7-Zip/7z.exe"
+    "/c/Program Files (x86)/7-Zip/7z.exe"
+    "/c/Users/${USERNAME:-${USER:-}}/AppData/Local/SourceTree/app-3.4.26/tools/7z.exe"
+    "/c/Users/${USERNAME:-${USER:-}}/AppData/Local/SourceTree/app-3.4.21/tools/7z.exe"
+)
+
+for _candidate in "${_7Z_CANDIDATES[@]}"; do
+    [[ -n "${_candidate}" && -x "${_candidate}" ]] && { _7Z="${_candidate}"; break; }
+done
+
+if [[ -z "${_7Z}" ]]; then
+    # Last resort: search AppData for any SourceTree-bundled 7z.exe
+    _found="$(find "/c/Users/${USERNAME:-${USER:-}}/AppData/Local/SourceTree" \
+        -name "7z.exe" 2>/dev/null | sort -V | tail -1 || true)"
+    [[ -n "${_found}" && -x "${_found}" ]] && _7Z="${_found}"
+fi
+
+if [[ -z "${_7Z}" ]]; then
+    echo "[ERROR] 7z not found. Please install 7-Zip:" >&2
+    echo "        https://7-zip.org/" >&2
+    echo "        Or add 7z to this devkit (task: add 7z to prebuilt-binaries)." >&2
+    exit 1
+fi
+
+echo "[INFO]  Using 7z: ${_7Z}"
 
 # ---------------------------------------------------------------------------
 # Parse manifest
@@ -65,16 +95,6 @@ if [[ ! -f "${ARCHIVE}" ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Check for 7z
-# ---------------------------------------------------------------------------
-if ! command -v 7z &>/dev/null; then
-  echo "[ERROR] 7z not found on PATH." >&2
-  echo "        Install 7-Zip (https://7-zip.org/) and add it to PATH." >&2
-  echo "        On MINGW64: add 'C:/Program Files/7-Zip' to your PATH." >&2
-  exit 1
-fi
-
-# ---------------------------------------------------------------------------
 # Extract
 # ---------------------------------------------------------------------------
 echo "[extract] Extracting archive..."
@@ -88,7 +108,7 @@ cleanup_staging() {
 }
 trap cleanup_staging EXIT
 
-7z x "${ARCHIVE}" -o"${STAGING}" -y > /dev/null
+"${_7Z}" x "${ARCHIVE}" -o"${STAGING}" -y > /dev/null
 
 EXTRACTED="${STAGING}/${EXTRACT_ROOT}"
 if [[ ! -d "${EXTRACTED}" ]]; then
