@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
+# Author: Nima Shafie
 # =============================================================================
 # scripts/install-mode.sh
-# Author: Nima Shafie
 #
 # PURPOSE: Shared library sourced by all airgap-cpp-devkit bootstrap/setup
 #          scripts. Detects whether the current user has admin/root privileges,
@@ -61,7 +61,6 @@ _im_os() {
 
 # ---------------------------------------------------------------------------
 # Internal: test whether we can write to a system path
-# Tries a temp file write — cleaner than checking group membership.
 # ---------------------------------------------------------------------------
 _im_can_write_system() {
     local test_path="$1"
@@ -104,9 +103,21 @@ _im_temp_dir() {
 }
 
 # ---------------------------------------------------------------------------
+# Internal: truncate a string to fit inside the box (max 64 chars)
+# Appends "…" if truncated. Use for any value that may contain long paths.
+# ---------------------------------------------------------------------------
+_im_truncate() {
+    local str="$1"
+    local max="${2:-64}"
+    if [[ ${#str} -gt ${max} ]]; then
+        echo "${str:0:$(( max - 1 ))}…"
+    else
+        echo "${str}"
+    fi
+}
+
+# ---------------------------------------------------------------------------
 # install_mode_init <tool_name> <tool_version>
-#
-# Sets all exported variables. Call once at the start of each bootstrap.
 # ---------------------------------------------------------------------------
 install_mode_init() {
     local tool_name="${1:-unknown}"
@@ -116,16 +127,13 @@ install_mode_init() {
     local timestamp
     timestamp="$(date +"%Y%m%d-%H%M%S")"
 
-    # ---- Determine system-wide paths per platform ----
     local sys_prefix user_prefix
     case "${os}" in
         windows)
-            # System-wide: C:\Program Files\airgap-cpp-devkit\
             local pf
             pf="$( cygpath -u "${PROGRAMFILES:-/c/Program Files}" 2>/dev/null \
                    || echo "/c/Program Files" )"
             sys_prefix="${pf}/airgap-cpp-devkit/${tool_name}"
-            # Per-user: %LOCALAPPDATA%\airgap-cpp-devkit\
             user_prefix="$(_im_localappdata)/airgap-cpp-devkit/${tool_name}"
             ;;
         linux|macos)
@@ -138,7 +146,6 @@ install_mode_init() {
             ;;
     esac
 
-    # ---- Detect admin capability ----
     if _im_can_write_system "${sys_prefix}"; then
         export INSTALL_MODE="admin"
         export INSTALL_PREFIX="${sys_prefix}"
@@ -153,7 +160,6 @@ install_mode_init() {
     export INSTALL_TIMESTAMP="${timestamp}"
     export INSTALL_OS="${os}"
 
-    # ---- Log file location ----
     local log_base
     case "${os}" in
         windows)
@@ -173,19 +179,13 @@ install_mode_init() {
     mkdir -p "${log_base}" 2>/dev/null || true
     export INSTALL_LOG_DIR="${log_base}"
     export INSTALL_LOG_FILE="${log_base}/${tool_name}-${timestamp}.log"
-
-    # ---- Receipt file (written inside install prefix) ----
     export INSTALL_RECEIPT="${INSTALL_PREFIX}/INSTALL_RECEIPT.txt"
 
-    # ---- Print the mode banner immediately ----
     install_mode_print_header
 }
 
 # ---------------------------------------------------------------------------
 # install_mode_print_header
-#
-# Prints a prominent banner showing install mode and target paths.
-# Called automatically by install_mode_init.
 # ---------------------------------------------------------------------------
 install_mode_print_header() {
     local mode_label scope_label mode_icon
@@ -199,15 +199,25 @@ install_mode_print_header() {
         mode_icon="⚠"
     fi
 
+    # Each content string must fit in 64 chars (box inner width).
+    # Prefix is 2 chars ("  "), so max value length varies per label width.
+    # We truncate the variable portion to keep total <= 64.
+    local line_tool line_mode line_dir line_scope line_log
+    line_tool="$(_im_truncate "  Tool        : ${INSTALL_TOOL_NAME} ${INSTALL_TOOL_VERSION}")"
+    line_mode="$(_im_truncate "  Mode        : ${mode_icon}  ${mode_label}")"
+    line_dir="$(_im_truncate  "  Install dir : ${INSTALL_PREFIX}")"
+    line_scope="$(_im_truncate "  Available to: ${scope_label}")"
+    line_log="$(_im_truncate  "  Log file    : ${INSTALL_LOG_FILE}")"
+
     echo ""
     echo "╔══════════════════════════════════════════════════════════════════╗"
     printf "║  %-64s║\n" "  airgap-cpp-devkit — Install Mode"
     echo "╠══════════════════════════════════════════════════════════════════╣"
-    printf "║  %-64s║\n" "  Tool        : ${INSTALL_TOOL_NAME} ${INSTALL_TOOL_VERSION}"
-    printf "║  %-64s║\n" "  Mode        : ${mode_icon}  ${mode_label}"
-    printf "║  %-64s║\n" "  Install dir : ${INSTALL_PREFIX}"
-    printf "║  %-64s║\n" "  Available to: ${scope_label}"
-    printf "║  %-64s║\n" "  Log file    : ${INSTALL_LOG_FILE}"
+    printf "║%-66s║\n" "${line_tool}"
+    printf "║%-66s║\n" "${line_mode}"
+    printf "║%-66s║\n" "${line_dir}"
+    printf "║%-66s║\n" "${line_scope}"
+    printf "║%-66s║\n" "${line_log}"
     echo "╚══════════════════════════════════════════════════════════════════╝"
     echo ""
 
@@ -224,16 +234,7 @@ install_mode_print_header() {
 }
 
 # ---------------------------------------------------------------------------
-# install_mode_print_footer <status> [<binary_paths...>]
-#
-# Prints a final summary box at the end of a bootstrap/setup script.
-# Call with "success" or "failure" as the first argument, followed by
-# any number of "label:path" pairs for the installed binaries.
-#
-# Example:
-#   install_mode_print_footer "success" \
-#       "clang-format:${INSTALL_BIN_DIR}/clang-format" \
-#       "clang-tidy:${INSTALL_BIN_DIR}/clang-tidy"
+# install_mode_print_footer <status> [<label:path> ...]
 # ---------------------------------------------------------------------------
 install_mode_print_footer() {
     local status="${1:-success}"
@@ -248,20 +249,29 @@ install_mode_print_footer() {
         status_icon="✗"
     fi
 
+    local line_title line_mode line_path line_log line_receipt
+    line_title="$(_im_truncate   "  ${status_icon}  ${INSTALL_TOOL_NAME} ${INSTALL_TOOL_VERSION} — ${status_label}")"
+    line_mode="$(_im_truncate    "  Install mode : ${INSTALL_MODE}")"
+    line_path="$(_im_truncate    "  Install path : ${INSTALL_PREFIX}")"
+    line_log="$(_im_truncate     "  Log  : ${INSTALL_LOG_FILE}")"
+    line_receipt="$(_im_truncate "  Receipt : ${INSTALL_RECEIPT}")"
+
     echo ""
     echo "╔══════════════════════════════════════════════════════════════════╗"
-    printf "║  %-64s║\n" "  ${status_icon}  ${INSTALL_TOOL_NAME} ${INSTALL_TOOL_VERSION} — ${status_label}"
+    printf "║%-66s║\n" "${line_title}"
     echo "╠══════════════════════════════════════════════════════════════════╣"
-    printf "║  %-64s║\n" "  Install mode : ${INSTALL_MODE}"
-    printf "║  %-64s║\n" "  Install path : ${INSTALL_PREFIX}"
+    printf "║%-66s║\n" "${line_mode}"
+    printf "║%-66s║\n" "${line_path}"
     for pair in "$@"; do
         local label="${pair%%:*}"
         local path="${pair#*:}"
-        printf "║  %-64s║\n" "  ${label} : ${path}"
+        local line_bin
+        line_bin="$(_im_truncate "  ${label} : ${path}")"
+        printf "║%-66s║\n" "${line_bin}"
     done
     echo "╠══════════════════════════════════════════════════════════════════╣"
-    printf "║  %-64s║\n" "  Log  : ${INSTALL_LOG_FILE}"
-    printf "║  %-64s║\n" "  Receipt : ${INSTALL_RECEIPT}"
+    printf "║%-66s║\n" "${line_log}"
+    printf "║%-66s║\n" "${line_receipt}"
     echo "╚══════════════════════════════════════════════════════════════════╝"
     echo ""
 
@@ -273,10 +283,7 @@ install_mode_print_footer() {
 }
 
 # ---------------------------------------------------------------------------
-# install_receipt_write <status> [<binary_paths...>]
-#
-# Writes a plain-text audit receipt to INSTALL_RECEIPT.
-# Same signature as install_mode_print_footer.
+# install_receipt_write <status> [<label:path> ...]
 # ---------------------------------------------------------------------------
 install_receipt_write() {
     local status="${1:-success}"
@@ -330,17 +337,10 @@ install_receipt_write() {
 
 # ---------------------------------------------------------------------------
 # install_log_capture_start
-#
-# Redirects all subsequent stdout/stderr to both the terminal and the log
-# file using a background tee process. Call once near the start of a script
-# after install_mode_init.
-#
-# Note: This uses exec redirection — it affects the entire calling script.
 # ---------------------------------------------------------------------------
 install_log_capture_start() {
     mkdir -p "${INSTALL_LOG_DIR}" 2>/dev/null || true
 
-    # Write a log header
     {
         echo "airgap-cpp-devkit — Install Log"
         echo "================================"
@@ -354,10 +354,54 @@ install_log_capture_start() {
         echo ""
     } >> "${INSTALL_LOG_FILE}" 2>/dev/null || true
 
-    # Tee stdout and stderr to the log file
-    # Use a named pipe + background process to avoid subshell issues
     exec > >(tee -a "${INSTALL_LOG_FILE}") 2>&1
 
     echo "[install-mode] Logging to: ${INSTALL_LOG_FILE}"
     echo ""
+}
+
+# ---------------------------------------------------------------------------
+# install_env_register <bin_dir>
+#
+# Appends the given bin_dir to the shared airgap-cpp-devkit env file so all
+# tools are on PATH after a single source. The env file path depends on
+# install mode:
+#   admin  Linux   : /opt/airgap-cpp-devkit/env.sh
+#   admin  Windows : /c/Program Files/airgap-cpp-devkit/env.sh
+#   user   Linux   : ~/.local/share/airgap-cpp-devkit/env.sh
+#   user   Windows : %LOCALAPPDATA%/airgap-cpp-devkit/env.sh
+#
+# The install.sh orchestrator sources this file and wires it into ~/.bashrc.
+# ---------------------------------------------------------------------------
+install_env_register() {
+    local bin_dir="$1"
+
+    # Derive env file location from install prefix (one level up from tool dir)
+    local env_dir
+    env_dir="$(dirname "${INSTALL_PREFIX}")"
+    local env_file="${env_dir}/env.sh"
+
+    mkdir -p "${env_dir}" 2>/dev/null || true
+
+    # Write header if file doesn't exist yet
+    if [[ ! -f "${env_file}" ]]; then
+        {
+            echo "# airgap-cpp-devkit — PATH environment"
+            echo "# Auto-generated by install-mode.sh — do not edit manually."
+            echo "# Source this file from ~/.bashrc to put all tools on PATH:"
+            echo "#   source \"${env_file}\""
+            echo ""
+        } > "${env_file}"
+    fi
+
+    # Only append if this bin_dir isn't already registered
+    local export_line="export PATH=\"${bin_dir}:\${PATH}\""
+    if ! grep -qF "${bin_dir}" "${env_file}" 2>/dev/null; then
+        echo "${export_line}" >> "${env_file}"
+        echo "[install-mode] Registered PATH: ${bin_dir} → ${env_file}"
+    else
+        echo "[install-mode] PATH already registered: ${bin_dir}"
+    fi
+
+    echo "${env_file}"
 }
