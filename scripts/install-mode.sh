@@ -394,46 +394,54 @@ _IM_PROGRESS_START_TIME=""
 im_progress_start() {
     local msg="${1:-Working}"
     _IM_PROGRESS_START_TIME="$(date +%s)"
-    local spin='|/-\'
-    printf "  [....] %s" "${msg}"
-    (
-        local i=0
-        while true; do
-            local now elapsed mins secs frame
-            now="$(date +%s)"
-            elapsed=$(( now - _IM_PROGRESS_START_TIME ))
-            mins=$(( elapsed / 60 ))
-            secs=$(( elapsed % 60 ))
-            frame="${spin:$(( i % 4 )):1}"
-            printf "\r  [ %s  ] %s  (%02d:%02d elapsed)" \
-                "${frame}" "${msg}" "${mins}" "${secs}"
-            (( i++ )) || true
-            sleep 1
-        done
-    ) &
-    _IM_PROGRESS_PID=$!
-    disown "${_IM_PROGRESS_PID}" 2>/dev/null || true
+    if { true > /dev/tty; } 2>/dev/null; then
+        _IM_TTY_OK=true
+        local spin='|/-\'
+        printf "  [....] %s" "${msg}" > /dev/tty
+        (
+            local i=0
+            while true; do
+                local now elapsed mins secs frame
+                now="$(date +%s)"
+                elapsed=$(( now - _IM_PROGRESS_START_TIME ))
+                mins=$(( elapsed / 60 ))
+                secs=$(( elapsed % 60 ))
+                frame="${spin:$(( i % 4 )):1}"
+                printf "\r  [ %s  ] %s  (%02d:%02d elapsed)" \
+                    "${frame}" "${msg}" "${mins}" "${secs}" > /dev/tty
+                (( i++ )) || true
+                sleep 1
+            done
+        ) &
+        _IM_PROGRESS_PID=$!
+        disown "${_IM_PROGRESS_PID}" 2>/dev/null || true
+    else
+        _IM_TTY_OK=false
+        _IM_PROGRESS_PID=""
+        echo "  [....] ${msg}..."
+    fi
 }
 
 im_progress_stop() {
     local final_msg="${1:-Done}"
+    local now elapsed mins secs
+    now="$(date +%s)"
+    elapsed=$(( now - ${_IM_PROGRESS_START_TIME:-$(date +%s)} ))
+    mins=$(( elapsed / 60 ))
+    secs=$(( elapsed % 60 ))
     if [[ -n "${_IM_PROGRESS_PID:-}" ]]; then
         kill "${_IM_PROGRESS_PID}" 2>/dev/null || true
         wait "${_IM_PROGRESS_PID}" 2>/dev/null || true
         _IM_PROGRESS_PID=""
+        printf "\r%-120s\r" " " > /dev/tty
+        printf "  [OK]  %s  (%02d:%02d)\n" "${final_msg}" "${mins}" "${secs}" > /dev/tty
+    else
+        echo "  [OK]  ${final_msg}  ($(printf '%02d:%02d' ${mins} ${secs}))"
     fi
-    local now elapsed mins secs
-    now="$(date +%s)"
-    elapsed=$(( now - ${_IM_PROGRESS_START_TIME:-now} ))
-    mins=$(( elapsed / 60 ))
-    secs=$(( elapsed % 60 ))
-    # Clear line fully before printing final status
-    printf "\r%-120s\r" " "
-    printf "  [OK]  %s  (%02d:%02d)\n" "${final_msg}" "${mins}" "${secs}"
     _IM_PROGRESS_START_TIME=""
+    _IM_TTY_OK=false
 }
 
-# ---------------------------------------------------------------------------
 # install_env_register <bin_dir>
 #
 # Appends bin_dir to the shared env.sh (one level above tool install dir).
