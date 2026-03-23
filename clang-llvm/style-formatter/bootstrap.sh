@@ -151,7 +151,7 @@ echo ""
 if [[ "${IN_GIT_REPO}" == "true" ]]; then
     echo "[bootstrap] Step 4/4: Installing pre-commit hook..."
     echo "  [....] Installing pre-commit hook..."
-    bash "${SCRIPT_DIR}/scripts/install-hooks.sh" ${FORCE} 2>&1 | sed 's/^/            /'
+    bash "${SCRIPT_DIR}/scripts/install-hooks.sh" ${FORCE} 2>&1 | sed 's/^/            /' || true
     echo "  [OK]  Pre-commit hook installed"
 else
     echo "[bootstrap] Step 4/4: Not inside a git repository — skipping hook install."
