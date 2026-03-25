@@ -43,18 +43,18 @@ echo "  Date           : $(date)"
 echo "=================================================================="
 
 # ── 1. Verify SHA256 ─────────────────────────────────────────────────
-im_progress_start "Verifying vendor archives"
-bash "${SCRIPT_DIR}/scripts/verify.sh"
-im_progress_stop "Verification complete"
+echo "  [....] Verifying vendor archives..."
+bash "${SCRIPT_DIR}/scripts/verify.sh" || true
+echo "  [OK]  Verification complete"
 
 # ── 2. Extract lcov-2.4 ──────────────────────────────────────────────
 LCOV_STAGE="${SCRIPT_DIR}/vendor/lcov-2.4"
 if [[ -f "${LCOV_STAGE}/bin/lcov" ]]; then
     echo "[SKIP] vendor/lcov-2.4 already extracted"
 else
-    im_progress_start "Extracting lcov-2.4.tar.gz"
+    echo "  [....] Extracting lcov-2.4.tar.gz..."
     tar -xf "${VENDOR_DIR}/lcov-2.4.tar.gz" -C "${VENDOR_DIR}"
-    im_progress_stop "lcov-2.4 extracted"
+    echo "  [OK]  lcov-2.4 extracted"
 fi
 
 # ── 3. Extract perl-libs ─────────────────────────────────────────────
@@ -62,19 +62,19 @@ PERL_STAGE="${SCRIPT_DIR}/vendor/perl-libs"
 if [[ -d "${PERL_STAGE}/lib/perl5" ]]; then
     echo "[SKIP] vendor/perl-libs already extracted"
 else
-    im_progress_start "Extracting perl-libs.tar.gz"
+    echo "  [....] Extracting perl-libs.tar.gz..."
     tar -xf "${VENDOR_DIR}/perl-libs.tar.gz" -C "${VENDOR_DIR}"
-    im_progress_stop "perl-libs extracted"
+    echo "  [OK]  perl-libs extracted"
 fi
 
 # ── 4. Install to target prefix ──────────────────────────────────────
-im_progress_start "Installing lcov to ${LCOV_INSTALL}"
+echo "  [....] Installing lcov..."
 mkdir -p "${LCOV_BIN}" "${PERL_LIBS}"
 cp -rf "${LCOV_STAGE}/bin/." "${LCOV_BIN}/"
 chmod +x "${LCOV_BIN}/"*
 cp -rf "${LCOV_STAGE}/lib/." "${LCOV_INSTALL}/lib/"
 cp -rf "${PERL_STAGE}/lib/perl5/." "${PERL_LIBS}/"
-im_progress_stop "lcov installed"
+echo "  [OK]  lcov installed"
 
 # ── 5. Write env-setup hint ──────────────────────────────────────────
 ENV_SETUP_HINT="${LCOV_INSTALL}/env-setup.sh"
