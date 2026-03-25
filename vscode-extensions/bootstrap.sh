@@ -244,7 +244,7 @@ while IFS= read -r ext_json; do
     vsix_path="${VENDOR_DIR}/${filename}"
 
     echo "  [....] Installing: ${name} (${filename})"
-    if "${CODE_BIN}" --install-extension "${vsix_path}" --force 2>&1 | tail -1; then
+    if "${CODE_BIN}" --install-extension "${vsix_path}" --force --no-sandbox --user-data-dir /tmp/vscode-airgap 2>&1 | tail -1; then
         INSTALLED+=("${name}")
         echo "  [OK]   Installed: ${name}"
     else
