@@ -175,7 +175,14 @@ install_mode_init() {
     esac
 
     if [[ -n "${prefix_override}" ]]; then
-        export INSTALL_MODE="custom"
+        # If the override matches a known path, show the correct mode label
+        if [[ "${prefix_override}" == "${sys_prefix}" ]] && _im_can_write_system "${sys_prefix}"; then
+            export INSTALL_MODE="admin"
+        elif [[ "${prefix_override}" == "${user_prefix}" ]]; then
+            export INSTALL_MODE="user"
+        else
+            export INSTALL_MODE="custom"
+        fi
         export INSTALL_PREFIX="${prefix_override}"
     elif _im_can_write_system "${sys_prefix}"; then
         export INSTALL_MODE="admin"
