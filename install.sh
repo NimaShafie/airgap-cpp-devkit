@@ -127,7 +127,7 @@ if [[ "${AUTO_YES}" == "false" ]]; then
     _box_blank
     if [[ "${OS}" == "windows" ]]; then
     _box_line "  OPTIONAL (you will be prompted):"
-    _box_line "    [5] winlibs-gcc-ucrt   GCC 15.2.0 + MinGW-w64 (requires 7z)"
+    _box_line "    [5] winlibs-gcc-ucrt   GCC 15.2.0 + MinGW-w64"
     _box_line "    [6] grpc-source-build  gRPC C++ (requires Visual Studio)"
     _box_blank
     fi
@@ -176,7 +176,7 @@ if [[ "${AUTO_YES}" == "false" ]]; then
     GRPC_VERSION="1.78.1"
 
     if [[ "${OS}" == "windows" ]]; then
-        printf "  Install winlibs-gcc-ucrt? (GCC 15.2.0, requires 7z) [y/N]: "
+        printf "  Install winlibs-gcc-ucrt? (GCC 15.2.0 + MinGW-w64) [y/N]: "
         read -r reply
         [[ "${reply^^}" == "Y" ]] && INSTALL_WINLIBS=true
 
