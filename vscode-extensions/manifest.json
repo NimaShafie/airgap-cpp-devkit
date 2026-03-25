@@ -1,0 +1,97 @@
+{
+  "_comment": "airgap-cpp-devkit VS Code extensions manifest. SHA256 hashes for all vendored .vsix files. Large extensions are split into parts and must be reassembled before installation.",
+  "schema_version": "1.0",
+  "generated": "2026-03-24",
+  "extensions": [
+    {
+      "id": "ms-vscode.cpptools-extension-pack",
+      "name": "C/C++ Extension Pack",
+      "publisher": "Microsoft",
+      "version": "1.5.1",
+      "platform": "universal",
+      "filename": "ms-vscode.cpptools-extension-pack-1.5.1.vsix",
+      "sha256": "e639affc29ee00cc06f1ab2f5b6896f23f37ee57672d9deb25241b36c36f3743",
+      "split": false,
+      "marketplace_url": "https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools-extension-pack"
+    },
+    {
+      "id": "ms-vscode.cpptools",
+      "name": "C/C++",
+      "publisher": "Microsoft",
+      "version": "1.30.4",
+      "platform": "win32-x64",
+      "filename": "ms-vscode.cpptools-1.30.4-win32-x64.vsix",
+      "sha256": "2f2b95d13f96cc05c73ef5c3a80e30b24f2d0b810476d1ec75830ef9483ba683",
+      "split": true,
+      "parts": [
+        {
+          "filename": "ms-vscode.cpptools-1.30.4-win32-x64.vsix.part-aa",
+          "sha256": "8fcb7ab7df4f5343d99c11b293c2063146ff8671690419885cc78f8034a25660"
+        },
+        {
+          "filename": "ms-vscode.cpptools-1.30.4-win32-x64.vsix.part-ab",
+          "sha256": "665458c0e6d7af6b9c580fa2dc43a589041d8d4d5228e34c58723593d8cf434e"
+        }
+      ],
+      "marketplace_url": "https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools"
+    },
+    {
+      "id": "ms-vscode.cpptools",
+      "name": "C/C++",
+      "publisher": "Microsoft",
+      "version": "1.30.4",
+      "platform": "linux-x64",
+      "filename": "ms-vscode.cpptools-1.30.4-linux-x64.vsix",
+      "sha256": "81f1db061856ef17a10815cacf1d0636fc73c0f767edd80f7b9d590ba863ab09",
+      "split": true,
+      "parts": [
+        {
+          "filename": "ms-vscode.cpptools-1.30.4-linux-x64.vsix.part-aa",
+          "sha256": "c1af21a537b6ead6e1630769f904016d63b3101e2516b33f8c3b1935be682b2d"
+        },
+        {
+          "filename": "ms-vscode.cpptools-1.30.4-linux-x64.vsix.part-ab",
+          "sha256": "c765f4cf0b126d8f57446f491c5367970c6200e4a9486e16da96d1aee3e0e5b0"
+        },
+        {
+          "filename": "ms-vscode.cpptools-1.30.4-linux-x64.vsix.part-ac",
+          "sha256": "74ad73b35994e3d3a221d2669e62227ba5910143946212f369a51fa0197f5e91"
+        }
+      ],
+      "marketplace_url": "https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools"
+    },
+    {
+      "id": "matepek.vscode-catch2-test-adapter",
+      "name": "C++ TestMate",
+      "publisher": "Mate Pek",
+      "version": "4.22.3",
+      "platform": "universal",
+      "filename": "matepek.vscode-catch2-test-adapter-4.22.3.vsix",
+      "sha256": "d6f0fe196bf16a36e9c1a2557d5f23e030deba1eb45d1ce34321096c7abae81c",
+      "split": false,
+      "marketplace_url": "https://marketplace.visualstudio.com/items?itemName=matepek.vscode-catch2-test-adapter"
+    },
+    {
+      "id": "ms-python.python",
+      "name": "Python",
+      "publisher": "Microsoft",
+      "version": "2026.5.2026031201",
+      "platform": "win32-x64",
+      "filename": "ms-python.python-2026.5.2026031201-win32-x64.vsix",
+      "sha256": "02bbc948663a959fc8ce303b65d75b2096270db45a9d547514530a69b3512f8f",
+      "split": false,
+      "marketplace_url": "https://marketplace.visualstudio.com/items?itemName=ms-python.python"
+    },
+    {
+      "id": "ms-python.python",
+      "name": "Python",
+      "publisher": "Microsoft",
+      "version": "2026.5.2026031201",
+      "platform": "linux-x64",
+      "filename": "ms-python.python-2026.5.2026031201-linux-x64.vsix",
+      "sha256": "fce323fefb26a43321b6c106f666c032ad9841f541a64750a180685ace9e5647",
+      "split": false,
+      "marketplace_url": "https://marketplace.visualstudio.com/items?itemName=ms-python.python"
+    }
+  ]
+}
