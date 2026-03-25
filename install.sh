@@ -266,8 +266,10 @@ _run_bootstrap() {
     local rebuild_arg=()
     [[ "${REBUILD}" == "true" ]] && rebuild_arg=("--rebuild")
 
+    # Each tool gets its own subdirectory under the base prefix
+    local tool_prefix="${INSTALL_PREFIX_OVERRIDE}/${label}"
     if bash "${script}" \
-        --prefix "${INSTALL_PREFIX_OVERRIDE}" \
+        --prefix "${tool_prefix}" \
         "${rebuild_arg[@]}" \
         "${extra_args[@]}"; then
         INSTALLED_TOOLS+=("${label}")
@@ -376,9 +378,6 @@ echo "  Wiring env.sh into ~/.bashrc..."
 
 ENV_DIR="${INSTALL_PREFIX_OVERRIDE}"
 ENV_FILE="${ENV_DIR}/env.sh"
-# Also check one level up (where install_env_register writes it)
-ALT_ENV_FILE="$(dirname "${INSTALL_PREFIX_OVERRIDE}")/env.sh"
-[[ ! -f "${ENV_FILE}" && -f "${ALT_ENV_FILE}" ]] && ENV_FILE="${ALT_ENV_FILE}"
 BASHRC="${HOME}/.bashrc"
 
 if [[ -f "${ENV_FILE}" ]]; then
