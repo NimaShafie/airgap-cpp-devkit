@@ -1,5 +1,5 @@
 {
-  "_comment": "WinLibs GCC UCRT pre-built binary manifest. The .7z is split into parts and committed directly to vendor/. SHA256 hashes cover each individual part AND the reassembled .7z. The reassembled hash is cross-referenced from two independent sources: the official GitHub release sidecar and the ScoopInstaller/Main package registry.",
+  "_comment": "WinLibs GCC UCRT pre-built binary manifest. The .zip is split into parts and committed to prebuilt-binaries submodule. SHA256 hashes cover each individual part AND the reassembled .zip.",
   "toolchain": {
     "name": "winlibs-gcc-ucrt",
     "gcc_version": "15.2.0",
@@ -14,55 +14,44 @@
   },
   "assets": {
     "x86_64": {
-      "filename": "winlibs-x86_64-posix-seh-gcc-15.2.0-mingw-w64ucrt-13.0.0-r6.7z",
-      "url": "https://github.com/brechtsanders/winlibs_mingw/releases/download/15.2.0posix-13.0.0-ucrt-r6/winlibs-x86_64-posix-seh-gcc-15.2.0-mingw-w64ucrt-13.0.0-r6.7z",
+      "filename": "winlibs-x86_64-posix-seh-gcc-15.2.0-mingw-w64ucrt-13.0.0-r6.zip",
+      "url": "https://github.com/brechtsanders/winlibs_mingw/releases/download/15.2.0posix-13.0.0-ucrt-r6/winlibs-x86_64-posix-seh-gcc-15.2.0-mingw-w64ucrt-13.0.0-r6.zip",
       "split_parts": [
         {
-          "filename": "winlibs-x86_64-posix-seh-gcc-15.2.0-mingw-w64ucrt-13.0.0-r6.7z.part-aa",
-          "sha256": "2d51c10007f960433064d649d16ba9a4b962fdb3b0386dc55e1cec13fcaca35b"
+          "filename": "winlibs-x86_64-posix-seh-gcc-15.2.0-mingw-w64ucrt-13.0.0-r6.zip.part-aa",
+          "sha256": "299cb64a48e1ade491f58070f2bd6b82042a4fe9551f8f62b718df30a713482d"
         },
         {
-          "filename": "winlibs-x86_64-posix-seh-gcc-15.2.0-mingw-w64ucrt-13.0.0-r6.7z.part-ab",
-          "sha256": "adf3ec7dd989a7afe75db2e8efd1ebcf038b8c6002e0d6ca0b1d506e95ea572e"
+          "filename": "winlibs-x86_64-posix-seh-gcc-15.2.0-mingw-w64ucrt-13.0.0-r6.zip.part-ab",
+          "sha256": "51131a9515b3a307a7a6b7dd4b325f3441b3b4c14ceb21aa2775b3e5bdf737e3"
         },
         {
-          "filename": "winlibs-x86_64-posix-seh-gcc-15.2.0-mingw-w64ucrt-13.0.0-r6.7z.part-ac",
-          "sha256": "c61453a1923248f77b928dbed08b69491d6b4f660e4bbcba5a80d487850645ef"
+          "filename": "winlibs-x86_64-posix-seh-gcc-15.2.0-mingw-w64ucrt-13.0.0-r6.zip.part-ac",
+          "sha256": "b3439cd8c7582623280abeab88c349e035273306d4f76afd9bb21d92c17db8d9"
+        },
+        {
+          "filename": "winlibs-x86_64-posix-seh-gcc-15.2.0-mingw-w64ucrt-13.0.0-r6.zip.part-ad",
+          "sha256": "ddb152767617fd2713636c22e62876e33de50a6a5cc89bcd80bcf2ed8c22034a"
+        },
+        {
+          "filename": "winlibs-x86_64-posix-seh-gcc-15.2.0-mingw-w64ucrt-13.0.0-r6.zip.part-ae",
+          "sha256": "0a6fe6ad3b8f48e8443544df70ce3cfd7d53049d41b5abdfff40ef2688d4d04c"
+        },
+        {
+          "filename": "winlibs-x86_64-posix-seh-gcc-15.2.0-mingw-w64ucrt-13.0.0-r6.zip.part-af",
+          "sha256": "9ba13529c0afd1ad36b8acbb8216bd73518fb411c82b4bde91efeb407a3f3d84"
         }
       ],
       "sha256_reassembled": {
-        "value": "4ed329d4b2e8292d3f1b8defb17276c3f359d301e24d5693a9b026f037ecf58f",
-        "sources": [
-          {
-            "name": "winlibs_mingw GitHub release sidecar (.sha256)",
-            "url": "https://github.com/brechtsanders/winlibs_mingw/releases/download/15.2.0posix-13.0.0-ucrt-r6/winlibs-x86_64-posix-seh-gcc-15.2.0-mingw-w64ucrt-13.0.0-r6.7z.sha256"
-          },
-          {
-            "name": "ScoopInstaller/Main bucket (independent third-party)",
-            "url": "https://github.com/ScoopInstaller/Main/blob/master/bucket/mingw-winlibs.json"
-          }
-        ]
+        "value": "9f3ee66dd11f1c40a85850976ab9a740469cd3bc43a234a2e9f91c04c92c4f57"
       },
       "extract_root": "mingw64",
       "arch_note": "x86_64 SEH — 64-bit Windows, structured exception handling"
     },
     "i686": {
-      "filename": "winlibs-i686-posix-dwarf-gcc-15.2.0-mingw-w64ucrt-13.0.0-r6.7z",
-      "url": "https://github.com/brechtsanders/winlibs_mingw/releases/download/15.2.0posix-13.0.0-ucrt-r6/winlibs-i686-posix-dwarf-gcc-15.2.0-mingw-w64ucrt-13.0.0-r6.7z",
+      "filename": "winlibs-i686-posix-dwarf-gcc-15.2.0-mingw-w64ucrt-13.0.0-r6.zip",
+      "url": "https://github.com/brechtsanders/winlibs_mingw/releases/download/15.2.0posix-13.0.0-ucrt-r6/winlibs-i686-posix-dwarf-gcc-15.2.0-mingw-w64ucrt-13.0.0-r6.zip",
       "_note": "i686 parts not yet split — add split_parts and sha256_reassembled when vendored",
-      "sha256_reassembled": {
-        "value": "170460f671ebfba60a529b26d8191f99ffc84f33b920c9fa90cb1f9791709d2c",
-        "sources": [
-          {
-            "name": "winlibs_mingw GitHub release sidecar (.sha256)",
-            "url": "https://github.com/brechtsanders/winlibs_mingw/releases/download/15.2.0posix-13.0.0-ucrt-r6/winlibs-i686-posix-dwarf-gcc-15.2.0-mingw-w64ucrt-13.0.0-r6.7z.sha256"
-          },
-          {
-            "name": "ScoopInstaller/Main bucket (independent third-party)",
-            "url": "https://github.com/ScoopInstaller/Main/blob/master/bucket/mingw-winlibs.json"
-          }
-        ]
-      },
       "extract_root": "mingw32",
       "arch_note": "i686 DWARF — 32-bit Windows, DWARF exception handling"
     }

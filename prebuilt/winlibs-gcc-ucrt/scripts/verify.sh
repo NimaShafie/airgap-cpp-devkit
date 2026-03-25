@@ -61,7 +61,7 @@ echo ""
 
 # If assembled .7z exists in vendor/, verify that
 if [[ -f "${ASSEMBLED_PATH}" ]]; then
-  echo "[MODE] Reassembled archive found -- verifying .7z..."
+  echo "[MODE] Reassembled archive found -- verifying .zip..."
   ACTUAL=$(sha256sum "${ASSEMBLED_PATH}" | awk '{print $1}')
   echo "  Expected: ${EXPECTED_ASSEMBLED_SHA256}"
   echo "  Actual  : ${ACTUAL}"

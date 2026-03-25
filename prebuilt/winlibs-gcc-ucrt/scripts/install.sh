@@ -3,7 +3,7 @@
 # =============================================================================
 # prebuilt/winlibs-gcc-ucrt/scripts/install.sh
 #
-# PURPOSE: Extract the reassembled .7z to the toolchain directory and smoke
+# PURPOSE: Extract the reassembled .zip to the toolchain directory and smoke
 #          test the result. Called by setup.sh — not intended to be run
 #          directly by end users.
 #
@@ -12,10 +12,9 @@
 #
 #   install_dir defaults to: <module_root>/toolchain/<arch>
 #
-# REQUIREMENTS:
-#   7z (7-Zip) — searched on PATH and in known install locations automatically.
-#   The reassembled .7z must already exist in vendor/ — run setup.sh or
-#   reassemble.sh first.
+# EXTRACTION:
+#   Uses PowerShell Expand-Archive (Windows native, no external tools needed).
+#   Falls back to 7z if available.
 # =============================================================================
 
 set -euo pipefail
@@ -32,38 +31,6 @@ if [[ "${ARCH}" != "x86_64" && "${ARCH}" != "i686" ]]; then
 fi
 
 INSTALL_DIR="${2:-${MODULE_ROOT}/toolchain/${ARCH}}"
-
-# ---------------------------------------------------------------------------
-# Locate 7z — PATH first, then known fallback locations
-# ---------------------------------------------------------------------------
-_7Z=""
-_7Z_CANDIDATES=(
-    "$(command -v 7z 2>/dev/null || true)"
-    "/c/Program Files/7-Zip/7z.exe"
-    "/c/Program Files (x86)/7-Zip/7z.exe"
-    "/c/Users/${USERNAME:-${USER:-}}/AppData/Local/SourceTree/app-3.4.26/tools/7z.exe"
-    "/c/Users/${USERNAME:-${USER:-}}/AppData/Local/SourceTree/app-3.4.21/tools/7z.exe"
-)
-
-for _candidate in "${_7Z_CANDIDATES[@]}"; do
-    [[ -n "${_candidate}" && -x "${_candidate}" ]] && { _7Z="${_candidate}"; break; }
-done
-
-if [[ -z "${_7Z}" ]]; then
-    # Last resort: search AppData for any SourceTree-bundled 7z.exe
-    _found="$(find "/c/Users/${USERNAME:-${USER:-}}/AppData/Local/SourceTree" \
-        -name "7z.exe" 2>/dev/null | sort -V | tail -1 || true)"
-    [[ -n "${_found}" && -x "${_found}" ]] && _7Z="${_found}"
-fi
-
-if [[ -z "${_7Z}" ]]; then
-    echo "[ERROR] 7z not found. Please install 7-Zip:" >&2
-    echo "        https://7-zip.org/" >&2
-    echo "        Or add 7z to this devkit (task: add 7z to prebuilt-binaries)." >&2
-    exit 1
-fi
-
-echo "[INFO]  Using 7z: ${_7Z}"
 
 # ---------------------------------------------------------------------------
 # Parse manifest
@@ -95,7 +62,8 @@ if [[ ! -f "${ARCHIVE}" ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Extract
+# Extract — PowerShell Expand-Archive (native, no 7z needed)
+# Falls back to 7z if available on PATH
 # ---------------------------------------------------------------------------
 echo "[extract] Extracting archive..."
 mkdir -p "${INSTALL_DIR}"
@@ -108,11 +76,22 @@ cleanup_staging() {
 }
 trap cleanup_staging EXIT
 
-"${_7Z}" x "${ARCHIVE}" -o"${STAGING}" -y > /dev/null
+if command -v 7z &>/dev/null; then
+    echo "[extract] Using 7z..."
+    7z x "${ARCHIVE}" -o"${STAGING}" -y > /dev/null
+else
+    echo "[extract] Using PowerShell Expand-Archive..."
+    WIN_ARCHIVE="$(cygpath -w "${ARCHIVE}")"
+    WIN_STAGING="$(cygpath -w "${STAGING}")"
+    powershell.exe -NoProfile -Command \
+        "Expand-Archive -LiteralPath '${WIN_ARCHIVE}' -DestinationPath '${WIN_STAGING}' -Force"
+fi
 
 EXTRACTED="${STAGING}/${EXTRACT_ROOT}"
 if [[ ! -d "${EXTRACTED}" ]]; then
   echo "[ERROR] Expected extraction root '${EXTRACT_ROOT}' not found in archive." >&2
+  echo "        Contents of staging dir:"
+  ls "${STAGING}" 2>/dev/null || true
   exit 1
 fi
 
