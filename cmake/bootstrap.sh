@@ -187,7 +187,9 @@ else
     im_progress_start "Running CMake bootstrap"
     "${SRC_DIR}/bootstrap" \
         --prefix="${INSTALL_PREFIX}" \
-        --parallel="$(nproc 2>/dev/null || echo 4)"
+        --parallel="$(nproc 2>/dev/null || echo 4)" \
+        --no-system-curl \
+        -- -DCMAKE_USE_OPENSSL=OFF
     im_progress_stop "Bootstrap complete"
 
     im_progress_start "Building CMake (10-20 min)"
