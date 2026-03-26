@@ -1,0 +1,25 @@
+{
+  "_comment": "airgap-cpp-devkit GCC Linux module manifest. SHA256 hashes for all vendored GCC 15.2 toolchain files. Tarball is split into parts and must be reassembled before installation.",
+  "schema_version": "1.0",
+  "generated": "2026-03-26",
+  "gcc": {
+    "version": "15.2",
+    "platform": "x86_64-linux",
+    "source": "tttapa/toolchains",
+    "source_release": "latest",
+    "upstream_url": "https://github.com/tttapa/toolchains/releases/latest",
+    "tarball_filename": "x-tools-x86_64-bionic-linux-gnu-gcc15.tar.xz",
+    "internal_prefix": "x-tools/x86_64-bionic-linux-gnu",
+    "sha256_reassembled": "92cd7d00efa27298b6a2c7956afc6df4132051846c357547f278a52de56e7762",
+    "split_parts": [
+      {
+        "filename": "x-tools-x86_64-bionic-linux-gnu-gcc15.tar.xz.part-aa",
+        "sha256": "c35f91f3c025fb41c382ee82420ce7ef1742c04b04fafe93b7e8e4eebd05da95"
+      },
+      {
+        "filename": "x-tools-x86_64-bionic-linux-gnu-gcc15.tar.xz.part-ab",
+        "sha256": "5d736c51a69cb2157cd0f95e0c418fd3dcb9a3eba15c2b36a59e640cd5345aeb"
+      }
+    ]
+  }
+}
