@@ -7,6 +7,10 @@
 # Toolchain source: tttapa/toolchains (Rocky 8 / RHEL 8 compatible).
 # Installs to system-wide or per-user path based on available privileges.
 #
+# The tttapa toolchain uses prefixed binaries (x86_64-bionic-linux-gnu-gcc).
+# This script creates unprefixed symlinks (gcc, g++, etc.) so the toolchain
+# works transparently with CMake and other build tools.
+#
 # USAGE:
 #   bash gcc-linux/bootstrap.sh [--verify] [--dry-run] [--prefix <path>]
 #
@@ -39,6 +43,7 @@ source "${REPO_ROOT}/scripts/install-mode.sh"
 
 TOOL_NAME="gcc-linux"
 GCC_VERSION="15.2"
+TOOLCHAIN_PREFIX="x86_64-bionic-linux-gnu"
 
 # ---------------------------------------------------------------------------
 # Argument parsing
@@ -162,6 +167,39 @@ detect_system_gcc() {
 }
 
 # ---------------------------------------------------------------------------
+# Create unprefixed symlinks
+#
+# The tttapa toolchain ships binaries as x86_64-bionic-linux-gnu-gcc etc.
+# We create plain gcc/g++/etc. symlinks so CMake and build systems work
+# without extra configuration.
+# ---------------------------------------------------------------------------
+create_symlinks() {
+  local bin_dir="${INSTALL_PREFIX}/bin"
+  local prefix="${TOOLCHAIN_PREFIX}"
+
+  echo "[INFO] Creating unprefixed symlinks in ${bin_dir}..."
+
+  local tools=(
+    gcc g++ cpp c++ cc
+    ar as nm ld ranlib strip objcopy objdump readelf size strings
+    addr2line gprof gdb
+  )
+
+  local created=0
+  for tool in "${tools[@]}"; do
+    local prefixed="${bin_dir}/${prefix}-${tool}"
+    local unprefixed="${bin_dir}/${tool}"
+
+    if [[ -f "${prefixed}" ]] && [[ ! -e "${unprefixed}" ]]; then
+      ln -sf "${prefixed}" "${unprefixed}"
+      (( created++ )) || true
+    fi
+  done
+
+  echo "[OK]   Created ${created} symlinks"
+}
+
+# ---------------------------------------------------------------------------
 # Install
 # ---------------------------------------------------------------------------
 install_gcc() {
@@ -171,34 +209,45 @@ install_gcc() {
   mkdir -p "${INSTALL_PREFIX}"
 
   im_progress_start "Extracting GCC ${GCC_VERSION} toolchain"
+  # The tarball contains x-tools/x86_64-bionic-linux-gnu/ — strip 2 components
   tar -xJf "${tarball_path}" -C "${INSTALL_PREFIX}" \
       --strip-components=2
   im_progress_stop "Extraction complete"
 
-  # Verify key binaries
-  local gcc_bin="${INSTALL_PREFIX}/bin/gcc"
-  local gxx_bin="${INSTALL_PREFIX}/bin/g++"
+  # Create unprefixed symlinks
+  create_symlinks
+
+  # Verify via prefixed binary (the real executable)
+  local gcc_bin="${INSTALL_PREFIX}/bin/${TOOLCHAIN_PREFIX}-gcc"
+  local gxx_bin="${INSTALL_PREFIX}/bin/${TOOLCHAIN_PREFIX}-g++"
 
   if [[ ! -f "${gcc_bin}" ]]; then
-    echo "[ERROR] Installation failed — gcc not found: ${gcc_bin}"
+    echo "[ERROR] Installation failed — ${TOOLCHAIN_PREFIX}-gcc not found: ${gcc_bin}"
     exit 1
   fi
 
-  local gcc_ver
+  local gcc_ver gxx_ver
   gcc_ver="$("${gcc_bin}" --version 2>&1 | head -1)"
-  echo "[OK]   Installed: ${gcc_ver}"
-
-  local gxx_ver
   gxx_ver="$("${gxx_bin}" --version 2>&1 | head -1)"
-  echo "[OK]   Installed: ${gxx_ver}"
+
+  echo "[OK]   ${gcc_ver}"
+  echo "[OK]   ${gxx_ver}"
+
+  # Also confirm symlinks work
+  local gcc_sym="${INSTALL_PREFIX}/bin/gcc"
+  if [[ -L "${gcc_sym}" ]]; then
+    echo "[OK]   Symlink: gcc → ${TOOLCHAIN_PREFIX}-gcc"
+  fi
 
   install_receipt_write "success" \
-    "gcc:${gcc_bin}" \
-    "g++:${gxx_bin}"
+    "${TOOLCHAIN_PREFIX}-gcc:${gcc_bin}" \
+    "${TOOLCHAIN_PREFIX}-g++:${gxx_bin}" \
+    "gcc (symlink):${INSTALL_PREFIX}/bin/gcc" \
+    "g++ (symlink):${INSTALL_PREFIX}/bin/g++"
 
   install_mode_print_footer "success" \
-    "gcc:${gcc_bin}" \
-    "g++:${gxx_bin}"
+    "gcc:${INSTALL_PREFIX}/bin/gcc" \
+    "g++:${INSTALL_PREFIX}/bin/g++"
 
   echo "To activate GCC ${GCC_VERSION} in your current shell:"
   echo "  source gcc-linux/scripts/env-setup.sh"
