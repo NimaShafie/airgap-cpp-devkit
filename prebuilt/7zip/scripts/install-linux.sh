@@ -41,7 +41,7 @@ TMPDIR="$(mktemp -d)"
 trap 'rm -rf "${TMPDIR}"' EXIT
 
 echo "[7zip] Extracting 7zz from tarball..."
-tar -xJf "${TARBALL}" -C "${TMPDIR}" ./7zz
+tar -xJf "${TARBALL}" -C "${TMPDIR}" 7zz
 
 if [[ ! -f "${TMPDIR}/7zz" ]]; then
   echo "ERROR: 7zz binary not found in tarball after extraction." >&2
