@@ -1,0 +1,58 @@
+{
+  "_comment": "Servy 7.3 pre-built binary manifest for airgap-cpp-devkit. Windows-only tool. The portable .7z is split into parts committed to prebuilt-binaries submodule. SHA256 hashes cover each individual part AND the reassembled .7z.",
+  "tool": {
+    "name": "servy",
+    "version": "7.3",
+    "release_date": "2026-03-26",
+    "upstream_repo": "https://github.com/aelassas/servy",
+    "upstream_release": "https://github.com/aelassas/servy/releases/tag/v7.3",
+    "license": "MIT",
+    "license_url": "https://github.com/aelassas/servy/blob/main/LICENSE.txt",
+    "platform": "windows-x86_64",
+    "runtime": "self-contained (.NET 8.0 embedded — no runtime install required)",
+    "supported_os": "Windows 10, 11, Windows Server x64"
+  },
+  "assets": {
+    "portable_7z": {
+      "filename": "servy-7.3-x64-portable.7z",
+      "url": "https://github.com/aelassas/servy/releases/download/v7.3/servy-7.3-x64-portable.7z",
+      "sha256_reassembled": {
+        "value": "e7767b2903affc189cbf0308f4df57b87f7f73b798155d5e2574732cd7e657d6"
+      },
+      "split_parts": [
+        {
+          "filename": "servy-7.3-x64-portable.7z.part-aa",
+          "sha256": "023f5a59f3346b7552261cdc273b156fa10df55330b138be20ef4209d929b1ba",
+          "size_bytes": 52428800
+        },
+        {
+          "filename": "servy-7.3-x64-portable.7z.part-ab",
+          "sha256": "8b392b9a3a8bcb32b05f6ecc6526ea85d0ea6c9556826a5249c268b7237c5930",
+          "size_bytes": 31201984
+        }
+      ],
+      "extract_root": "servy-7.3-x64-portable",
+      "_note": "Reassemble with: cat servy-7.3-x64-portable.7z.part-* > servy-7.3-x64-portable.7z"
+    }
+  },
+  "contents": {
+    "Servy.exe": "GUI desktop application — create and manage Windows services interactively",
+    "Servy.Manager.exe": "Manager app — real-time monitoring of all installed Servy services",
+    "servy-cli.exe": "CLI — scriptable service management for CI/CD and automation",
+    "Servy.psm1": "PowerShell module — place alongside servy-cli.exe for PS integration",
+    "taskschd/": "Task Scheduler helpers for failure email/notification alerts"
+  },
+  "install_targets": {
+    "windows_admin": {
+      "install_dir": "C:\\Program Files\\servy",
+      "path_entry": "C:\\Program Files\\servy",
+      "binaries": ["servy-cli.exe", "Servy.exe", "Servy.Manager.exe"]
+    },
+    "windows_user": {
+      "install_dir": "%LOCALAPPDATA%\\airgap-cpp-devkit\\servy",
+      "path_entry": "%LOCALAPPDATA%\\airgap-cpp-devkit\\servy",
+      "binaries": ["servy-cli.exe", "Servy.exe", "Servy.Manager.exe"]
+    }
+  },
+  "reassemble_command": "cat prebuilt-binaries/servy/servy-7.3-x64-portable.7z.part-* > servy-7.3-x64-portable.7z"
+}
