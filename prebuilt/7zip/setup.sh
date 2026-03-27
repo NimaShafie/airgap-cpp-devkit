@@ -101,8 +101,8 @@ install_mode_print_footer "success" \
 
 echo "  Verify installation:"
 if [[ "${OS}" == "windows" ]]; then
-  echo "    \"${INSTALLED_BIN}\" --version"
+  echo "    \"${INSTALLED_BIN}\" i"
 else
-  echo "    7zz --version"
+  echo "    7zz i"
 fi
 echo ""

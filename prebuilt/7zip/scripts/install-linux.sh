@@ -70,4 +70,5 @@ if [[ "${MODE}" == "user" ]]; then
   echo "[7zip] NOTE: Ensure ${INSTALL_DIR} is in your PATH."
   echo "       Add to ~/.bashrc if needed:"
   echo "         export PATH=\"${INSTALL_DIR}:\${PATH}\""
+  echo "       Then verify with: 7zz i"
 fi
