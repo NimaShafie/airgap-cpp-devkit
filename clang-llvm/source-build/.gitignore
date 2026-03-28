@@ -17,9 +17,8 @@ llvm-src/SOURCE_INFO.txt
 ninja-src/build/
 llvm-src/*.tar.xz
 llvm-src/*.tar.xz.part*
-bin/linux/clang-tidybin/linux/clang-tidy.part-*
+bin/linux/clang-tidy
+bin/linux/clang-tidy.part-*
 llvm-src/libcxx/
 llvm-src/lldb/
 llvm-src/utils/
-bin/linux/clang-tidy
-bin/linux/clang-format
