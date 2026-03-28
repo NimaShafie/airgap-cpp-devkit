@@ -47,3 +47,4 @@ reports/
 *.bak.clang-format
 .clang-tidy
 .llvm-hooks-local/
+mintty*.png
