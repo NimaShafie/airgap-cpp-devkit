@@ -24,8 +24,8 @@ required for most tools.
 git clone <this-repo-url>
 cd airgap-cpp-devkit
 git submodule update --init --recursive
-bash clang-llvm/source-build/bootstrap.sh
-bash clang-llvm/style-formatter/bootstrap.sh
+bash toolchains/clang/source-build/setup.sh
+bash toolchains/clang/style-formatter/bootstrap.sh
 ```
 
 ### Worst Case — Binaries not permitted, source only
@@ -37,8 +37,8 @@ build everything from the vendored source archives.
 git clone <this-repo-url>
 cd airgap-cpp-devkit
 # Do NOT run: git submodule update --init --recursive
-bash clang-llvm/source-build/bootstrap.sh --build-from-source
-bash clang-llvm/style-formatter/bootstrap.sh
+bash toolchains/clang/source-build/setup.sh --build-from-source
+bash toolchains/clang/style-formatter/bootstrap.sh
 ```
 
 Each tool's bootstrap script detects which scenario applies and responds
@@ -71,23 +71,23 @@ To install system-wide on Windows, right-click Git Bash and select
 
 | Directory | Purpose | Required? |
 |-----------|---------|-----------|
-| [`clang-llvm/style-formatter/`](clang-llvm/style-formatter/README.md) | Enforces LLVM C++ coding standards via Git pre-commit hook | Yes |
-| [`clang-llvm/source-build/`](clang-llvm/source-build/README.md) | Builds clang-format + clang-tidy from LLVM 22.1.2 source; installs pre-built binaries (Windows: instant, Linux: ~30-60 min) | No |
+| [`toolchains/clang/style-formatter/`](toolchains/clang/style-formatter/README.md) | Enforces LLVM C++ coding standards via Git pre-commit hook | Yes |
+| [`toolchains/clang/source-build/`](toolchains/clang/source-build/README.md) | Builds clang-format + clang-tidy from LLVM 22.1.2 source; installs pre-built binaries (Windows: instant, Linux: ~30-60 min) | No |
 | [`cmake/`](cmake/README.md) | CMake 4.3.0 — build from source or install pre-built; RHEL 8 + Windows | No |
-| [`git-bundle/`](git-bundle/README.md) | Transfers Git repositories with nested submodules across air-gapped boundaries | Yes |
-| [`lcov-source-build/`](lcov-source-build/README.md) | Code coverage reporting via lcov 2.4 + gcov, vendored Perl deps included | No |
+| [`dev-tools/git-bundle/`](dev-tools/git-bundle/README.md) | Transfers Git repositories with nested submodules across air-gapped boundaries | Yes |
+| [`build-tools/lcov/`](build-tools/lcov/README.md) | Code coverage reporting via lcov 2.4 + gcov, vendored Perl deps included | No |
 | [`python/`](python/README.md) | Portable Python 3.14.3 interpreter — Windows embeddable + Linux standalone (python-build-standalone) | No |
-| [`vscode-extensions/`](vscode-extensions/README.md) | Offline VS Code extensions: C/C++, C++ TestMate, Python (win32-x64 + linux-x64) | No |
-| [`prebuilt/winlibs-gcc-ucrt/`](prebuilt/winlibs-gcc-ucrt/README.md) | GCC 15.2.0 + MinGW-w64 13.0.0 UCRT toolchain for Windows | No — standalone |
-| [`prebuilt/7zip/`](prebuilt/7zip/README.md) | 7-Zip 26.00 — admin + user install for Windows and Linux | No — standalone |
-| [`prebuilt/servy/`](prebuilt/servy/README.md) | Servy 7.3 — Windows service manager (Windows only, graceful no-op on Linux) | No — standalone |
-| [`grpc-source-build/`](grpc-source-build/README.md) | Vendored gRPC source build for Windows (v1.76.0 production-tested) | No — standalone |
+| [`dev-tools/vscode-extensions/`](dev-tools/vscode-extensions/README.md) | Offline VS Code extensions: C/C++, C++ TestMate, Python (win32-x64 + linux-x64) | No |
+| [`toolchains/gcc/windows/`](toolchains/gcc/windows/README.md) | GCC 15.2.0 + MinGW-w64 13.0.0 UCRT toolchain for Windows | No — standalone |
+| [`dev-tools/7zip/`](dev-tools/7zip/README.md) | 7-Zip 26.00 — admin + user install for Windows and Linux | No — standalone |
+| [`dev-tools/servy/`](dev-tools/servy/README.md) | Servy 7.3 — Windows service manager (Windows only, graceful no-op on Linux) | No — standalone |
+| [`frameworks/grpc/`](frameworks/grpc/README.md) | Vendored gRPC source build for Windows (v1.76.0 production-tested) | No — standalone |
 
 ---
 
 ## Optional Tools
 
-All tools outside of `clang-llvm/style-formatter/` and `git-bundle/` are
+All tools outside of `toolchains/clang/style-formatter/` and `dev-tools/git-bundle/` are
 fully independent and optional. You can use any subset without affecting
 the others.
 
@@ -97,7 +97,7 @@ run `source python/scripts/env-setup.sh`. Other devkit tools that require
 Python will prefer this interpreter if active, and fall back to the system
 Python if not.
 
-**`vscode-extensions/`** installs offline VS Code extensions for C++
+**`dev-tools/vscode-extensions/`** installs offline VS Code extensions for C++
 development. Requires VS Code to be installed and `code` on PATH.
 Extensions are installed per-user into VS Code's extension directory.
 
@@ -105,27 +105,27 @@ Extensions are installed per-user into VS Code's extension directory.
 is too old. On RHEL 8 the system CMake is 3.x — this module builds or
 installs 4.3.0 into the devkit path without touching the system.
 
-**`prebuilt/winlibs-gcc-ucrt/`** is a standalone GCC 15.2.0 + MinGW-w64
+**`toolchains/gcc/windows/`** is a standalone GCC 15.2.0 + MinGW-w64
 toolchain for developers who need to compile C++ projects in an air-gapped
 Windows environment. It has no relationship to any other tool in this devkit.
 
-**`prebuilt/7zip/`** provides 7-Zip 26.00 for environments that need `.7z`
+**`dev-tools/7zip/`** provides 7-Zip 26.00 for environments that need `.7z`
 archive support. Admin install uses the official silent installer (Windows)
 or places `7zz` in `/usr/local/bin` (Linux). User install uses the portable
 `7za.exe` (Windows) or `~/.local/bin/7zz` (Linux). No internet access or
 package manager required.
 
-**`prebuilt/servy/`** provides Servy 7.3, a Windows service manager that turns
+**`dev-tools/servy/`** provides Servy 7.3, a Windows service manager that turns
 any executable into a native Windows service with health checks, log rotation,
 restart policies, and a full GUI + CLI + PowerShell interface. Requires 7-Zip
-(`prebuilt/7zip/`) for extraction. Running `setup.sh` on Linux exits cleanly
+(`dev-tools/7zip/`) for extraction. Running `setup.sh` on Linux exits cleanly
 with an informational message — no error.
 
-**`grpc-source-build/`** is a standalone gRPC source tree for teams that
+**`frameworks/grpc/`** is a standalone gRPC source tree for teams that
 need gRPC in their air-gapped C++ projects. The bash entry point
 `setup_grpc.sh` handles admin detection and install path selection.
 
-**`lcov-source-build/`** provides code coverage reporting for C++ projects
+**`build-tools/lcov/`** provides code coverage reporting for C++ projects
 compiled with GCC's `-fprofile-arcs -ftest-coverage` flags. Vendors lcov
 2.4 and all required Perl dependencies — no CPAN, no EPEL required.
 
@@ -143,7 +143,7 @@ Your repo already has the formatter set up. Run one command after cloning:
 bash setup.sh
 ```
 
-See your repo's `setup.sh` or [clang-llvm/style-formatter/README.md](clang-llvm/style-formatter/README.md)
+See your repo's `setup.sh` or [toolchains/clang/style-formatter/README.md](toolchains/clang/style-formatter/README.md)
 for the full developer reference.
 
 ### I am a maintainer adding the formatter to a new production repo
@@ -189,13 +189,13 @@ git submodule update --init --recursive
 ### Step 2 — Copy setup.sh into the repo root
 
 ```bash
-cp tools/style-formatter/clang-llvm/style-formatter/docs/production-repo-template/setup.sh ./setup.sh
+cp tools/style-formatter/toolchains/clang/style-formatter/docs/production-repo-template/setup.sh ./setup.sh
 ```
 
 ### Step 3 — Append .gitignore entries
 
 ```bash
-cat tools/style-formatter/clang-llvm/style-formatter/docs/gitignore-snippet.txt >> .gitignore
+cat tools/style-formatter/toolchains/clang/style-formatter/docs/gitignore-snippet.txt >> .gitignore
 ```
 
 ### Step 4 — Commit and push
@@ -228,7 +228,7 @@ cd airgap-cpp-devkit
 bash scripts/setup-prebuilt-submodule.sh
 
 # Install the formatter (fast, ~5 seconds)
-bash clang-llvm/style-formatter/bootstrap.sh
+bash toolchains/clang/style-formatter/bootstrap.sh
 ```
 
 ### Prerequisites
@@ -245,7 +245,7 @@ See each tool's README for source-build prerequisites.
 
 **Method 1 — pip/venv for clang-format (recommended, ~5 seconds)**
 ```bash
-bash clang-llvm/style-formatter/bootstrap.sh
+bash toolchains/clang/style-formatter/bootstrap.sh
 ```
 Installs `clang-format` from a vendored `.whl` file into a local Python venv.
 No network access. No compiler. No admin rights required (installs in-repo).
@@ -253,14 +253,14 @@ No network access. No compiler. No admin rights required (installs in-repo).
 **Method 2 — clang-format + clang-tidy from vendored binaries (base case)**
 ```bash
 bash scripts/setup-prebuilt-submodule.sh
-bash clang-llvm/source-build/bootstrap.sh
+bash toolchains/clang/source-build/setup.sh
 ```
 Verifies and installs pre-built binaries from the `prebuilt-binaries`
 submodule. Windows: instant. Linux: reassembles clang-tidy from split parts.
 
 **Method 3 — Build from LLVM source (worst case / policy requirement)**
 ```bash
-bash clang-llvm/source-build/bootstrap.sh --build-from-source
+bash toolchains/clang/source-build/setup.sh --build-from-source
 ```
 Compiles `clang-format` and `clang-tidy` from the vendored LLVM 22.1.2
 source tarball (~30-120 minutes). Use when pre-built binaries are not
@@ -286,14 +286,14 @@ Does not affect system Python until `env-setup.sh` is sourced.
 
 **Method 6 — VS Code extensions (offline)**
 ```bash
-bash vscode-extensions/bootstrap.sh
+bash dev-tools/vscode-extensions/setup.sh
 ```
 Installs C/C++, C++ TestMate, and Python extensions into VS Code offline.
 Requires VS Code installed and `code` on PATH.
 
 **Method 7 — GCC toolchain for Windows**
 ```bash
-cd prebuilt/winlibs-gcc-ucrt
+cd toolchains/gcc/windows
 bash setup.sh x86_64
 source scripts/env-setup.sh x86_64
 ```
@@ -302,7 +302,7 @@ GCC to compile C++ projects on Windows.
 
 **Method 8 — 7-Zip 26.00 (Windows + Linux)**
 ```bash
-bash prebuilt/7zip/setup.sh
+bash dev-tools/7zip/setup.sh
 ```
 Installs 7-Zip 26.00. Admin mode: system-wide install. User mode: portable
 drop-in with no elevation required. Supports `.7z`, `.zip`, `.tar.xz`, and
@@ -310,7 +310,7 @@ all major archive formats on both Windows and Linux.
 
 **Method 9 — Servy 7.3 (Windows service manager)**
 ```bash
-bash prebuilt/servy/setup.sh
+bash dev-tools/servy/setup.sh
 ```
 Installs Servy 7.3 portable — GUI, Manager app, CLI, and PowerShell module.
 Turns any executable into a native Windows service with health checks, log
@@ -319,7 +319,7 @@ rotation, and restart policies. Admin: `C:\Program Files\servy\`. User:
 
 **Method 10 — gRPC for Windows**
 ```bash
-cd grpc-source-build
+cd frameworks/grpc
 bash setup_grpc.sh
 ```
 Builds gRPC from vendored source using MSVC + CMake.
@@ -327,8 +327,8 @@ Requires: Visual Studio 2022 with Desktop C++ workload, Git Bash.
 
 **Method 11 — lcov code coverage (RHEL 8 / Linux)**
 ```bash
-bash lcov-source-build/bootstrap.sh
-source lcov-source-build/scripts/env-setup.sh
+bash build-tools/lcov/setup.sh
+source build-tools/lcov/scripts/env-setup.sh
 ```
 Installs lcov 2.4 and all Perl dependencies from vendored tarballs.
 No internet access, no CPAN, no EPEL required.
@@ -368,7 +368,7 @@ airgap-cpp-devkit/
 │
 ├── prebuilt-binaries/                     <- SUBMODULE (separate repo, optional)
 │   │                                         Skip entirely in binary-restricted envs
-│   ├── clang-llvm/
+│   ├── toolchains/clang/
 │   │   ├── clang-format.exe
 │   │   ├── clang-tidy.exe
 │   │   ├── clang-tidy.part-aa
@@ -383,7 +383,7 @@ airgap-cpp-devkit/
 │       ├── servy-7.3-x64-portable.7z.part-aa   <- ~50 MB
 │       └── servy-7.3-x64-portable.7z.part-ab   <- ~30 MB
 │
-├── clang-llvm/                            <- LLVM/Clang tooling group
+├── toolchains/clang/                            <- LLVM/Clang tooling group
 │   ├── style-formatter/                   <- LLVM style enforcement tool
 │   │   ├── bootstrap.sh
 │   │   ├── sbom.spdx.json
@@ -416,13 +416,13 @@ airgap-cpp-devkit/
 │   ├── manifest.json
 │   └── vendor/                            <- vendored source tarball (split parts)
 │
-├── git-bundle/                            <- air-gap git transfer tool
+├── dev-tools/git-bundle/                            <- air-gap git transfer tool
 │   ├── bundle.py
 │   ├── export.py
 │   ├── sbom.spdx.json
 │   └── tests/
 │
-├── lcov-source-build/                     <- code coverage reporting (Linux)
+├── build-tools/lcov/                     <- code coverage reporting (Linux)
 │   ├── bootstrap.sh
 │   ├── manifest.json
 │   ├── sbom.spdx.json
@@ -444,7 +444,7 @@ airgap-cpp-devkit/
 │       ├── cpython-3.14.3+...linux-gnu...part-aa      <- Linux split part (~100MB)
 │       └── cpython-3.14.3+...linux-gnu...part-ab      <- Linux split part (~19MB)
 │
-├── vscode-extensions/                     <- offline VS Code extensions
+├── dev-tools/vscode-extensions/                     <- offline VS Code extensions
 │   ├── bootstrap.sh
 │   ├── manifest.json
 │   ├── sbom.spdx.json
@@ -482,7 +482,7 @@ airgap-cpp-devkit/
 │           ├── install-windows.sh
 │           └── install-linux.sh           <- graceful no-op on Linux
 │
-└── grpc-source-build/                     <- gRPC source build (Windows)
+└── frameworks/grpc/                     <- gRPC source build (Windows)
     ├── setup_grpc.sh
     ├── setup_grpc.bat
     ├── manifest.json

@@ -1,0 +1,123 @@
+{
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "spdxVersion": "SPDX-2.3",
+  "creationInfo": {
+    "created": "2026-03-27T00:00:00Z",
+    "creators": [
+      "Organization: airgap-cpp-devkit",
+      "Tool: airgap-cpp-devkit/scripts/generate-sbom.sh"
+    ],
+    "comment": "Generated SBOM for dev-tools/servy subproject of airgap-cpp-devkit."
+  },
+  "name": "airgap-cpp-devkit-servy",
+  "dataLicense": "CC0-1.0",
+  "documentNamespace": "https://airgap-cpp-devkit.internal/dev-tools/servy/sbom.spdx.json",
+  "documentDescribes": [
+    "SPDXRef-servy-subproject"
+  ],
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-servy-subproject",
+      "name": "servy",
+      "versionInfo": "7.3",
+      "supplier": "Organization: airgap-cpp-devkit",
+      "downloadLocation": "https://airgap-cpp-devkit.internal",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "APPLICATION",
+      "comment": "Top-level subproject. Vendors Servy 7.3 portable prebuilt for Windows x64. Windows-only tool — no Linux component. Supports admin and user install modes."
+    },
+    {
+      "SPDXID": "SPDXRef-servy-upstream",
+      "name": "Servy",
+      "versionInfo": "7.3",
+      "supplier": "Person: Akram El Assas",
+      "downloadLocation": "https://github.com/aelassas/servy/releases/tag/v7.3",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "Copyright (c) Akram El Assas",
+      "primaryPackagePurpose": "APPLICATION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:github/aelassas/servy@v7.3"
+        }
+      ],
+      "comment": "Servy — Windows service manager. Self-contained .NET 8.0 application. Supports Windows 10/11 and Windows Server x64. Includes GUI (Servy.exe), Manager (Servy.Manager.exe), CLI (servy-cli.exe), and PowerShell module (Servy.psm1). Release date: 2026-03-26."
+    },
+    {
+      "SPDXID": "SPDXRef-servy-part-aa",
+      "name": "servy-7.3-x64-portable.7z.part-aa",
+      "versionInfo": "7.3",
+      "supplier": "Organization: airgap-cpp-devkit",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "023f5a59f3346b7552261cdc273b156fa10df55330b138be20ef4209d929b1ba"
+        }
+      ],
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "ARCHIVE",
+      "comment": "Split part 1 of 2 of servy-7.3-x64-portable.7z (~50 MB). Committed to prebuilt-binaries submodule."
+    },
+    {
+      "SPDXID": "SPDXRef-servy-part-ab",
+      "name": "servy-7.3-x64-portable.7z.part-ab",
+      "versionInfo": "7.3",
+      "supplier": "Organization: airgap-cpp-devkit",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "8b392b9a3a8bcb32b05f6ecc6526ea85d0ea6c9556826a5249c268b7237c5930"
+        }
+      ],
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "ARCHIVE",
+      "comment": "Split part 2 of 2 of servy-7.3-x64-portable.7z (~30 MB). Committed to prebuilt-binaries submodule."
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-servy-subproject"
+    },
+    {
+      "spdxElementId": "SPDXRef-servy-subproject",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-servy-upstream"
+    },
+    {
+      "spdxElementId": "SPDXRef-servy-subproject",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-servy-part-aa"
+    },
+    {
+      "spdxElementId": "SPDXRef-servy-subproject",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-servy-part-ab"
+    },
+    {
+      "spdxElementId": "SPDXRef-servy-upstream",
+      "relationshipType": "GENERATED_FROM",
+      "relatedSpdxElement": "SPDXRef-servy-part-aa"
+    },
+    {
+      "spdxElementId": "SPDXRef-servy-upstream",
+      "relationshipType": "GENERATED_FROM",
+      "relatedSpdxElement": "SPDXRef-servy-part-ab"
+    }
+  ]
+}

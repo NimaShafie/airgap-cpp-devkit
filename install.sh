@@ -7,7 +7,7 @@
 # Installs all tools in the correct order and wires PATH into ~/.bashrc.
 #
 # REQUIRED tools (installed automatically):
-#   - clang-llvm  (clang-format + clang-tidy)
+#   - toolchains/clang  (clang-format + clang-tidy)
 #   - cmake       4.3.0
 #   - python      3.14.3  (portable interpreter)
 #   - lcov        2.4  (Linux only)
@@ -15,9 +15,9 @@
 #
 # OPTIONAL tools (prompted):
 #   - 7zip               (Windows + Linux, admin + user)
-#   - vscode-extensions  (requires VS Code + 'code' on PATH)
+#   - dev-tools/vscode-extensions  (requires VS Code + 'code' on PATH)
 #   - winlibs-gcc-ucrt   (Windows only)
-#   - grpc-source-build  (Windows only, requires Visual Studio)
+#   - frameworks/grpc  (Windows only, requires Visual Studio)
 #
 # USAGE:
 #   bash install.sh [--prefix <path>] [--rebuild] [--yes]
@@ -121,7 +121,7 @@ if [[ "${AUTO_YES}" == "false" ]]; then
     _box_line "  Platform : ${OS}   Date : $(date '+%Y-%m-%d %H:%M:%S')"
     _box_blank
     _box_line "  REQUIRED (installed automatically):"
-    _box_line "    [1] clang-llvm         clang-format + clang-tidy 22.1.2"
+    _box_line "    [1] toolchains/clang         clang-format + clang-tidy 22.1.2"
     _box_line "    [2] cmake              4.3.0"
     _box_line "    [3] python             3.14.3 (portable interpreter)"
     if [[ "${OS}" == "linux" ]]; then
@@ -132,10 +132,10 @@ if [[ "${AUTO_YES}" == "false" ]]; then
     _box_line "  OPTIONAL (you will be prompted):"
     _box_line "    [6] 7zip               26.00 (Windows + Linux, admin + user)"
     _box_line "    [7] servy              7.3 (Windows service manager, Windows only)"
-    _box_line "    [8] vscode-extensions  C/C++, TestMate, Python (requires 'code' on PATH)"
+    _box_line "    [8] dev-tools/vscode-extensions  C/C++, TestMate, Python (requires 'code' on PATH)"
     if [[ "${OS}" == "windows" ]]; then
     _box_line "    [8] winlibs-gcc-ucrt   GCC 15.2.0 + MinGW-w64"
-    _box_line "    [9] grpc-source-build  gRPC C++ (requires Visual Studio)"
+    _box_line "    [9] frameworks/grpc  gRPC C++ (requires Visual Studio)"
     fi
     _box_blank
     _box_mid
@@ -192,7 +192,7 @@ if [[ "${AUTO_YES}" == "false" ]]; then
     read -r reply
     [[ "${reply^^}" == "Y" ]] && INSTALL_SERVY=true
 
-    printf "  Install vscode-extensions? (requires 'code' on PATH) [y/N]: "
+    printf "  Install dev-tools/vscode-extensions? (requires 'code' on PATH) [y/N]: "
     read -r reply
     [[ "${reply^^}" == "Y" ]] && INSTALL_VSCODE=true
 
@@ -201,7 +201,7 @@ if [[ "${AUTO_YES}" == "false" ]]; then
         read -r reply
         [[ "${reply^^}" == "Y" ]] && INSTALL_WINLIBS=true
 
-        printf "  Install grpc-source-build? (requires Visual Studio) [y/N]: "
+        printf "  Install frameworks/grpc? (requires Visual Studio) [y/N]: "
         read -r reply
         if [[ "${reply^^}" == "Y" ]]; then
             INSTALL_GRPC=true
@@ -229,13 +229,13 @@ if [[ "${AUTO_YES}" == "false" ]]; then
     _box_line "  Rebuild        : ${REBUILD}"
     _box_blank
     _box_line "  Tools to install:"
-    _box_line "    [OK] clang-llvm, cmake, python, style-formatter"
+    _box_line "    [OK] toolchains/clang, cmake, python, style-formatter"
     [[ "${OS}" == "linux" ]] && _box_line "    [OK] lcov"
     [[ "${INSTALL_7ZIP}" == "true" ]]     && _box_line "    [OK] 7zip 26.00"
     [[ "${INSTALL_SERVY}" == "true" ]]    && _box_line "    [OK] servy 7.3 (Windows only)"
-    [[ "${INSTALL_VSCODE}" == "true" ]]   && _box_line "    [OK] vscode-extensions"
+    [[ "${INSTALL_VSCODE}" == "true" ]]   && _box_line "    [OK] dev-tools/vscode-extensions"
     [[ "${INSTALL_WINLIBS}" == "true" ]]  && _box_line "    [OK] winlibs-gcc-ucrt"
-    [[ "${INSTALL_GRPC}" == "true" ]]     && _box_line "    [OK] grpc-source-build ${GRPC_VERSION}"
+    [[ "${INSTALL_GRPC}" == "true" ]]     && _box_line "    [OK] frameworks/grpc ${GRPC_VERSION}"
     _box_bot
     echo ""
     printf "  Press Enter to begin installation, or Ctrl+C to cancel..."
@@ -360,12 +360,12 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# Step 2: clang-llvm
+# Step 2: toolchains/clang
 # ---------------------------------------------------------------------------
 echo ""
-echo "  [2/9] Installing clang-llvm (required)..."
-_run_bootstrap "clang-llvm" \
-    "${REPO_ROOT}/clang-llvm/source-build/bootstrap.sh"
+echo "  [2/9] Installing toolchains/clang (required)..."
+_run_bootstrap "toolchains/clang" \
+    "${REPO_ROOT}/toolchains/clang/source-build/setup.sh"
 
 # ---------------------------------------------------------------------------
 # Step 3: cmake
@@ -390,7 +390,7 @@ if [[ "${OS}" == "linux" ]]; then
     echo ""
     echo "  [5/9] Installing lcov (required on Linux)..."
     _run_bootstrap "lcov" \
-        "${REPO_ROOT}/lcov-source-build/bootstrap.sh"
+        "${REPO_ROOT}/build-tools/lcov/setup.sh"
 else
     echo ""
     echo "  [5/9] lcov — skipped (Linux only)"
@@ -403,7 +403,7 @@ fi
 echo ""
 echo "  [6/9] Installing style-formatter (required)..."
 _run_bootstrap_no_prefix "style-formatter" \
-    "${REPO_ROOT}/clang-llvm/style-formatter/bootstrap.sh"
+    "${REPO_ROOT}/toolchains/clang/style-formatter/bootstrap.sh"
 
 # ---------------------------------------------------------------------------
 # Step 7: 7zip (optional, both platforms)
@@ -411,7 +411,7 @@ _run_bootstrap_no_prefix "style-formatter" \
 echo ""
 echo "  [7/10] 7-Zip 26.00 (optional)..."
 if [[ "${INSTALL_7ZIP}" == "true" ]]; then
-    _run_setup "7zip" "${REPO_ROOT}/prebuilt/7zip/setup.sh"
+    _run_setup "7zip" "${REPO_ROOT}/dev-tools/7zip/setup.sh"
 else
     echo "  [--]  Skipped: 7zip"
     SKIPPED_TOOLS+=("7zip")
@@ -423,23 +423,23 @@ fi
 echo ""
 echo "  [8/10] Servy 7.3 (optional, Windows only)..."
 if [[ "${INSTALL_SERVY}" == "true" ]]; then
-    _run_setup "servy" "${REPO_ROOT}/prebuilt/servy/setup.sh"
+    _run_setup "servy" "${REPO_ROOT}/dev-tools/servy/setup.sh"
 else
     echo "  [--]  Skipped: servy"
     SKIPPED_TOOLS+=("servy")
 fi
 
 # ---------------------------------------------------------------------------
-# Step 9: vscode-extensions (optional, both platforms)
+# Step 9: dev-tools/vscode-extensions (optional, both platforms)
 # ---------------------------------------------------------------------------
 echo ""
 echo "  [9/10] VS Code extensions (optional)..."
 if [[ "${INSTALL_VSCODE}" == "true" ]]; then
-    _run_bootstrap_no_prefix "vscode-extensions" \
-        "${REPO_ROOT}/vscode-extensions/bootstrap.sh"
+    _run_bootstrap_no_prefix "dev-tools/vscode-extensions" \
+        "${REPO_ROOT}/dev-tools/vscode-extensions/setup.sh"
 else
-    echo "  [--]  Skipped: vscode-extensions"
-    SKIPPED_TOOLS+=("vscode-extensions")
+    echo "  [--]  Skipped: dev-tools/vscode-extensions"
+    SKIPPED_TOOLS+=("dev-tools/vscode-extensions")
 fi
 
 # ---------------------------------------------------------------------------
@@ -451,7 +451,7 @@ echo "  [10/10] Optional platform tools..."
 if [[ "${OS}" == "windows" ]]; then
     if [[ "${INSTALL_WINLIBS}" == "true" ]]; then
         _run_bootstrap_winlibs "winlibs-gcc-ucrt" \
-            "${REPO_ROOT}/prebuilt/winlibs-gcc-ucrt/setup.sh"
+            "${REPO_ROOT}/toolchains/gcc/windows/setup.sh"
     else
         echo "  [--]  Skipped: winlibs-gcc-ucrt"
         SKIPPED_TOOLS+=("winlibs-gcc-ucrt")
@@ -459,16 +459,16 @@ if [[ "${OS}" == "windows" ]]; then
 
     if [[ "${INSTALL_GRPC}" == "true" ]]; then
         _run_bootstrap "grpc-${GRPC_VERSION}" \
-            "${REPO_ROOT}/grpc-source-build/setup_grpc.sh" \
+            "${REPO_ROOT}/frameworks/grpc/setup_grpc.sh" \
             "--version" "${GRPC_VERSION}"
     else
-        echo "  [--]  Skipped: grpc-source-build"
-        SKIPPED_TOOLS+=("grpc-source-build")
+        echo "  [--]  Skipped: frameworks/grpc"
+        SKIPPED_TOOLS+=("frameworks/grpc")
     fi
 else
     echo "  [--]  winlibs-gcc-ucrt  — skipped (Windows only)"
-    echo "  [--]  grpc-source-build — skipped (Windows only)"
-    SKIPPED_TOOLS+=("winlibs-gcc-ucrt (Windows only)" "grpc-source-build (Windows only)")
+    echo "  [--]  frameworks/grpc — skipped (Windows only)"
+    SKIPPED_TOOLS+=("winlibs-gcc-ucrt (Windows only)" "frameworks/grpc (Windows only)")
 fi
 
 # ---------------------------------------------------------------------------

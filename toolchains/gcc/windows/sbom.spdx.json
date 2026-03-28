@@ -1,0 +1,407 @@
+{
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "spdxVersion": "SPDX-2.3",
+  "creationInfo": {
+    "created": "2026-03-17T00:00:00Z",
+    "creators": [
+      "Organization: airgap-cpp-devkit",
+      "Tool: airgap-cpp-devkit/scripts/generate-sbom.sh"
+    ],
+    "comment": "Generated SBOM for toolchains/gcc/windows subproject of airgap-cpp-devkit. Covers all tools bundled in the WinLibs GCC 15.2.0 UCRT release 6 package."
+  },
+  "name": "airgap-cpp-devkit-prebuilt-winlibs-gcc-ucrt",
+  "dataLicense": "CC0-1.0",
+  "documentNamespace": "https://airgap-cpp-devkit.internal/toolchains/gcc/windows/sbom.spdx.json",
+  "documentDescribes": ["SPDXRef-winlibs-gcc-ucrt"],
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-winlibs-gcc-ucrt",
+      "name": "winlibs-gcc-ucrt",
+      "versionInfo": "15.2.0posix-13.0.0-ucrt-r6",
+      "supplier": "Person: Brecht Sanders (brechtsanders)",
+      "downloadLocation": "https://github.com/brechtsanders/winlibs_mingw/releases/tag/15.2.0posix-13.0.0-ucrt-r6",
+      "filesAnalyzed": false,
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "4ed329d4b2e8292d3f1b8defb17276c3f359d301e24d5693a9b026f037ecf58f"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "ARCHIVE",
+      "comment": "Top-level pre-built binary package. Windows x86_64 only. SHA256 is for the reassembled winlibs-x86_64-posix-seh-gcc-15.2.0-mingw-w64ucrt-13.0.0-r6.7z, cross-referenced from GitHub release sidecar and ScoopInstaller/Main."
+    },
+    {
+      "SPDXID": "SPDXRef-gcc",
+      "name": "gcc",
+      "versionInfo": "15.2.0",
+      "supplier": "Organization: GNU Project",
+      "downloadLocation": "https://gcc.gnu.org/",
+      "filesAnalyzed": false,
+      "licenseConcluded": "GPL-3.0-or-later WITH GCC-exception-3.1",
+      "licenseDeclared": "GPL-3.0-or-later WITH GCC-exception-3.1",
+      "copyrightText": "Copyright (C) 1987-2026 Free Software Foundation, Inc.",
+      "primaryPackagePurpose": "APPLICATION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:generic/gcc@15.2.0"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:gnu:gcc:15.2.0:*:*:*:*:*:*:*"
+        }
+      ],
+      "comment": "POSIX threads model. Bundled in WinLibs release. Targets Windows x86_64."
+    },
+    {
+      "SPDXID": "SPDXRef-mingw-w64",
+      "name": "mingw-w64",
+      "versionInfo": "13.0.0",
+      "supplier": "Organization: MinGW-w64 Project",
+      "downloadLocation": "https://www.mingw-w64.org/",
+      "filesAnalyzed": false,
+      "licenseConcluded": "ZPL-2.1",
+      "licenseDeclared": "ZPL-2.1",
+      "copyrightText": "Copyright (C) MinGW-w64 Contributors",
+      "primaryPackagePurpose": "LIBRARY",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:generic/mingw-w64@13.0.0"
+        }
+      ],
+      "comment": "Linked with UCRT runtime. Provides Windows headers and import libraries."
+    },
+    {
+      "SPDXID": "SPDXRef-gdb",
+      "name": "gdb",
+      "versionInfo": "17.1",
+      "supplier": "Organization: GNU Project",
+      "downloadLocation": "https://www.gnu.org/software/gdb/",
+      "filesAnalyzed": false,
+      "licenseConcluded": "GPL-3.0-or-later",
+      "licenseDeclared": "GPL-3.0-or-later",
+      "copyrightText": "Copyright (C) Free Software Foundation, Inc.",
+      "primaryPackagePurpose": "APPLICATION",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:gnu:gdb:17.1:*:*:*:*:*:*:*"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-binutils",
+      "name": "binutils",
+      "versionInfo": "2.46.0.20260210",
+      "supplier": "Organization: GNU Project",
+      "downloadLocation": "https://www.gnu.org/software/binutils/",
+      "filesAnalyzed": false,
+      "licenseConcluded": "GPL-3.0-or-later",
+      "licenseDeclared": "GPL-3.0-or-later",
+      "copyrightText": "Copyright (C) Free Software Foundation, Inc.",
+      "primaryPackagePurpose": "APPLICATION",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:gnu:binutils:2.46.0:*:*:*:*:*:*:*"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-make",
+      "name": "make",
+      "versionInfo": "4.4.1",
+      "supplier": "Organization: GNU Project",
+      "downloadLocation": "https://www.gnu.org/software/make/",
+      "filesAnalyzed": false,
+      "licenseConcluded": "GPL-3.0-or-later",
+      "licenseDeclared": "GPL-3.0-or-later",
+      "copyrightText": "Copyright (C) Free Software Foundation, Inc.",
+      "primaryPackagePurpose": "APPLICATION",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:gnu:make:4.4.1:*:*:*:*:*:*:*"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-cmake",
+      "name": "cmake",
+      "versionInfo": "4.2.3",
+      "supplier": "Organization: Kitware Inc.",
+      "downloadLocation": "https://cmake.org/",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-3-Clause",
+      "licenseDeclared": "BSD-3-Clause",
+      "copyrightText": "Copyright 2000-2026 Kitware, Inc. and Contributors",
+      "primaryPackagePurpose": "APPLICATION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:generic/cmake@4.2.3"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:kitware:cmake:4.2.3:*:*:*:*:*:*:*"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-ninja",
+      "name": "ninja",
+      "versionInfo": "1.13.2",
+      "supplier": "Organization: ninja-build",
+      "downloadLocation": "https://github.com/ninja-build/ninja/releases/tag/v1.13.2",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0",
+      "copyrightText": "Copyright 2011 Google Inc. All Rights Reserved.",
+      "primaryPackagePurpose": "APPLICATION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:github/ninja-build/ninja@v1.13.2"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-nasm",
+      "name": "nasm",
+      "versionInfo": "2.16.03",
+      "supplier": "Organization: NASM Project",
+      "downloadLocation": "https://www.nasm.us/",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-2-Clause",
+      "licenseDeclared": "BSD-2-Clause",
+      "copyrightText": "Copyright 1996-2026 The NASM Authors",
+      "primaryPackagePurpose": "APPLICATION",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:nasm:nasm:2.16.03:*:*:*:*:*:*:*"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-yasm",
+      "name": "yasm",
+      "versionInfo": "1.3.0",
+      "supplier": "Organization: Yasm Project",
+      "downloadLocation": "https://yasm.tortall.net/",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-2-Clause",
+      "licenseDeclared": "BSD-2-Clause",
+      "copyrightText": "Copyright (c) 2001-2014 Peter Johnson and other Yasm developers",
+      "primaryPackagePurpose": "APPLICATION"
+    },
+    {
+      "SPDXID": "SPDXRef-ccache",
+      "name": "ccache",
+      "versionInfo": "4.12.3",
+      "supplier": "Organization: ccache contributors",
+      "downloadLocation": "https://ccache.dev/",
+      "filesAnalyzed": false,
+      "licenseConcluded": "GPL-3.0-or-later",
+      "licenseDeclared": "GPL-3.0-or-later",
+      "copyrightText": "Copyright (C) 2002-2026 ccache contributors",
+      "primaryPackagePurpose": "APPLICATION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:github/ccache/ccache@v4.12.3"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-cppcheck",
+      "name": "cppcheck",
+      "versionInfo": "2.19.0",
+      "supplier": "Organization: Cppcheck contributors",
+      "downloadLocation": "https://cppcheck.sourceforge.io/",
+      "filesAnalyzed": false,
+      "licenseConcluded": "GPL-3.0-or-later",
+      "licenseDeclared": "GPL-3.0-or-later",
+      "copyrightText": "Copyright (C) 2007-2026 Daniel Marjamaki and Cppcheck team",
+      "primaryPackagePurpose": "APPLICATION",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:cppcheck:cppcheck:2.19.0:*:*:*:*:*:*:*"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-doxygen",
+      "name": "doxygen",
+      "versionInfo": "1.16.1",
+      "supplier": "Person: Dimitri van Heesch",
+      "downloadLocation": "https://www.doxygen.nl/",
+      "filesAnalyzed": false,
+      "licenseConcluded": "GPL-2.0-only",
+      "licenseDeclared": "GPL-2.0-only",
+      "copyrightText": "Copyright (C) 1997-2026 Dimitri van Heesch",
+      "primaryPackagePurpose": "APPLICATION",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:doxygen:doxygen:1.16.1:*:*:*:*:*:*:*"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-dos2unix",
+      "name": "dos2unix",
+      "versionInfo": "7.5.4",
+      "supplier": "Person: Erwin Waterlander",
+      "downloadLocation": "https://waterlan.home.xs4all.nl/dos2unix.html",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-2-Clause",
+      "licenseDeclared": "BSD-2-Clause",
+      "copyrightText": "Copyright (c) 2009-2026 Erwin Waterlander",
+      "primaryPackagePurpose": "APPLICATION"
+    },
+    {
+      "SPDXID": "SPDXRef-pkgconf",
+      "name": "pkgconf",
+      "versionInfo": "2.5.1",
+      "supplier": "Person: ariadne (Ariadne Conill)",
+      "downloadLocation": "https://github.com/pkgconf/pkgconf",
+      "filesAnalyzed": false,
+      "licenseConcluded": "ISC",
+      "licenseDeclared": "ISC",
+      "copyrightText": "Copyright (c) 2011-2026 pkgconf authors",
+      "primaryPackagePurpose": "APPLICATION"
+    },
+    {
+      "SPDXID": "SPDXRef-ucrt",
+      "name": "ucrt",
+      "versionInfo": "NOASSERTION",
+      "supplier": "Organization: Microsoft Corporation",
+      "downloadLocation": "https://support.microsoft.com/en-us/topic/update-for-universal-c-runtime-in-windows-322bf30f-4735-bb94-3949-49f5c49f4732",
+      "filesAnalyzed": false,
+      "licenseConcluded": "LicenseRef-Microsoft-UCRT",
+      "licenseDeclared": "LicenseRef-Microsoft-UCRT",
+      "copyrightText": "Copyright (C) Microsoft Corporation",
+      "primaryPackagePurpose": "LIBRARY",
+      "comment": "Universal C Runtime. Required at runtime on target Windows machines. Built into Windows 10+. Installable on Windows 7 SP1+ via Microsoft update KB2999226."
+    },
+    {
+      "SPDXID": "SPDXRef-winlibs-tools",
+      "name": "winlibs-tools",
+      "versionInfo": "1.0.17",
+      "supplier": "Person: Brecht Sanders (brechtsanders)",
+      "downloadLocation": "https://github.com/brechtsanders/winlibs_mingw",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "Copyright (C) Brecht Sanders",
+      "primaryPackagePurpose": "APPLICATION",
+      "comment": "WinLibs-specific utility tools bundled in the release."
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-winlibs-gcc-ucrt"
+    },
+    {
+      "spdxElementId": "SPDXRef-winlibs-gcc-ucrt",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-gcc"
+    },
+    {
+      "spdxElementId": "SPDXRef-winlibs-gcc-ucrt",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-mingw-w64"
+    },
+    {
+      "spdxElementId": "SPDXRef-winlibs-gcc-ucrt",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-gdb"
+    },
+    {
+      "spdxElementId": "SPDXRef-winlibs-gcc-ucrt",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-binutils"
+    },
+    {
+      "spdxElementId": "SPDXRef-winlibs-gcc-ucrt",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-make"
+    },
+    {
+      "spdxElementId": "SPDXRef-winlibs-gcc-ucrt",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-cmake"
+    },
+    {
+      "spdxElementId": "SPDXRef-winlibs-gcc-ucrt",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-ninja"
+    },
+    {
+      "spdxElementId": "SPDXRef-winlibs-gcc-ucrt",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-nasm"
+    },
+    {
+      "spdxElementId": "SPDXRef-winlibs-gcc-ucrt",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-yasm"
+    },
+    {
+      "spdxElementId": "SPDXRef-winlibs-gcc-ucrt",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-ccache"
+    },
+    {
+      "spdxElementId": "SPDXRef-winlibs-gcc-ucrt",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-cppcheck"
+    },
+    {
+      "spdxElementId": "SPDXRef-winlibs-gcc-ucrt",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-doxygen"
+    },
+    {
+      "spdxElementId": "SPDXRef-winlibs-gcc-ucrt",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-dos2unix"
+    },
+    {
+      "spdxElementId": "SPDXRef-winlibs-gcc-ucrt",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-pkgconf"
+    },
+    {
+      "spdxElementId": "SPDXRef-winlibs-gcc-ucrt",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-winlibs-tools"
+    },
+    {
+      "spdxElementId": "SPDXRef-gcc",
+      "relationshipType": "RUNTIME_DEPENDENCY_OF",
+      "relatedSpdxElement": "SPDXRef-ucrt"
+    }
+  ]
+}

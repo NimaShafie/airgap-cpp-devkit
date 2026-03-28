@@ -1,0 +1,17 @@
+# Author: Nima Shafie
+# ── toolchains/clang-style-formatter ──────────────────────────────────────────────
+# Add these entries to the .gitignore of any production repository that uses
+# toolchains/clang-style-formatter as a submodule under tools/.
+
+# Python venv created by setup.sh — generated locally, never committed.
+tools/toolchains/clang-style-formatter/.venv/
+
+# Per-developer local config overrides — intentionally not shared.
+tools/toolchains/clang-style-formatter/.llvm-hooks-local/
+
+# .clang-format and .clang-tidy live inside the submodule (config/ directory)
+# and are not copied to the repo root. No entries needed for them here unless
+# you add local overrides at the repo root, in which case add:
+# .clang-format
+# .clang-tidy
+# ─────────────────────────────────────────────────────────────────────────────

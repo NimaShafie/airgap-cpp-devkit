@@ -34,13 +34,13 @@ update_timestamp() {
 }
 
 # ---------------------------------------------------------------------------
-# Update timestamps — paths updated for new clang-llvm/ structure
+# Update timestamps — paths updated for new toolchains/clang/ structure
 # ---------------------------------------------------------------------------
 update_timestamp "${REPO_ROOT}/sbom.spdx.json"
-update_timestamp "${REPO_ROOT}/clang-llvm/source-build/sbom.spdx.json"
-update_timestamp "${REPO_ROOT}/clang-llvm/style-formatter/sbom.spdx.json"
-update_timestamp "${REPO_ROOT}/git-bundle/sbom.spdx.json"
-update_timestamp "${REPO_ROOT}/prebuilt/winlibs-gcc-ucrt/sbom.spdx.json"
+update_timestamp "${REPO_ROOT}/toolchains/clang/source-build/sbom.spdx.json"
+update_timestamp "${REPO_ROOT}/toolchains/clang/style-formatter/sbom.spdx.json"
+update_timestamp "${REPO_ROOT}/dev-tools/git-bundle/sbom.spdx.json"
+update_timestamp "${REPO_ROOT}/toolchains/gcc/windows/sbom.spdx.json"
 
 echo ""
 
@@ -58,18 +58,18 @@ update_sha1() {
   echo "${sha1}"
 }
 
-SHA1_SOURCE_BUILD=$(update_sha1 "${REPO_ROOT}/clang-llvm/source-build/sbom.spdx.json")
-SHA1_FORMATTER=$(update_sha1 "${REPO_ROOT}/clang-llvm/style-formatter/sbom.spdx.json")
-SHA1_GIT_BUNDLE=$(update_sha1 "${REPO_ROOT}/git-bundle/sbom.spdx.json")
-SHA1_WINLIBS=$(update_sha1 "${REPO_ROOT}/prebuilt/winlibs-gcc-ucrt/sbom.spdx.json")
+SHA1_SOURCE_BUILD=$(update_sha1 "${REPO_ROOT}/toolchains/clang/source-build/sbom.spdx.json")
+SHA1_FORMATTER=$(update_sha1 "${REPO_ROOT}/toolchains/clang/style-formatter/sbom.spdx.json")
+SHA1_GIT_BUNDLE=$(update_sha1 "${REPO_ROOT}/dev-tools/git-bundle/sbom.spdx.json")
+SHA1_WINLIBS=$(update_sha1 "${REPO_ROOT}/toolchains/gcc/windows/sbom.spdx.json")
 
 python3 - "${ROOT_SBOM}" "${SHA1_SOURCE_BUILD}" "${SHA1_FORMATTER}" "${SHA1_GIT_BUNDLE}" "${SHA1_WINLIBS}" << 'PYEOF'
 import json, sys
 path, sha_sb, sha_fmt, sha_gb, sha_wl = sys.argv[1:]
 hashes = {
-    "DocumentRef-clang-llvm-source-build": sha_sb,
-    "DocumentRef-clang-llvm-style-formatter": sha_fmt,
-    "DocumentRef-git-bundle": sha_gb,
+    "DocumentRef-toolchains/clang-source-build": sha_sb,
+    "DocumentRef-toolchains/clang-style-formatter": sha_fmt,
+    "DocumentRef-dev-tools/git-bundle": sha_gb,
     "DocumentRef-winlibs-gcc-ucrt": sha_wl,
 }
 with open(path) as f:
@@ -93,10 +93,10 @@ echo "Verifying JSON syntax..."
 ALL_OK=true
 for sbom in \
   "${REPO_ROOT}/sbom.spdx.json" \
-  "${REPO_ROOT}/clang-llvm/source-build/sbom.spdx.json" \
-  "${REPO_ROOT}/clang-llvm/style-formatter/sbom.spdx.json" \
-  "${REPO_ROOT}/git-bundle/sbom.spdx.json" \
-  "${REPO_ROOT}/prebuilt/winlibs-gcc-ucrt/sbom.spdx.json"
+  "${REPO_ROOT}/toolchains/clang/source-build/sbom.spdx.json" \
+  "${REPO_ROOT}/toolchains/clang/style-formatter/sbom.spdx.json" \
+  "${REPO_ROOT}/dev-tools/git-bundle/sbom.spdx.json" \
+  "${REPO_ROOT}/toolchains/gcc/windows/sbom.spdx.json"
 do
   if [[ ! -f "${sbom}" ]]; then
     echo "  [FAIL] Missing: ${sbom}" >&2
@@ -119,10 +119,10 @@ if [[ "${ALL_OK}" == "true" ]]; then
   echo ""
   echo " Files:"
   echo "   sbom.spdx.json                                 (root)"
-  echo "   clang-llvm/source-build/sbom.spdx.json"
-  echo "   clang-llvm/style-formatter/sbom.spdx.json"
-  echo "   git-bundle/sbom.spdx.json"
-  echo "   prebuilt/winlibs-gcc-ucrt/sbom.spdx.json"
+  echo "   toolchains/clang/source-build/sbom.spdx.json"
+  echo "   toolchains/clang/style-formatter/sbom.spdx.json"
+  echo "   dev-tools/git-bundle/sbom.spdx.json"
+  echo "   toolchains/gcc/windows/sbom.spdx.json"
   echo ""
   echo " Validate online: https://tools.spdx.org/app/validate/"
   echo "============================================================"

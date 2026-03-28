@@ -95,7 +95,7 @@ _box_blank() { printf '║%*s║\n' "${_W}" ""; }
 _find_tools() {
     local base="$1"
     local found=()
-    for tool in clang-llvm cmake lcov 7zip servy winlibs-gcc-ucrt grpc-1.76.0 grpc-1.78.1 style-formatter; do
+    for tool in toolchains/clang cmake lcov 7zip servy winlibs-gcc-ucrt grpc-1.76.0 grpc-1.78.1 style-formatter; do
         local dir="${base}/${tool}"
         if [[ -f "${dir}/INSTALL_RECEIPT.txt" ]]; then
             found+=("${tool}:${dir}")

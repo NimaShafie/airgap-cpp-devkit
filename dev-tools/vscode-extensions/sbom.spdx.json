@@ -1,0 +1,156 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "airgap-cpp-devkit-dev-tools/vscode-extensions",
+  "documentNamespace": "https://airgap-cpp-devkit.internal/dev-tools/vscode-extensions/sbom.spdx.json",
+  "creationInfo": {
+    "created": "2026-03-25T00:00:00Z",
+    "creators": [
+      "Tool: airgap-cpp-devkit",
+      "Organization: airgap-cpp-devkit"
+    ]
+  },
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-cpptools-extension-pack",
+      "name": "C/C++ Extension Pack",
+      "version": "1.5.1",
+      "supplier": "Organization: Microsoft",
+      "downloadLocation": "https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools-extension-pack",
+      "filesAnalyzed": false,
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "e639affc29ee00cc06f1ab2f5b6896f23f37ee57672d9deb25241b36c36f3743"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "Copyright (c) Microsoft Corporation",
+      "comment": "Universal platform. Single file — no splitting required."
+    },
+    {
+      "SPDXID": "SPDXRef-cpptools-win32-x64",
+      "name": "C/C++ (win32-x64)",
+      "version": "1.30.4",
+      "supplier": "Organization: Microsoft",
+      "downloadLocation": "https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools",
+      "filesAnalyzed": false,
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "2f2b95d13f96cc05c73ef5c3a80e30b24f2d0b810476d1ec75830ef9483ba683"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "Copyright (c) Microsoft Corporation",
+      "comment": "Windows x86-64. Split into 2 parts: part-aa + part-ab."
+    },
+    {
+      "SPDXID": "SPDXRef-cpptools-linux-x64",
+      "name": "C/C++ (linux-x64)",
+      "version": "1.30.4",
+      "supplier": "Organization: Microsoft",
+      "downloadLocation": "https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools",
+      "filesAnalyzed": false,
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "81f1db061856ef17a10815cacf1d0636fc73c0f767edd80f7b9d590ba863ab09"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "Copyright (c) Microsoft Corporation",
+      "comment": "Linux x86-64. Split into 3 parts: part-aa + part-ab + part-ac."
+    },
+    {
+      "SPDXID": "SPDXRef-testmate",
+      "name": "C++ TestMate",
+      "version": "4.22.3",
+      "supplier": "Organization: Mate Pek",
+      "downloadLocation": "https://marketplace.visualstudio.com/items?itemName=matepek.vscode-catch2-test-adapter",
+      "filesAnalyzed": false,
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "d6f0fe196bf16a36e9c1a2557d5f23e030deba1eb45d1ce34321096c7abae81c"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "Copyright (c) Mate Pek",
+      "comment": "Universal platform. Single file — no splitting required."
+    },
+    {
+      "SPDXID": "SPDXRef-python-ext-win32-x64",
+      "name": "Python extension (win32-x64)",
+      "version": "2026.5.2026031201",
+      "supplier": "Organization: Microsoft",
+      "downloadLocation": "https://marketplace.visualstudio.com/items?itemName=ms-python.python",
+      "filesAnalyzed": false,
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "02bbc948663a959fc8ce303b65d75b2096270db45a9d547514530a69b3512f8f"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "Copyright (c) Microsoft Corporation",
+      "comment": "Windows x86-64. Single file — no splitting required."
+    },
+    {
+      "SPDXID": "SPDXRef-python-ext-linux-x64",
+      "name": "Python extension (linux-x64)",
+      "version": "2026.5.2026031201",
+      "supplier": "Organization: Microsoft",
+      "downloadLocation": "https://marketplace.visualstudio.com/items?itemName=ms-python.python",
+      "filesAnalyzed": false,
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "fce323fefb26a43321b6c106f666c032ad9841f541a64750a180685ace9e5647"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "Copyright (c) Microsoft Corporation",
+      "comment": "Linux x86-64. Single file — no splitting required."
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-cpptools-extension-pack"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-cpptools-win32-x64"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-cpptools-linux-x64"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-testmate"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-python-ext-win32-x64"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-python-ext-linux-x64"
+    }
+  ]
+}

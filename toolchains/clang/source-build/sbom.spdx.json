@@ -1,0 +1,445 @@
+{
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "spdxVersion": "SPDX-2.3",
+  "creationInfo": {
+    "created": "2026-03-28T00:00:00Z",
+    "creators": [
+      "Organization: airgap-cpp-devkit",
+      "Tool: airgap-cpp-devkit/scripts/generate-sbom.sh"
+    ],
+    "comment": "Generated SBOM for toolchains/clang-source-build subproject of airgap-cpp-devkit."
+  },
+  "name": "airgap-cpp-devkit-toolchains/clang-source-build",
+  "dataLicense": "CC0-1.0",
+  "documentNamespace": "https://airgap-cpp-devkit.internal/toolchains/clang/source-build/sbom.spdx.json",
+  "documentDescribes": [
+    "SPDXRef-toolchains/clang-source-build"
+  ],
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-toolchains/clang-source-build",
+      "name": "toolchains/clang-source-build",
+      "versionInfo": "1.0.0",
+      "supplier": "Organization: airgap-cpp-devkit",
+      "downloadLocation": "https://airgap-cpp-devkit.internal",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "APPLICATION",
+      "comment": "Top-level subproject. Builds or installs clang-format, clang-tidy, and ninja for Windows and Linux in air-gapped environments. Pre-built binaries are in the prebuilt-binaries submodule; source builds use vendored LLVM 22.1.2."
+    },
+    {
+      "SPDXID": "SPDXRef-llvm-project",
+      "name": "llvm-project",
+      "versionInfo": "22.1.2",
+      "supplier": "Organization: LLVM Project",
+      "downloadLocation": "https://github.com/llvm/llvm-project/releases/tag/llvmorg-22.1.2",
+      "filesAnalyzed": false,
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "62f2f13ff25b1bb28ea507888e858212d19aafb65e8e72b4a65ee0629ec4ae0c"
+        }
+      ],
+      "licenseConcluded": "Apache-2.0 WITH LLVM-exception",
+      "licenseDeclared": "Apache-2.0 WITH LLVM-exception",
+      "copyrightText": "Copyright (c) 2003-2026 University of Illinois at Urbana-Champaign and LLVM Contributors",
+      "primaryPackagePurpose": "SOURCE",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:github/llvm/llvm-project@llvmorg-22.1.2"
+        }
+      ],
+      "comment": "Vendored as split parts: llvm-project-22.1.2.src.tar.xz.part-aa through part-ad in llvm-src/. SHA256 is for the reassembled tarball."
+    },
+    {
+      "SPDXID": "SPDXRef-llvm-part-aa",
+      "name": "llvm-project-22.1.2.src.tar.xz.part-aa",
+      "versionInfo": "22.1.2",
+      "supplier": "Organization: airgap-cpp-devkit",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "9bad69282673024744d6b466df5f9621e69027c94ada249b54d7ca915395aa3b"
+        }
+      ],
+      "licenseConcluded": "Apache-2.0 WITH LLVM-exception",
+      "licenseDeclared": "Apache-2.0 WITH LLVM-exception",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "ARCHIVE",
+      "comment": "Split part 1 of 4 of llvm-project-22.1.2.src.tar.xz (50 MB)."
+    },
+    {
+      "SPDXID": "SPDXRef-llvm-part-ab",
+      "name": "llvm-project-22.1.2.src.tar.xz.part-ab",
+      "versionInfo": "22.1.2",
+      "supplier": "Organization: airgap-cpp-devkit",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "1c6edbf992c25c00efa88c347ff634c120241784e971394c6d00c0b1a8ba65cd"
+        }
+      ],
+      "licenseConcluded": "Apache-2.0 WITH LLVM-exception",
+      "licenseDeclared": "Apache-2.0 WITH LLVM-exception",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "ARCHIVE",
+      "comment": "Split part 2 of 4 of llvm-project-22.1.2.src.tar.xz (50 MB)."
+    },
+    {
+      "SPDXID": "SPDXRef-ninja-source",
+      "name": "ninja",
+      "versionInfo": "1.13.2",
+      "supplier": "Organization: ninja-build",
+      "downloadLocation": "https://github.com/ninja-build/ninja/releases/tag/v1.13.2",
+      "filesAnalyzed": false,
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "974d6b2f4eeefa25625d34da3cb36bdcebe7fbce40f4c16ac0835fd1c0cbae17"
+        }
+      ],
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0",
+      "copyrightText": "Copyright 2011 Google Inc. All Rights Reserved.",
+      "primaryPackagePurpose": "SOURCE",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:github/ninja-build/ninja@v1.13.2"
+        }
+      ],
+      "comment": "Vendored as ninja-1.13.2.tar.gz in ninja-src/. Built as a dependency for the LLVM CMake build. No official upstream SHA256 published; hash is self-computed from vendored tarball."
+    },
+    {
+      "SPDXID": "SPDXRef-clang-format-windows",
+      "name": "clang-format.exe",
+      "versionInfo": "22.1.1",
+      "supplier": "Organization: airgap-cpp-devkit",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "85c83cba356a79057e0715448f6164ce760a9b43b289291796520df65a047d61"
+        }
+      ],
+      "licenseConcluded": "Apache-2.0 WITH LLVM-exception",
+      "licenseDeclared": "Apache-2.0 WITH LLVM-exception",
+      "copyrightText": "Copyright (c) 2003-2026 University of Illinois at Urbana-Champaign and LLVM Contributors",
+      "primaryPackagePurpose": "APPLICATION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:github/llvm/llvm-project@llvmorg-22.1.1"
+        }
+      ],
+      "comment": "Pre-built clang-format.exe for windows-x86_64. Built from llvmorg-22.1.1 using MSVC 14.50.35717 (VS Insiders 18), CMake 4.1.2. Committed to prebuilt-binaries submodule (3.1 MB). Verified by scripts/verify-clang-format-windows.sh at bootstrap time."
+    },
+    {
+      "SPDXID": "SPDXRef-clang-tidy-linux",
+      "name": "clang-tidy",
+      "versionInfo": "22.1.2",
+      "supplier": "Organization: airgap-cpp-devkit",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "ee37045fd5655707839f23bc028884f79971aed834c4821f9e251f722ba704f4"
+        }
+      ],
+      "licenseConcluded": "Apache-2.0 WITH LLVM-exception",
+      "licenseDeclared": "Apache-2.0 WITH LLVM-exception",
+      "copyrightText": "Copyright (c) 2003-2026 University of Illinois at Urbana-Champaign and LLVM Contributors",
+      "primaryPackagePurpose": "APPLICATION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:github/llvm/llvm-project@llvmorg-22.1.2"
+        }
+      ],
+      "comment": "Pre-built clang-tidy binary for linux-x86_64. Built from llvmorg-22.1.2 on RHEL 8 using GCC 15.2.0. Strip applied (111MB->94MB)."
+    },
+    {
+      "SPDXID": "SPDXRef-clang-tidy-part-aa",
+      "name": "clang-tidy.part-aa",
+      "versionInfo": "22.1.2",
+      "supplier": "Organization: airgap-cpp-devkit",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "c9783e27d3e23793b80e5bc8cb314b273eb3de80347253002d6c556c663c6e58"
+        }
+      ],
+      "licenseConcluded": "Apache-2.0 WITH LLVM-exception",
+      "licenseDeclared": "Apache-2.0 WITH LLVM-exception",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "ARCHIVE",
+      "comment": "Split part 1 of 2 of the pre-built Linux clang-tidy binary (50 MB)."
+    },
+    {
+      "SPDXID": "SPDXRef-clang-tidy-part-ab",
+      "name": "clang-tidy.part-ab",
+      "versionInfo": "22.1.2",
+      "supplier": "Organization: airgap-cpp-devkit",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "b2d53b629e9f8e4d86cc36ab173950b10cbe04da57365a9a04c67fca1a6ee9b1"
+        }
+      ],
+      "licenseConcluded": "Apache-2.0 WITH LLVM-exception",
+      "licenseDeclared": "Apache-2.0 WITH LLVM-exception",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "ARCHIVE",
+      "comment": "Split part 2 of 2 of the pre-built Linux clang-tidy binary (44 MB)."
+    },
+    {
+      "SPDXID": "SPDXRef-clang-tidy-windows",
+      "name": "clang-tidy.exe",
+      "versionInfo": "22.1.1",
+      "supplier": "Organization: airgap-cpp-devkit",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "4e4dc42c11e407038b5b15c5bf91980e9c7a4a3ed17486b37963de8c5a5e15e4"
+        }
+      ],
+      "licenseConcluded": "Apache-2.0 WITH LLVM-exception",
+      "licenseDeclared": "Apache-2.0 WITH LLVM-exception",
+      "copyrightText": "Copyright (c) 2003-2026 University of Illinois at Urbana-Champaign and LLVM Contributors",
+      "primaryPackagePurpose": "APPLICATION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:github/llvm/llvm-project@llvmorg-22.1.1"
+        }
+      ],
+      "comment": "Pre-built clang-tidy.exe for windows-x86_64. Built from llvmorg-22.1.1 using MSVC 14.50.35717 (VS Insiders 18), CMake 4.1.2. Committed to prebuilt-binaries submodule (46 MB). Verified by scripts/verify-clang-tidy-windows.sh at bootstrap time."
+    },
+    {
+      "SPDXID": "SPDXRef-cmake-build-dep",
+      "name": "cmake",
+      "versionInfo": "3.14+",
+      "supplier": "NOASSERTION",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-3-Clause",
+      "licenseDeclared": "BSD-3-Clause",
+      "copyrightText": "Copyright 2000-2024 Kitware, Inc. and Contributors",
+      "primaryPackagePurpose": "APPLICATION",
+      "comment": "Transitive build dependency. Required to configure LLVM source build. Must be provided by the host system (not vendored). Minimum version 3.14; tested with CMake 4.1.2 on Windows."
+    },
+    {
+      "SPDXID": "SPDXRef-host-compiler",
+      "name": "host-compiler",
+      "versionInfo": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "APPLICATION",
+      "comment": "Transitive build dependency. MSVC (Windows, tested: 14.50.35717 via VS Insiders 18) or GCC (Linux, tested: 8.5.0 on RHEL 8) required to compile LLVM from source. Provided by host system; not vendored."
+    },
+    {
+      "SPDXID": "SPDXRef-clang-format-linux",
+      "name": "clang-format-linux",
+      "versionInfo": "22.1.2",
+      "supplier": "Organization: airgap-cpp-devkit",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "6711fa0ff6ed78592cabafc4f9730d915b1c92ddfcafe94ff8545ce78bed5f7e"
+        }
+      ],
+      "licenseConcluded": "Apache-2.0 WITH LLVM-exception",
+      "licenseDeclared": "Apache-2.0 WITH LLVM-exception",
+      "copyrightText": "Copyright (c) 2003-2026 University of Illinois at Urbana-Champaign and LLVM Contributors",
+      "primaryPackagePurpose": "APPLICATION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:github/llvm/llvm-project@llvmorg-22.1.2"
+        }
+      ],
+      "comment": "Pre-built clang-format binary for linux-x86_64. Built from llvmorg-22.1.2 on RHEL 8 using GCC 15.2.0."
+    },
+    {
+      "SPDXID": "SPDXRef-ninja-linux",
+      "name": "ninja-linux",
+      "versionInfo": "1.13.2",
+      "supplier": "Organization: airgap-cpp-devkit",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "e34911b853813843771d3e115c9f55fb6178ff0b3fa84fcebdb46e6768f05d86"
+        }
+      ],
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0",
+      "copyrightText": "Copyright 2011 Google Inc. All Rights Reserved.",
+      "primaryPackagePurpose": "APPLICATION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:github/ninja-build/ninja@v1.13.2"
+        }
+      ],
+      "comment": "Pre-built ninja binary for linux-x86_64. Built from ninja-1.13.2 on RHEL 8 using GCC 8.5.0 bootstrap. Committed to prebuilt-binaries submodule (10 MB). Used as build accelerator for LLVM source builds."
+    },
+    {
+      "SPDXID": "SPDXRef-ninja-windows",
+      "name": "ninja.exe",
+      "versionInfo": "1.13.2",
+      "supplier": "Organization: airgap-cpp-devkit",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "b3dfdbddb242f3400b2965a6d3acfa94c449d4ac8b11cec68290c624fc3c57e5"
+        }
+      ],
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0",
+      "copyrightText": "Copyright 2011 Google Inc. All Rights Reserved.",
+      "primaryPackagePurpose": "APPLICATION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:github/ninja-build/ninja@v1.13.2"
+        }
+      ],
+      "comment": "Pre-built ninja.exe for windows-x86_64. Built from ninja-1.13.2 using MSVC 19.50.35726.0 (VS Insiders 18) bootstrap. Committed to prebuilt-binaries submodule (656 KB). Used as build accelerator for LLVM source builds."
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-toolchains/clang-source-build"
+    },
+    {
+      "spdxElementId": "SPDXRef-toolchains/clang-source-build",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-llvm-project"
+    },
+    {
+      "spdxElementId": "SPDXRef-toolchains/clang-source-build",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-ninja-source"
+    },
+    {
+      "spdxElementId": "SPDXRef-toolchains/clang-source-build",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-clang-format-windows"
+    },
+    {
+      "spdxElementId": "SPDXRef-clang-format-windows",
+      "relationshipType": "GENERATED_FROM",
+      "relatedSpdxElement": "SPDXRef-llvm-project"
+    },
+    {
+      "spdxElementId": "SPDXRef-toolchains/clang-source-build",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-clang-tidy-linux"
+    },
+    {
+      "spdxElementId": "SPDXRef-toolchains/clang-source-build",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-clang-tidy-windows"
+    },
+    {
+      "spdxElementId": "SPDXRef-llvm-project",
+      "relationshipType": "GENERATED_FROM",
+      "relatedSpdxElement": "SPDXRef-llvm-part-aa"
+    },
+    {
+      "spdxElementId": "SPDXRef-llvm-project",
+      "relationshipType": "GENERATED_FROM",
+      "relatedSpdxElement": "SPDXRef-llvm-part-ab"
+    },
+    {
+      "spdxElementId": "SPDXRef-clang-tidy-linux",
+      "relationshipType": "GENERATED_FROM",
+      "relatedSpdxElement": "SPDXRef-clang-tidy-part-aa"
+    },
+    {
+      "spdxElementId": "SPDXRef-clang-tidy-linux",
+      "relationshipType": "GENERATED_FROM",
+      "relatedSpdxElement": "SPDXRef-clang-tidy-part-ab"
+    },
+    {
+      "spdxElementId": "SPDXRef-clang-tidy-windows",
+      "relationshipType": "GENERATED_FROM",
+      "relatedSpdxElement": "SPDXRef-llvm-project"
+    },
+    {
+      "spdxElementId": "SPDXRef-toolchains/clang-source-build",
+      "relationshipType": "BUILD_DEPENDENCY_OF",
+      "relatedSpdxElement": "SPDXRef-cmake-build-dep"
+    },
+    {
+      "spdxElementId": "SPDXRef-toolchains/clang-source-build",
+      "relationshipType": "BUILD_DEPENDENCY_OF",
+      "relatedSpdxElement": "SPDXRef-host-compiler"
+    },
+    {
+      "spdxElementId": "SPDXRef-toolchains/clang-source-build",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-clang-format-linux"
+    },
+    {
+      "spdxElementId": "SPDXRef-clang-format-linux",
+      "relationshipType": "GENERATED_FROM",
+      "relatedSpdxElement": "SPDXRef-llvm-project"
+    },
+    {
+      "spdxElementId": "SPDXRef-toolchains/clang-source-build",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-ninja-linux"
+    },
+    {
+      "spdxElementId": "SPDXRef-ninja-linux",
+      "relationshipType": "GENERATED_FROM",
+      "relatedSpdxElement": "SPDXRef-ninja-source"
+    },
+    {
+      "spdxElementId": "SPDXRef-toolchains/clang-source-build",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-ninja-windows"
+    },
+    {
+      "spdxElementId": "SPDXRef-ninja-windows",
+      "relationshipType": "GENERATED_FROM",
+      "relatedSpdxElement": "SPDXRef-ninja-source"
+    }
+  ]
+}

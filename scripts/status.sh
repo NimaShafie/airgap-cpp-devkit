@@ -139,11 +139,11 @@ _print_installed() {
 _check_style_formatter() {
     local fmt_bin=""
     local candidates=(
-        "${REPO_ROOT}/clang-llvm/style-formatter/.venv/bin/clang-format"
-        "${REPO_ROOT}/clang-llvm/style-formatter/.venv/Lib/site-packages/clang_format/data/bin/clang-format.exe"
-        "${REPO_ROOT}/clang-llvm/style-formatter/.venv/Lib/site-packages/clang_format/data/bin/clang-format"
-        "${REPO_ROOT}/clang-llvm/style-formatter/.venv/Scripts/clang-format.exe"
-        "${REPO_ROOT}/clang-llvm/style-formatter/.venv/Scripts/clang-format"
+        "${REPO_ROOT}/toolchains/clang/style-formatter/.venv/bin/clang-format"
+        "${REPO_ROOT}/toolchains/clang/style-formatter/.venv/Lib/site-packages/clang_format/data/bin/clang-format.exe"
+        "${REPO_ROOT}/toolchains/clang/style-formatter/.venv/Lib/site-packages/clang_format/data/bin/clang-format"
+        "${REPO_ROOT}/toolchains/clang/style-formatter/.venv/Scripts/clang-format.exe"
+        "${REPO_ROOT}/toolchains/clang/style-formatter/.venv/Scripts/clang-format"
     )
     for c in "${candidates[@]}"; do
         [[ -x "${c}" ]] && { fmt_bin="${c}"; break; }
@@ -161,7 +161,7 @@ _check_style_formatter() {
         echo ""
     else
         _print_not_installed "style-formatter" \
-            "bash clang-llvm/style-formatter/bootstrap.sh"
+            "bash toolchains/clang/style-formatter/bootstrap.sh"
     fi
 }
 _check_cmake() {
@@ -206,7 +206,7 @@ _check_winlibs() {
             "${install_dir}/INSTALL_RECEIPT.txt"
         return
     fi
-    local legacy="${REPO_ROOT}/prebuilt/winlibs-gcc-ucrt/toolchain/x86_64/mingw64/bin/gcc.exe"
+    local legacy="${REPO_ROOT}/toolchains/gcc/windows/toolchain/x86_64/mingw64/bin/gcc.exe"
     if [[ -x "${legacy}" ]]; then
         local ver
         ver="$(_bin_version "${legacy}")"
@@ -215,12 +215,12 @@ _check_winlibs() {
         printf "       gcc : %s\n\n" "${legacy}"
     else
         _print_not_installed "winlibs-gcc-ucrt" \
-            "bash prebuilt/winlibs-gcc-ucrt/setup.sh"
+            "bash toolchains/gcc/windows/setup.sh"
     fi
 }
 _check_grpc() {
     if [[ "${OS}" != "windows" ]]; then
-        _print_platform_only "grpc-source-build" "Windows"
+        _print_platform_only "frameworks/grpc" "Windows"
         return
     fi
     local found=false
@@ -240,8 +240,8 @@ _check_grpc() {
         done
     done
     if [[ "${found}" == false ]]; then
-        _print_not_installed "grpc-source-build" \
-            "bash grpc-source-build/setup_grpc.sh"
+        _print_not_installed "frameworks/grpc" \
+            "bash frameworks/grpc/setup_grpc.sh"
     fi
 }
 # ---------------------------------------------------------------------------
@@ -255,18 +255,18 @@ echo "  Platform : ${OS}   Date : $(date '+%Y-%m-%d')"
 echo "======================================================================================================"
 printf "${RESET}"
 echo ""
-install_dir="$(_find_install_dir "clang-llvm")"
+install_dir="$(_find_install_dir "toolchains/clang")"
 if [[ -n "${install_dir}" ]]; then
-    _print_installed "clang-llvm" "${install_dir}" "${install_dir}/INSTALL_RECEIPT.txt"
+    _print_installed "toolchains/clang" "${install_dir}" "${install_dir}/INSTALL_RECEIPT.txt"
 else
-    _print_not_installed "clang-llvm" "bash clang-llvm/source-build/bootstrap.sh"
+    _print_not_installed "toolchains/clang" "bash toolchains/clang/source-build/setup.sh"
 fi
 if [[ "${OS}" == "linux" ]]; then
     install_dir="$(_find_install_dir "lcov")"
     if [[ -n "${install_dir}" ]]; then
         _print_installed "lcov" "${install_dir}" "${install_dir}/INSTALL_RECEIPT.txt"
     else
-        _print_not_installed "lcov" "bash lcov-source-build/bootstrap.sh"
+        _print_not_installed "lcov" "bash build-tools/lcov/setup.sh"
     fi
 else
     _print_platform_only "lcov" "Linux"

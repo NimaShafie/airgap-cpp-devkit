@@ -1,0 +1,97 @@
+{
+  "_comment": "toolchains/clang manifest for airgap-cpp-devkit. Vendors a slim Clang/LLVM 22.1.2 Linux toolchain and llvm-mingw 20260324 (LLVM 22.1.2) for Windows cross-compilation and native Windows use. All binaries are split into <=50MB parts committed to prebuilt-binaries submodule.",
+  "clang_linux": {
+    "description": "Slim Clang/LLVM 22.1.2 Linux x86_64 toolchain — cherry-picked binaries only (clang, lld, llvm-ar, llvm-nm, llvm-objcopy, llvm-objdump, llvm-config, llvm-symbolizer)",
+    "version": "22.1.2",
+    "release_date": "2026-03-24",
+    "upstream_release": "https://github.com/llvm/llvm-project/releases/tag/llvmorg-22.1.2",
+    "original_asset": "LLVM-22.1.2-Linux-X64.tar.xz",
+    "original_sha256": "ff32497b6801267ee427bc69cdaeecfb2d19578af8c2a942e864c45215f9a2ac",
+    "slim_tarball": "toolchains/clang-22.1.2-linux-x64-slim.tar.xz",
+    "slim_sha256": "1988d3c2a84af6e16e968787c5c072ecaa37f93405aa2a0ec4c38096a5f3e14c",
+    "split_parts": [
+      {
+        "filename": "toolchains/clang-22.1.2-linux-x64-slim.tar.xz.part-aa",
+        "sha256": "b02e4061f964cd5b930c2229ee75f3884165069017f663478804a8ff784697f4"
+      },
+      {
+        "filename": "toolchains/clang-22.1.2-linux-x64-slim.tar.xz.part-ab",
+        "sha256": "1072c3d5f2bec9fce1d37f66a6ccda6a48c44422e39fd3f963c8cd563bc24a80"
+      },
+      {
+        "filename": "toolchains/clang-22.1.2-linux-x64-slim.tar.xz.part-ac",
+        "sha256": "e68779f0738c388bdb4cb68c0c1fbc9a02778faf67d536a8ab9eee50b763256f"
+      }
+    ],
+    "binaries_included": [
+      "bin/clang-22",
+      "bin/lld",
+      "bin/llvm-ar",
+      "bin/llvm-nm",
+      "bin/llvm-objcopy",
+      "bin/llvm-objdump",
+      "bin/llvm-config",
+      "bin/llvm-symbolizer"
+    ],
+    "symlinks_created_on_install": [
+      "bin/clang -> bin/clang-22",
+      "bin/clang++ -> bin/clang-22",
+      "bin/clang-cpp -> bin/clang-22",
+      "bin/ld.lld -> bin/lld",
+      "bin/ld64.lld -> bin/lld",
+      "bin/llvm-ranlib -> bin/llvm-ar",
+      "bin/llvm-strip -> bin/llvm-objcopy"
+    ],
+    "_note": "Original 1.9GB tarball cherry-picked to ~619MB unstripped binaries, repacked to 119MB .tar.xz. Symlinks recreated by install script since Windows cannot create Linux symlinks."
+  },
+  "llvm_mingw_linux": {
+    "description": "llvm-mingw 20260324 — LLVM/Clang/LLD based mingw-w64 cross-compiler running on Linux x86_64, targeting all four Windows architectures (i686, x86_64, armv7, arm64). UCRT runtime.",
+    "version": "20260324",
+    "llvm_version": "22.1.2",
+    "release_date": "2026-03-24",
+    "upstream_release": "https://github.com/mstorsjo/llvm-mingw/releases/tag/20260324",
+    "tarball": "llvm-mingw-20260324-ucrt-ubuntu-22.04-x86_64.tar.xz",
+    "sha256_reassembled": "f92b02c4f835470deb5ac5fb92ddb458239e80ddff9ce8867155679ee5f57ffc",
+    "platform": "linux-x86_64",
+    "crt": "ucrt",
+    "split_parts": [
+      {
+        "filename": "llvm-mingw-20260324-ucrt-ubuntu-22.04-x86_64.tar.xz.part-aa",
+        "sha256": "f62fb01834060daad730f25844064d53abfc99fd0db8c244d72c292cfd99921d"
+      },
+      {
+        "filename": "llvm-mingw-20260324-ucrt-ubuntu-22.04-x86_64.tar.xz.part-ab",
+        "sha256": "d6996772dcf79068515fcbcd58e640ee542357c477dd8121323d89037fb80483"
+      }
+    ]
+  },
+  "llvm_mingw_windows": {
+    "description": "llvm-mingw 20260324 — LLVM/Clang/LLD based mingw-w64 native toolchain for Windows x86_64, targeting all four Windows architectures (i686, x86_64, armv7, arm64). UCRT runtime.",
+    "version": "20260324",
+    "llvm_version": "22.1.2",
+    "release_date": "2026-03-24",
+    "upstream_release": "https://github.com/mstorsjo/llvm-mingw/releases/tag/20260324",
+    "zip": "llvm-mingw-20260324-ucrt-x86_64.zip",
+    "sha256_reassembled": "e6d3195ab6ee67f66651ae263b91e395cef3ef3af95d20f1004f84e9fe988116",
+    "platform": "windows-x86_64",
+    "crt": "ucrt",
+    "split_parts": [
+      {
+        "filename": "llvm-mingw-20260324-ucrt-x86_64.zip.part-aa",
+        "sha256": "9b9b360a5cec496ea9765aa61f268be20200ccf77ffbab1998879cd6f64d3c5a"
+      },
+      {
+        "filename": "llvm-mingw-20260324-ucrt-x86_64.zip.part-ab",
+        "sha256": "8b8d718ecf78123a47092561b116ef5b9239dbc7d87ccf9597e3fec1f4b46bc7"
+      },
+      {
+        "filename": "llvm-mingw-20260324-ucrt-x86_64.zip.part-ac",
+        "sha256": "2472ab27d8935807aa83c23ab1da8bd712401b4a64d161760be39fd855b1df7e"
+      },
+      {
+        "filename": "llvm-mingw-20260324-ucrt-x86_64.zip.part-ad",
+        "sha256": "edd1b68decb0a37c69ac00ff2fbf3e040de2adaa50b1ad3e3428d18629e41085"
+      }
+    ]
+  }
+}

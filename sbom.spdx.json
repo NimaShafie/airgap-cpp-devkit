@@ -17,32 +17,32 @@
   ],
   "externalDocumentRefs": [
     {
-      "externalDocumentId": "DocumentRef-clang-llvm-source-build",
-      "spdxDocument": "https://airgap-cpp-devkit.internal/clang-llvm/source-build/sbom.spdx.json",
+      "externalDocumentId": "DocumentRef-toolchains/clang-source-build",
+      "spdxDocument": "https://airgap-cpp-devkit.internal/toolchains/clang/source-build/sbom.spdx.json",
       "checksum": {
         "algorithm": "SHA1",
         "checksumValue": "d475175c5de0c82020f5d7caace6d3fe779c27ac"
       }
     },
     {
-      "externalDocumentId": "DocumentRef-clang-llvm-style-formatter",
-      "spdxDocument": "https://airgap-cpp-devkit.internal/clang-llvm/style-formatter/sbom.spdx.json",
+      "externalDocumentId": "DocumentRef-toolchains/clang-style-formatter",
+      "spdxDocument": "https://airgap-cpp-devkit.internal/toolchains/clang/style-formatter/sbom.spdx.json",
       "checksum": {
         "algorithm": "SHA1",
         "checksumValue": "8fc5f78713f618112cbe8c0c58b39d6068e082d5"
       }
     },
     {
-      "externalDocumentId": "DocumentRef-git-bundle",
-      "spdxDocument": "https://airgap-cpp-devkit.internal/git-bundle/sbom.spdx.json",
+      "externalDocumentId": "DocumentRef-dev-tools/git-bundle",
+      "spdxDocument": "https://airgap-cpp-devkit.internal/dev-tools/git-bundle/sbom.spdx.json",
       "checksum": {
         "algorithm": "SHA1",
         "checksumValue": "03fdab7e3a5c5bbcbc6aa68bd5380bdb52e0b460"
       }
     },
     {
-      "externalDocumentId": "DocumentRef-lcov-source-build",
-      "spdxDocument": "https://airgap-cpp-devkit.internal/lcov-source-build/sbom.spdx.json",
+      "externalDocumentId": "DocumentRef-build-tools/lcov",
+      "spdxDocument": "https://airgap-cpp-devkit.internal/build-tools/lcov/sbom.spdx.json",
       "checksum": {
         "algorithm": "SHA1",
         "checksumValue": "3325c377d33b7aed01b771143d022bf4431e96b0"
@@ -50,7 +50,7 @@
     },
     {
       "externalDocumentId": "DocumentRef-winlibs-gcc-ucrt",
-      "spdxDocument": "https://airgap-cpp-devkit.internal/prebuilt/winlibs-gcc-ucrt/sbom.spdx.json",
+      "spdxDocument": "https://airgap-cpp-devkit.internal/toolchains/gcc/windows/sbom.spdx.json",
       "checksum": {
         "algorithm": "SHA1",
         "checksumValue": "6138786b90732e5134545cdfd936fcb0084f4f24"
@@ -58,7 +58,7 @@
     },
     {
       "externalDocumentId": "DocumentRef-7zip",
-      "spdxDocument": "https://airgap-cpp-devkit.internal/prebuilt/7zip/sbom.spdx.json",
+      "spdxDocument": "https://airgap-cpp-devkit.internal/dev-tools/7zip/sbom.spdx.json",
       "checksum": {
         "algorithm": "SHA1",
         "checksumValue": "59a16572fe110989b0b32cca0e9375b2788d50de"
@@ -66,7 +66,7 @@
     },
     {
       "externalDocumentId": "DocumentRef-servy",
-      "spdxDocument": "https://airgap-cpp-devkit.internal/prebuilt/servy/sbom.spdx.json",
+      "spdxDocument": "https://airgap-cpp-devkit.internal/dev-tools/servy/sbom.spdx.json",
       "checksum": {
         "algorithm": "SHA1",
         "checksumValue": "79d61759c05c0addbba82562ea583aa148a18371"
@@ -88,8 +88,8 @@
       "comment": "Air-gapped C++ developer toolkit. All tools work without internet access, without admin rights, and without pre-installed binaries. Targets Windows 11 (Git Bash/MINGW64) and RHEL 8."
     },
     {
-      "SPDXID": "SPDXRef-subproject-clang-llvm-source-build",
-      "name": "clang-llvm-source-build",
+      "SPDXID": "SPDXRef-subproject-toolchains/clang-source-build",
+      "name": "toolchains/clang-source-build",
       "versionInfo": "1.0.0",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
@@ -98,11 +98,11 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "Optional subproject. Builds clang-format and clang-tidy from LLVM 22.1.2 source. See DocumentRef-clang-llvm-source-build for full component SBOM."
+      "comment": "Optional subproject. Builds clang-format and clang-tidy from LLVM 22.1.2 source. See DocumentRef-toolchains/clang-source-build for full component SBOM."
     },
     {
-      "SPDXID": "SPDXRef-subproject-clang-llvm-style-formatter",
-      "name": "clang-llvm-style-formatter",
+      "SPDXID": "SPDXRef-subproject-toolchains/clang-style-formatter",
+      "name": "toolchains/clang-style-formatter",
       "versionInfo": "1.0.0",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
@@ -111,11 +111,11 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "Core subproject. Enforces LLVM C++ style via Git pre-commit hook using vendored clang-format wheel. See DocumentRef-clang-llvm-style-formatter for full component SBOM."
+      "comment": "Core subproject. Enforces LLVM C++ style via Git pre-commit hook using vendored clang-format wheel. See DocumentRef-toolchains/clang-style-formatter for full component SBOM."
     },
     {
-      "SPDXID": "SPDXRef-subproject-git-bundle",
-      "name": "git-bundle",
+      "SPDXID": "SPDXRef-subproject-dev-tools/git-bundle",
+      "name": "dev-tools/git-bundle",
       "versionInfo": "1.0.0",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
@@ -124,11 +124,11 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "Core subproject. Transfers Git repositories with nested submodules across air-gapped boundaries. Pure Python, no third-party dependencies. See DocumentRef-git-bundle for full component SBOM."
+      "comment": "Core subproject. Transfers Git repositories with nested submodules across air-gapped boundaries. Pure Python, no third-party dependencies. See DocumentRef-dev-tools/git-bundle for full component SBOM."
     },
     {
-      "SPDXID": "SPDXRef-subproject-lcov-source-build",
-      "name": "lcov-source-build",
+      "SPDXID": "SPDXRef-subproject-build-tools/lcov",
+      "name": "build-tools/lcov",
       "versionInfo": "2.4",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
@@ -137,7 +137,7 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "Optional subproject. Code coverage reporting via lcov 2.4 + gcov for RHEL 8 / Linux. Vendored lcov source and Perl dependencies (Capture::Tiny, DateTime, DateTime::TimeZone) as pre-built tarballs. No internet access, CPAN, or EPEL required. See DocumentRef-lcov-source-build for full component SBOM."
+      "comment": "Optional subproject. Code coverage reporting via lcov 2.4 + gcov for RHEL 8 / Linux. Vendored lcov source and Perl dependencies (Capture::Tiny, DateTime, DateTime::TimeZone) as pre-built tarballs. No internet access, CPAN, or EPEL required. See DocumentRef-build-tools/lcov for full component SBOM."
     },
     {
       "SPDXID": "SPDXRef-subproject-winlibs-gcc-ucrt",
@@ -188,22 +188,22 @@
     {
       "spdxElementId": "SPDXRef-airgap-cpp-devkit",
       "relationshipType": "CONTAINS",
-      "relatedSpdxElement": "SPDXRef-subproject-clang-llvm-source-build"
+      "relatedSpdxElement": "SPDXRef-subproject-toolchains/clang-source-build"
     },
     {
       "spdxElementId": "SPDXRef-airgap-cpp-devkit",
       "relationshipType": "CONTAINS",
-      "relatedSpdxElement": "SPDXRef-subproject-clang-llvm-style-formatter"
+      "relatedSpdxElement": "SPDXRef-subproject-toolchains/clang-style-formatter"
     },
     {
       "spdxElementId": "SPDXRef-airgap-cpp-devkit",
       "relationshipType": "CONTAINS",
-      "relatedSpdxElement": "SPDXRef-subproject-git-bundle"
+      "relatedSpdxElement": "SPDXRef-subproject-dev-tools/git-bundle"
     },
     {
       "spdxElementId": "SPDXRef-airgap-cpp-devkit",
       "relationshipType": "CONTAINS",
-      "relatedSpdxElement": "SPDXRef-subproject-lcov-source-build"
+      "relatedSpdxElement": "SPDXRef-subproject-build-tools/lcov"
     },
     {
       "spdxElementId": "SPDXRef-airgap-cpp-devkit",
@@ -221,24 +221,24 @@
       "relatedSpdxElement": "SPDXRef-subproject-servy"
     },
     {
-      "spdxElementId": "SPDXRef-subproject-clang-llvm-source-build",
+      "spdxElementId": "SPDXRef-subproject-toolchains/clang-source-build",
       "relationshipType": "DESCRIBED_BY",
-      "relatedSpdxElement": "DocumentRef-clang-llvm-source-build:SPDXRef-clang-llvm-source-build"
+      "relatedSpdxElement": "DocumentRef-toolchains/clang-source-build:SPDXRef-toolchains/clang-source-build"
     },
     {
-      "spdxElementId": "SPDXRef-subproject-clang-llvm-style-formatter",
+      "spdxElementId": "SPDXRef-subproject-toolchains/clang-style-formatter",
       "relationshipType": "DESCRIBED_BY",
-      "relatedSpdxElement": "DocumentRef-clang-llvm-style-formatter:SPDXRef-clang-llvm-style-formatter"
+      "relatedSpdxElement": "DocumentRef-toolchains/clang-style-formatter:SPDXRef-toolchains/clang-style-formatter"
     },
     {
-      "spdxElementId": "SPDXRef-subproject-git-bundle",
+      "spdxElementId": "SPDXRef-subproject-dev-tools/git-bundle",
       "relationshipType": "DESCRIBED_BY",
-      "relatedSpdxElement": "DocumentRef-git-bundle:SPDXRef-git-bundle"
+      "relatedSpdxElement": "DocumentRef-dev-tools/git-bundle:SPDXRef-dev-tools/git-bundle"
     },
     {
-      "spdxElementId": "SPDXRef-subproject-lcov-source-build",
+      "spdxElementId": "SPDXRef-subproject-build-tools/lcov",
       "relationshipType": "DESCRIBED_BY",
-      "relatedSpdxElement": "DocumentRef-lcov-source-build:SPDXRef-lcov-source-build"
+      "relatedSpdxElement": "DocumentRef-build-tools/lcov:SPDXRef-build-tools/lcov"
     },
     {
       "spdxElementId": "SPDXRef-subproject-winlibs-gcc-ucrt",

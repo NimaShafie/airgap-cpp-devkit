@@ -8,12 +8,12 @@ Pre-built packages differ from the other tools in this repo:
 
 | Property          | Script/config tools              | Pre-built binary packages        |
 |-------------------|----------------------------------|----------------------------------|
-| Examples          | `clang-llvm-style-formatter/`    | `winlibs-gcc-ucrt/`              |
-|                   | `git-bundle/`                    |                                  |
+| Examples          | `toolchains/clang-style-formatter/`    | `winlibs-gcc-ucrt/`              |
+|                   | `dev-tools/git-bundle/`                    |                                  |
 | Binaries in repo? | No                               | No — vendored, gitignored        |
 | How it works      | Bash/Python scripts              | Download → verify → extract      |
 | Air-gap model     | Repo itself is the artifact      | `.7z`/`.zip` transferred via USB |
-| Build from source | N/A or separate (`clang-llvm-source-build/`) | Never — upstream pre-built only |
+| Build from source | N/A or separate (`toolchains/clang-source-build/`) | Never — upstream pre-built only |
 
 ---
 

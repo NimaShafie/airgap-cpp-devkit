@@ -19,7 +19,7 @@
 # BINARY-RESTRICTED ENVIRONMENTS:
 #   If your air-gapped network does not permit pre-compiled binaries,
 #   do NOT run this script. Instead, build all tools from source:
-#     bash clang-llvm/source-build/bootstrap.sh --build-from-source
+#     bash toolchains/clang/source-build/setup.sh --build-from-source
 #     bash winlibs-gcc-ucrt/bootstrap.sh --build-from-source
 #     etc.
 # =============================================================================
@@ -108,20 +108,20 @@ echo ""
 
 case "$(uname -s)" in
     MINGW*|MSYS*|CYGWIN*)
-        _check_binary "clang-format.exe"  "clang-llvm/clang-format.exe"
-        _check_binary "clang-tidy.exe"    "clang-llvm/clang-tidy.exe"
-        _check_binary "ninja.exe"         "clang-llvm/ninja.exe"
+        _check_binary "clang-format.exe"  "toolchains/clang/clang-format.exe"
+        _check_binary "clang-tidy.exe"    "toolchains/clang/clang-tidy.exe"
+        _check_binary "ninja.exe"         "toolchains/clang/ninja.exe"
         _check_binary "WinLibs GCC"       "winlibs-gcc-ucrt/winlibs-x86_64-posix-seh-gcc-15.2.0-mingw-w64ucrt-13.0.0-r6.zip" parts
         ;;
     Linux*)
-        _check_binary "clang-format (linux)"  "clang-llvm/clang-format-linux"
-        _check_binary "clang-tidy (linux)"    "clang-llvm/clang-tidy" parts
-        _check_binary "ninja (linux)"         "clang-llvm/ninja-linux"
+        _check_binary "clang-format (linux)"  "toolchains/clang/clang-format-linux"
+        _check_binary "clang-tidy (linux)"    "toolchains/clang/clang-tidy" parts
+        _check_binary "ninja (linux)"         "toolchains/clang/ninja-linux"
         ;;
 esac
 
 echo ""
 echo "  Run the individual tool bootstraps to install:"
-echo "    bash clang-llvm/source-build/bootstrap.sh"
+echo "    bash toolchains/clang/source-build/setup.sh"
 echo "    bash winlibs-gcc-ucrt/bootstrap.sh"
 echo ""
