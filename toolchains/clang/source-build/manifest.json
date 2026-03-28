@@ -89,15 +89,15 @@
     "sha256_binary": "ee37045fd5655707839f23bc028884f79971aed834c4821f9e251f722ba704f4",
     "split_parts": [
       {
-        "filename": "bin/linux/clang-tidy.part-aa",
+        "filename": "clang-tidy.part-aa",
         "sha256": "c9783e27d3e23793b80e5bc8cb314b273eb3de80347253002d6c556c663c6e58"
       },
       {
-        "filename": "bin/linux/clang-tidy.part-ab",
+        "filename": "clang-tidy.part-ab",
         "sha256": "b2d53b629e9f8e4d86cc36ab173950b10cbe04da57365a9a04c67fca1a6ee9b1"
       }
     ],
-    "_note": "Built from LLVM 22.1.2 on RHEL 8 using GCC 15.2.0. Strip applied (111MB->94MB). Reassemble: cat bin/linux/clang-tidy.part-* > bin/linux/clang-tidy && chmod +x bin/linux/clang-tidy"
+    "_note": "Built from LLVM 22.1.2 on RHEL 8 using GCC 15.2.0. Strip applied (111MB->94MB). Reassemble: Reassembled automatically by setup.sh via reassemble-clang-tidy.sh"
   },
   "clang_tidy_windows": {
     "version": "22.1.1",

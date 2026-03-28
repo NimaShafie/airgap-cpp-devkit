@@ -31,7 +31,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MODULE_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 MANIFEST="${MODULE_ROOT}/manifest.json"
 REPO_ROOT="$(cd "${MODULE_ROOT}/../.." && pwd)"
-PREBUILT_DIR="${REPO_ROOT}/prebuilt-binaries/toolchains/clang"
+PREBUILT_DIR="${REPO_ROOT}/prebuilt-binaries/toolchains/clang/source-build"
 BIN_DIR="${MODULE_ROOT}/bin/linux"
 mkdir -p "${BIN_DIR}"
 
@@ -46,7 +46,7 @@ echo ""
 
 get_tidy_binary_filename() {
     # Returns the value of "binary_filename" under the clang_tidy block,
-    # stripping the leading "bin/linux/" prefix since we address by BIN_DIR.
+    # The manifest stores only the basename (e.g. clang-tidy.part-aa).
     awk '/"clang_tidy_linux"/{found=1} found && /"binary_filename"/{
         match($0, /"binary_filename": *"([^"]+)"/, a)
         n = split(a[1], parts, "/")
