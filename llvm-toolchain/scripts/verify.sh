@@ -9,7 +9,8 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
+# scripts/ is inside llvm-toolchain/scripts/ — repo root is 2 levels up
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 VENDOR_DIR="${REPO_ROOT}/prebuilt-binaries/llvm-toolchain"
 
 COMPONENT="${1:-all}"
