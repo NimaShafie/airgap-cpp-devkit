@@ -105,6 +105,14 @@ install_clang_rhel8() {
   echo "[llvm-toolchain] Installing clang 20.1.8 RPMs via rpm..."
   rpm -Uvh --nodeps --replacepkgs "${RPM_DIR}"/*.rpm
 
+  # Patch clang cfg to use gcc-toolset-15 instead of gcc-toolset-14
+  local CFG="/etc/clang/x86_64-redhat-linux-gnu-clang.cfg"
+  if [[ -f "${CFG}" ]]; then
+    sed -i 's|gcc-toolset-14|gcc-toolset-15|g' "${CFG}"
+    sed -i 's|/gcc-toolset-15/root//usr/lib/gcc/x86_64-redhat-linux/14|/gcc-toolset-15/root//usr/lib/gcc/x86_64-redhat-linux/15|g' "${CFG}"
+    echo "[llvm-toolchain] Patched ${CFG} to use gcc-toolset-15"
+  fi
+
   echo "[llvm-toolchain] clang-rhel8 installed"
   clang --version | head -1 2>/dev/null || true
   echo "[llvm-toolchain] clang binary: $(which clang 2>/dev/null || echo 'run: hash -r to refresh PATH')"

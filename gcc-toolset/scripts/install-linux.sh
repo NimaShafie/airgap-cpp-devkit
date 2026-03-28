@@ -76,6 +76,14 @@ if [[ -n "${LIBSTDCPP}" ]] && [[ -f "${LIBSTDCPP}" ]]; then
   fi
 fi
 
+# Patch clang cfg to use gcc-toolset-15 if present
+CFG="/etc/clang/x86_64-redhat-linux-gnu-clang.cfg"
+if [[ -f "${CFG}" ]]; then
+  sed -i 's|gcc-toolset-14|gcc-toolset-15|g' "${CFG}"
+  sed -i 's|/gcc-toolset-15/root//usr/lib/gcc/x86_64-redhat-linux/14|/gcc-toolset-15/root//usr/lib/gcc/x86_64-redhat-linux/15|g' "${CFG}"
+  echo "[gcc-toolset] Patched ${CFG} to use gcc-toolset-15"
+fi
+
 echo ""
 echo "[gcc-toolset] Installation complete."
 echo "[gcc-toolset] Activate with: source /opt/rh/gcc-toolset-15/enable"
