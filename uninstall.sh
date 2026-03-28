@@ -90,15 +90,53 @@ _box_line() {
 _box_blank() { printf '║%*s║\n' "${_W}" ""; }
 
 # ---------------------------------------------------------------------------
+# Tool paths to search for INSTALL_RECEIPT.txt
+# Option D paths (current) + legacy paths (pre-restructure) both supported
+# ---------------------------------------------------------------------------
+# Format: "display-label:relative/path/under/prefix"
+ALL_TOOL_PATHS=(
+    # Option D — current paths
+    "clang-source-build:toolchains/clang/source-build"
+    "clang-style-formatter:toolchains/clang/style-formatter"
+    "clang-rhel8:toolchains/clang/rhel8"
+    "clang-mingw:toolchains/clang/mingw"
+    "gcc-windows:toolchains/gcc/windows"
+    "gcc-linux-native:toolchains/gcc/linux/native"
+    "gcc-linux-cross:toolchains/gcc/linux/cross"
+    "cmake:build-tools/cmake"
+    "lcov:build-tools/lcov"
+    "python:languages/python"
+    "7zip:dev-tools/7zip"
+    "servy:dev-tools/servy"
+    "vscode-extensions:dev-tools/vscode-extensions"
+    "git-bundle:dev-tools/git-bundle"
+    "grpc:frameworks/grpc"
+    # Legacy paths (pre-Option D restructure) — kept for transition
+    "clang-llvm:clang-llvm"
+    "cmake-legacy:cmake"
+    "lcov-legacy:lcov"
+    "python-legacy:python"
+    "7zip-legacy:7zip"
+    "servy-legacy:servy"
+    "winlibs-gcc-ucrt:winlibs-gcc-ucrt"
+    "gcc-linux-legacy:gcc-linux"
+    "gcc-toolset-legacy:gcc-toolset"
+    "llvm-toolchain:llvm-toolchain"
+    "grpc-legacy:grpc-source-build"
+)
+
+# ---------------------------------------------------------------------------
 # Find installed tools under a prefix
 # ---------------------------------------------------------------------------
 _find_tools() {
     local base="$1"
     local found=()
-    for tool in toolchains/clang cmake lcov 7zip servy winlibs-gcc-ucrt grpc-1.76.0 grpc-1.78.1 style-formatter; do
-        local dir="${base}/${tool}"
+    for entry in "${ALL_TOOL_PATHS[@]}"; do
+        local label="${entry%%:*}"
+        local relpath="${entry#*:}"
+        local dir="${base}/${relpath}"
         if [[ -f "${dir}/INSTALL_RECEIPT.txt" ]]; then
-            found+=("${tool}:${dir}")
+            found+=("${label}:${dir}")
         fi
     done
     printf '%s\n' "${found[@]}"
@@ -166,7 +204,7 @@ declare -a TOOL_KEYS=()
 for key in "${!TOOL_DIRS[@]}"; do
     tool="${key%%:*}"
     dir="${key#*:}"
-    printf "    %-25s %s\n" "${tool}" "${dir}"
+    printf "    %-30s %s\n" "${tool}" "${dir}"
     TOOL_KEYS+=("${key}")
 done
 echo ""
@@ -184,7 +222,7 @@ else
     for key in "${TOOL_KEYS[@]}"; do
         tool="${key%%:*}"
         dir="${key#*:}"
-        printf "  Remove %-25s [y/N]: " "${tool}"
+        printf "  Remove %-30s [y/N]: " "${tool}"
         read -r reply
         [[ "${reply^^}" == "Y" ]] && TOOLS_TO_REMOVE+=("${key}")
     done
@@ -259,7 +297,6 @@ for candidate_prefix in "$(_get_sys_prefix)" "$(_get_user_prefix)" ${PREFIX_OVER
             if [[ "${DRY_RUN}" == "true" ]]; then
                 echo "  [dry-run] Would remove PATH entry: ${bin_dir} from ${env_file}"
             else
-                # Remove the line containing this bin_dir
                 grep -v "${bin_dir}" "${env_file}" > "${env_file}.tmp" && mv "${env_file}.tmp" "${env_file}"
                 echo "  [OK]  Removed PATH entry: ${bin_dir}"
             fi
