@@ -1,5 +1,6 @@
 REM Author: Nima Shafie
 @echo off
+cd /d "%~dp0"
 setlocal EnableDelayedExpansion
 
 REM ====================================================
