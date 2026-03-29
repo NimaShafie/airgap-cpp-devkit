@@ -90,31 +90,19 @@ BAT_WIN="$(cygpath -w "${BAT_FILE}")"
 echo "[INFO] Invoking setup.bat..."
 echo ""
 
-# Write bat output to a temp log file via cmd /c with output redirection
-BAT_LOG="$(mktemp -t grpc-build-XXXXXX).log"
-BAT_LOG_WIN="$(cygpath -w "${BAT_LOG}")"
-
-im_progress_start "Building gRPC v${GRPC_VERSION} from source (this takes ~15-45 min)"
-
-# Tail the log in background to show live status
-(
-  sleep 3
-  while [[ -f "${BAT_LOG}" ]]; do
-    LAST="$(tail -1 "${BAT_LOG}" 2>/dev/null | tr -d "\r" | sed "s/^[[:space:]]*//" | cut -c1-88)"
-    [[ -n "${LAST}" ]] && printf "\r  > %-88s" "${LAST}" >&2 || true
-    sleep 2
-  done
-) &
-TAIL_PID=$!
-
-# Run bat synchronously, redirecting all output to log
+# Write a launcher bat to set working directory
+LAUNCHER="$(mktemp).bat"
+LAUNCHER_WIN="$(cygpath -w "${LAUNCHER}")"
 GRPC_DIR_WIN="$(cygpath -w "${SCRIPT_DIR}")"
-cmd.exe /c "cd /d \"${GRPC_DIR_WIN}\" && \"${BAT_WIN}\" --dest \"${DEST_WIN}\" --version \"${GRPC_VERSION}\" > \"${BAT_LOG_WIN}\" 2>&1"
-BAT_EXIT=$?
 
-kill "${TAIL_PID}" 2>/dev/null || true
-printf "\r  > %-88s\n" "Build finished." >&2
-rm -f "${BAT_LOG}"
+printf '@echo off\r\ncd /d "%s"\r\ncall "%s" --dest "%s" --version "%s"\r\n' \
+    "${GRPC_DIR_WIN}" "${BAT_WIN}" "${DEST_WIN}" "${GRPC_VERSION}" > "${LAUNCHER}"
+
+echo "[INFO] Build output will appear below. This takes 15-45 min..."
+echo ""
+cmd.exe /c "${LAUNCHER_WIN}"
+BAT_EXIT=$?
+rm -f "${LAUNCHER}"
 
 im_progress_stop "gRPC build complete"
 
