@@ -105,7 +105,7 @@ if not "!DEST_OVERRIDE!"=="" (
 ) else (
     REM Legacy fallback: detect admin rights, set path accordingly
     net session >nul 2>&1
-    if !errorlevel! equ 0 (
+    if %errorlevel% equ 0 (
         set "DEST_ROOT=C:\Program Files\airgap-cpp-devkit"
         echo [INFO] Admin rights detected. Installing system-wide.
     ) else (
