@@ -378,4 +378,4 @@ echo Launching greeter_client.exe...
 start powershell.exe -NoExit -Command "cd '!DEMO_HELLO!\.build\Release'; .\greeter_client.exe"
 echo.
 echo Please verify that both server and client are running as expected.
-pause
+REM pause removed
