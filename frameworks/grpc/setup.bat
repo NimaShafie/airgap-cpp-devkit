@@ -145,7 +145,7 @@ for %%P in (
 )
 echo [ERROR] VsDevCmd.bat not found in any standard VS install location.
 echo         Install Visual Studio 2022 (any edition) with C++ workload.
-pause
+REM pause removed for non-interactive use
 exit /b 1
 :found_vsdevcmd
 echo [INFO] Found VS: !VSDEVCMD!
