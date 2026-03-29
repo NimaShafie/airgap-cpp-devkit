@@ -1,7 +1,10 @@
 REM Author: Nima Shafie
 @echo off
 cd /d "%~dp0"
+echo [BAT DEBUG] Working dir: %CD%
+echo [BAT DEBUG] Args: %*
 setlocal EnableDelayedExpansion
+echo [BAT DEBUG] DelayedExpansion enabled
 
 REM ====================================================
 REM setup_grpc.bat
