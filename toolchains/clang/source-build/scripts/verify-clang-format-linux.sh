@@ -2,7 +2,7 @@
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MODULE_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-REPO_ROOT="$(cd "${MODULE_ROOT}/../.." && pwd)"
+REPO_ROOT="$(cd "${MODULE_ROOT}/../../.." && pwd)"
 MANIFEST="${MODULE_ROOT}/manifest.json"
 BINARY="${REPO_ROOT}/prebuilt-binaries/toolchains/clang/source-build/clang-format-linux"
 DEST="${MODULE_ROOT}/bin/linux/clang-format"
