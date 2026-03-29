@@ -97,8 +97,10 @@ if command -v cl.exe &>/dev/null; then
     echo ""
     BAT_WIN_ESC="${BAT_WIN//\//\\}"
     DEST_WIN_ESC="${DEST_WIN//\//\\}"
-    echo "[DEBUG] Running: cmd.exe /c \"${BAT_WIN}\" --version ${GRPC_VERSION} --dest \"${DEST_WIN}\""
-    cmd.exe /c "\"${BAT_WIN}\" --version ${GRPC_VERSION} --dest \"${DEST_WIN}\""
+    echo "[INFO] Changing to grpc directory and running bat..."
+    cd "${SCRIPT_DIR}"
+    cmd.exe /c "setup.bat --version ${GRPC_VERSION} --dest \"${DEST_WIN}\""
+    cd - > /dev/null
     BAT_EXIT=$?
 else
     echo ""
