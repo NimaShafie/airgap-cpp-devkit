@@ -84,21 +84,21 @@
     "version": "22.1.2",
     "platform": "linux-x86_64",
     "built_from": "llvmorg-22.1.2",
-    "compiler": "GCC 15.2.0 (tttapa/toolchains x86_64-bionic-linux-gnu)",
+    "compiler": "GCC 15.1.1 (gcc-toolset-15, RHEL 8)",
     "build_type": "Release",
     "binary_filename": "bin/linux/clang-tidy",
-    "sha256_binary": "ee37045fd5655707839f23bc028884f79971aed834c4821f9e251f722ba704f4",
+    "sha256_binary": "236414206fad37cf76da69f648476ed886dcf2f6b1ad33109a21182e581d4a8f",
     "split_parts": [
       {
         "filename": "clang-tidy.part-aa",
-        "sha256": "c9783e27d3e23793b80e5bc8cb314b273eb3de80347253002d6c556c663c6e58"
+        "sha256": "eaad4dc17ef50c0d7d850aef0943790dba7c592bd1c5d045d08502b46999189a"
       },
       {
         "filename": "clang-tidy.part-ab",
-        "sha256": "b2d53b629e9f8e4d86cc36ab173950b10cbe04da57365a9a04c67fca1a6ee9b1"
+        "sha256": "882274fdc1138e8b1ddc9b7b07320bc8ad39dd656c79e23b1502593e705b104b"
       }
     ],
-    "_note": "Built from LLVM 22.1.2 on RHEL 8 using GCC 15.2.0. Strip applied (111MB->94MB). Reassemble: Reassembled automatically by setup.sh via reassemble-clang-tidy.sh"
+    "_note": "Built from LLVM 22.1.2 on RHEL 8 using gcc-toolset-15. Statically linked libstdc++. Stripped (92MB). No LD_LIBRARY_PATH required."
   },
   "clang_tidy_windows": {
     "version": "22.1.1",
