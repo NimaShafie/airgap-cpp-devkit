@@ -1,5 +1,5 @@
 {
-  "_comment": "Source build manifest for toolchains/clang-source-build. Pins SHA256 for all vendored source archives and built binaries. LLVM parts are individually hashed plus the reassembled tarball is verified against the official upstream hash. Ninja has no official upstream checksum — hash is self-computed from the vendored tarball at time of pinning.",
+  "_comment": "Source build manifest for toolchains/clang-source-build. Pins SHA256 for all vendored source archives and built binaries. LLVM parts are individually hashed plus the reassembled tarball is verified against the official upstream hash. Ninja has no official upstream checksum -- hash is self-computed from the vendored tarball at time of pinning.",
   "llvm": {
     "version": "22.1.2",
     "release_tag": "llvmorg-22.1.2",
@@ -58,7 +58,7 @@
     "build_type": "Release",
     "binary_filename": "bin/windows/clang-format.exe",
     "sha256_binary": "85c83cba356a79057e0715448f6164ce760a9b43b289291796520df65a047d61",
-    "_note": "Windows clang-format still at 22.1.1 — pending rebuild from 22.1.2 source on Windows."
+    "_note": "Windows clang-format still at 22.1.1 -- pending rebuild from 22.1.2 source on Windows."
   },
   "clang_format_linux": {
     "version": "22.1.2",
@@ -78,7 +78,7 @@
     "build_type": "Release",
     "binary_filename": "prebuilt-binaries/toolchains/clang/ninja-linux",
     "sha256_binary": "e34911b853813843771d3e115c9f55fb6178ff0b3fa84fcebdb46e6768f05d86",
-    "_note": "Single file (10 MB) — committed directly to prebuilt-binaries submodule."
+    "_note": "Single file (10 MB) -- committed directly to prebuilt-binaries submodule."
   },
   "clang_tidy_linux": {
     "version": "22.1.2",
@@ -108,7 +108,7 @@
     "build_type": "Release",
     "binary_filename": "bin/windows/clang-tidy.exe",
     "sha256_binary": "4e4dc42c11e407038b5b15c5bf91980e9c7a4a3ed17486b37963de8c5a5e15e4",
-    "_note": "Windows clang-tidy still at 22.1.1 — pending rebuild from 22.1.2 source on Windows."
+    "_note": "Windows clang-tidy still at 22.1.1 -- pending rebuild from 22.1.2 source on Windows."
   },
   "ninja_windows": {
     "version": "1.13.2",
@@ -118,6 +118,6 @@
     "build_type": "bootstrap",
     "binary_filename": "prebuilt-binaries/toolchains/clang/ninja.exe",
     "sha256_binary": "b3dfdbddb242f3400b2965a6d3acfa94c449d4ac8b11cec68290c624fc3c57e5",
-    "_note": "Single file (656 KB) — committed directly to prebuilt-binaries submodule."
+    "_note": "Single file (656 KB) -- committed directly to prebuilt-binaries submodule."
   }
 }

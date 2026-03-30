@@ -1,4 +1,4 @@
-# Offline Transfer Guide — toolchains/gcc/windows
+# Offline Transfer Guide -- toolchains/gcc/windows
 
 ### Author: Nima Shafie
 
@@ -25,7 +25,7 @@ on the air-gapped machine via the normal `dev-tools/git-bundle` transfer workflo
 
 ## Step-by-Step
 
-### 1. Online machine — download and verify
+### 1. Online machine -- download and verify
 
 ```bash
 cd toolchains/gcc/windows
@@ -45,7 +45,7 @@ Both checks must pass before the file is considered ready.
 cp vendor/winlibs-x86_64-posix-seh-gcc-15.2.0-mingw-w64ucrt-13.0.0-r6.7z /media/usb/
 ```
 
-### 3. On the air-gapped machine — place the file
+### 3. On the air-gapped machine -- place the file
 
 ```bash
 cp /media/usb/winlibs-x86_64-posix-seh-gcc-15.2.0-mingw-w64ucrt-13.0.0-r6.7z \
@@ -60,7 +60,7 @@ bash scripts/verify.sh x86_64
 ```
 
 This compares the file's SHA256 against the value pinned in `manifest.json`.
-If this fails, do not proceed — re-transfer the file.
+If this fails, do not proceed -- re-transfer the file.
 
 ### 5. Install
 
@@ -98,5 +98,5 @@ release, run `download.sh` against the new tag and update `manifest.json`.
   immediately re-verifies it instead.
 - `install.sh` removes a previous extraction before placing the new one, so
   re-running it is safe.
-- `env-setup.sh` is idempotent — sourcing it multiple times in the same shell
+- `env-setup.sh` is idempotent -- sourcing it multiple times in the same shell
   will not duplicate the PATH entry.

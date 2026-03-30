@@ -11,25 +11,25 @@ environments. Part of the `airgap-cpp-devkit` suite.
 
 | Version | Status | Source Bundle | SHA256 (reassembled) |
 |---------|--------|---------------|----------------------|
-| **v1.78.1** | ✅ Production-tested | 127MB (3 parts) | `99a8d16ad8aa9ced75d255e1e92247de556e91483fd0e0e73c158a76c9913871` |
+| **v1.78.1** | Yes Production-tested | 127MB (3 parts) | `99a8d16ad8aa9ced75d255e1e92247de556e91483fd0e0e73c158a76c9913871` |
 
-The source bundle is a full recursive clone — all `third_party/` dependencies
+The source bundle is a full recursive clone -- all `third_party/` dependencies
 (protobuf, abseil-cpp, boringssl, re2, zlib, c-ares, and all nested submodules)
 are included inline. No git submodules, no network access required to build.
 
 ---
 
-## Quickstart — Prebuilt (Recommended)
+## Quickstart -- Prebuilt (Recommended)
 
 No compiler or Visual Studio required for installation. Just extract and use.
 
-**Step 1 — Install from prebuilt:**
+**Step 1 -- Install from prebuilt:**
 ```powershell
 cd frameworks\grpc
 .\install-prebuilt.ps1 -version 1.78.1
 ```
 
-**Step 2 — Run the HelloWorld demo:**
+**Step 2 -- Run the HelloWorld demo:**
 ```powershell
 .\setup.ps1 -version 1.78.1
 ```
@@ -39,7 +39,7 @@ automatically. Expected output: `Greeter received: Hello world`.
 
 ---
 
-## Quickstart — Source Build
+## Quickstart -- Source Build
 
 Builds gRPC from the vendored source tarball using MSVC. Takes ~40 minutes.
 
@@ -65,8 +65,8 @@ Single entry point for both prebuilt and source build paths:
 2. Reassembles grpc-1.78.1.tar.gz from split parts
 3. Extracts source tree to src/grpc-1.78.1/
 4. Detects install type:
-   a. Prebuilt layout (bin/ present) → populates outputs/ and skips build
-   b. No binaries → runs full source build via MSVC + Ninja + cmake
+   a. Prebuilt layout (bin/ present) > populates outputs/ and skips build
+   b. No binaries > runs full source build via MSVC + Ninja + cmake
 5. Copies HelloWorld demo files from install dir or source tree
 6. Patches CMakeLists.txt proto path
 7. Generates protobuf sources via protoc + grpc_cpp_plugin
@@ -84,7 +84,7 @@ Single entry point for both prebuilt and source build paths:
 -DgRPC_SSL_PROVIDER=module
 -DgRPC_ZLIB_PROVIDER=module
 ```
-All dependencies are sourced from `third_party/` — no network access.
+All dependencies are sourced from `third_party/` -- no network access.
 
 ---
 
@@ -92,8 +92,8 @@ All dependencies are sourced from `third_party/` — no network access.
 
 ```
 setup.sh  (bash entry point)
-  └── setup.bat  (thin PowerShell launcher)
-        └── setup.ps1  (all logic)
+   setup.bat  (thin PowerShell launcher)
+         setup.ps1  (all logic)
 ```
 
 `setup.sh` is the entry point when running from Git Bash.
@@ -110,7 +110,7 @@ setup.sh  (bash entry point)
 
 ### Source build (`setup.ps1`)
 - Visual Studio 2019 / 2022 / Insiders with Desktop C++ workload
-- CMake ≥ 3.16 (at `C:\Program Files\CMake\bin\cmake.exe`)
+- CMake >= 3.16 (at `C:\Program Files\CMake\bin\cmake.exe`)
 - Git Bash (`bash.exe` on PATH)
 
 ---
@@ -181,22 +181,22 @@ any extraction or build. Both are called automatically by `setup.ps1`.
 
 ```
 frameworks/grpc/
-├── setup.bat              <- thin launcher (calls setup.ps1)
-├── setup.ps1              <- full build + demo pipeline
-├── setup.sh               <- bash entry point (calls setup.bat)
-├── install-prebuilt.ps1   <- extracts prebuilt from prebuilt-binaries/
-├── manifest.json          <- SHA256 pins for vendored source parts
-├── README.md
-├── scripts/
-│   ├── verify.sh          <- SHA256 check (accepts version arg)
-│   └── reassemble.sh      <- joins parts into .tar.gz (accepts version arg)
-├── vendor/                <- split .tar.gz parts committed to git
-│   ├── grpc-1.78.1.tar.gz             <- reassembled tarball (gitignored)
-│   ├── grpc-1.78.1.tar.gz.part-aa     <- 45MB
-│   ├── grpc-1.78.1.tar.gz.part-ab     <- 45MB
-│   └── grpc-1.78.1.tar.gz.part-ac     <- 37MB
-└── src/                   <- extracted here by setup.ps1 (gitignored)
-    └── grpc-1.78.1/
+ setup.bat              <- thin launcher (calls setup.ps1)
+ setup.ps1              <- full build + demo pipeline
+ setup.sh               <- bash entry point (calls setup.bat)
+ install-prebuilt.ps1   <- extracts prebuilt from prebuilt-binaries/
+ manifest.json          <- SHA256 pins for vendored source parts
+ README.md
+ scripts/
+    verify.sh          <- SHA256 check (accepts version arg)
+    reassemble.sh      <- joins parts into .tar.gz (accepts version arg)
+ vendor/                <- split .tar.gz parts committed to git
+    grpc-1.78.1.tar.gz             <- reassembled tarball (gitignored)
+    grpc-1.78.1.tar.gz.part-aa     <- 45MB
+    grpc-1.78.1.tar.gz.part-ab     <- 45MB
+    grpc-1.78.1.tar.gz.part-ac     <- 37MB
+ src/                   <- extracted here by setup.ps1 (gitignored)
+     grpc-1.78.1/
 ```
 
 ---
@@ -206,7 +206,7 @@ frameworks/grpc/
 - **`vendor/*.tar.gz` is gitignored.** Only `*.part-*` files are committed.
 - **`src/` is gitignored.** The extracted source tree is never committed.
 - **Windows only.** `setup.ps1` targets MSVC. Linux build not supported.
-- **VS 2019, 2022, and 2026 Insiders** all work — generator is Ninja,
+- **VS 2019, 2022, and 2026 Insiders** all work -- generator is Ninja,
   not a VS solution generator, so no version-specific cmake generator needed.
 - **Prebuilt and source build are independent.** Either path produces a
   fully functional install at the same destination layout.

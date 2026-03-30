@@ -1,4 +1,4 @@
-# GCC 15.2 — Linux Air-Gap Package
+# GCC 15.2 -- Linux Air-Gap Package
 
 Prebuilt GCC 15.2 toolchain for Linux x86_64 (RHEL 8 / Rocky 8 compatible).
 
@@ -15,7 +15,7 @@ Prebuilt GCC 15.2 toolchain for Linux x86_64 (RHEL 8 / Rocky 8 compatible).
 # Verify, reassemble, and install
 bash toolchains/gcc/linux/cross/setup.sh
 
-# Verify SHA256 only — no installation
+# Verify SHA256 only -- no installation
 bash toolchains/gcc/linux/cross/setup.sh --verify
 
 # Show what would be installed without installing
@@ -50,7 +50,7 @@ RHEL 8 ships GCC 8.5, which does not support the C++17/C++20 features
 required by modern C++ projects (gRPC, abseil, etc.). This toolchain provides
 GCC 15.2 without modifying the system compiler.
 
-The devkit GCC is opt-in — it only activates when you source `env-setup.sh`.
+The devkit GCC is opt-in -- it only activates when you source `env-setup.sh`.
 Your system GCC 8.5 remains untouched.
 
 ---

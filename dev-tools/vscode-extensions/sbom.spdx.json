@@ -28,7 +28,7 @@
       "licenseConcluded": "NOASSERTION",
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "Copyright (c) Microsoft Corporation",
-      "comment": "Universal platform. Single file — no splitting required."
+      "comment": "Universal platform. Single file -- no splitting required."
     },
     {
       "SPDXID": "SPDXRef-cpptools-win32-x64",
@@ -82,7 +82,7 @@
       "licenseConcluded": "NOASSERTION",
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "Copyright (c) Mate Pek",
-      "comment": "Universal platform. Single file — no splitting required."
+      "comment": "Universal platform. Single file -- no splitting required."
     },
     {
       "SPDXID": "SPDXRef-python-ext-win32-x64",
@@ -100,7 +100,7 @@
       "licenseConcluded": "NOASSERTION",
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "Copyright (c) Microsoft Corporation",
-      "comment": "Windows x86-64. Single file — no splitting required."
+      "comment": "Windows x86-64. Single file -- no splitting required."
     },
     {
       "SPDXID": "SPDXRef-python-ext-linux-x64",
@@ -118,7 +118,7 @@
       "licenseConcluded": "NOASSERTION",
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "Copyright (c) Microsoft Corporation",
-      "comment": "Linux x86-64. Single file — no splitting required."
+      "comment": "Linux x86-64. Single file -- no splitting required."
     }
   ],
   "relationships": [

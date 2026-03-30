@@ -85,7 +85,7 @@
       "licenseDeclared": "LGPL-2.1-or-later AND unRAR",
       "copyrightText": "Copyright (C) 2026 Igor Pavlov",
       "primaryPackagePurpose": "ARCHIVE",
-      "comment": "7-Zip Extra package for Windows. Contains standalone 7za.exe (x64/7za.exe inside archive) used for user (non-admin) installs. No system installation required — drop-in portable executable."
+      "comment": "7-Zip Extra package for Windows. Contains standalone 7za.exe (x64/7za.exe inside archive) used for user (non-admin) installs. No system installation required -- drop-in portable executable."
     },
     {
       "SPDXID": "SPDXRef-7zip-linux-tarball",

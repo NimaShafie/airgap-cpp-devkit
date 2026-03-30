@@ -1,5 +1,5 @@
 {
-  "_comment": "toolchains/gcc/linux/native module manifest for airgap-cpp-devkit. Vendors Red Hat toolchains/gcc/linux/native-15 RPMs for RHEL 8 / Rocky Linux 8. Provides GCC 15.1.1, G++, libstdc++ with GLIBCXX_3.4.30+, binutils 2.44. Linux only — no Windows component.",
+  "_comment": "toolchains/gcc/linux/native module manifest for airgap-cpp-devkit. Vendors Red Hat toolchains/gcc/linux/native-15 RPMs for RHEL 8 / Rocky Linux 8. Provides GCC 15.1.1, G++, libstdc++ with GLIBCXX_3.4.30+, binutils 2.44. Linux only -- no Windows component.",
   "gcc_toolset_15": {
     "version": "15.1.1",
     "toolset_version": "15.0-9.el8_10",

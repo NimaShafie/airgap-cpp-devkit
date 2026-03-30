@@ -163,7 +163,7 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "LIBRARY",
-      "comment": "System Perl dependency. Available in RHEL 8 base AppStream repo — no EPEL required. Install with: sudo dnf install perl-Time-HiRes"
+      "comment": "System Perl dependency. Available in RHEL 8 base AppStream repo -- no EPEL required. Install with: sudo dnf install perl-Time-HiRes"
     },
     {
       "SPDXID": "SPDXRef-perl-json",
@@ -176,7 +176,7 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "LIBRARY",
-      "comment": "System Perl dependency. Available in RHEL 8 base AppStream repo — no EPEL required. Install with: sudo dnf install perl-JSON"
+      "comment": "System Perl dependency. Available in RHEL 8 base AppStream repo -- no EPEL required. Install with: sudo dnf install perl-JSON"
     }
   ],
   "relationships": [

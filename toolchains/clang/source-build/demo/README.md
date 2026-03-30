@@ -44,9 +44,9 @@ bash toolchains/clang-source-build/setup.sh
 
 ## Notes
 
-- `run-demo.sh` never modifies `demo.cpp` — it is read-only input.
+- `run-demo.sh` never modifies `demo.cpp` -- it is read-only input.
 - `clang-tidy` exits non-zero when it finds issues; the script captures and
   displays this output rather than treating it as a script failure.
 - To apply fixes automatically (on a copy), use `--fix` and point at your own
-  file — do not pass `--fix` against `demo.cpp` as that would remove the
+  file -- do not pass `--fix` against `demo.cpp` as that would remove the
   intentional issues.

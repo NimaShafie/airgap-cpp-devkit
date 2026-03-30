@@ -9,7 +9,7 @@
     "license": "MIT",
     "license_url": "https://github.com/aelassas/servy/blob/main/LICENSE.txt",
     "platform": "windows-x86_64",
-    "runtime": "self-contained (.NET 8.0 embedded — no runtime install required)",
+    "runtime": "self-contained (.NET 8.0 embedded -- no runtime install required)",
     "supported_os": "Windows 10, 11, Windows Server x64"
   },
   "assets": {
@@ -36,10 +36,10 @@
     }
   },
   "contents": {
-    "Servy.exe": "GUI desktop application — create and manage Windows services interactively",
-    "Servy.Manager.exe": "Manager app — real-time monitoring of all installed Servy services",
-    "servy-cli.exe": "CLI — scriptable service management for CI/CD and automation",
-    "Servy.psm1": "PowerShell module — place alongside servy-cli.exe for PS integration",
+    "Servy.exe": "GUI desktop application -- create and manage Windows services interactively",
+    "Servy.Manager.exe": "Manager app -- real-time monitoring of all installed Servy services",
+    "servy-cli.exe": "CLI -- scriptable service management for CI/CD and automation",
+    "Servy.psm1": "PowerShell module -- place alongside servy-cli.exe for PS integration",
     "taskschd/": "Task Scheduler helpers for failure email/notification alerts"
   },
   "install_targets": {

@@ -45,7 +45,7 @@
           "referenceLocator": "pkg:generic/python@3.8"
         }
       ],
-      "comment": "Transitive runtime dependency. All scripts (bundle.py, export.py, create_test_repo.py, verify_test.py) are pure Python. Uses standard library only — no third-party packages. Provided by host system."
+      "comment": "Transitive runtime dependency. All scripts (bundle.py, export.py, create_test_repo.py, verify_test.py) are pure Python. Uses standard library only -- no third-party packages. Provided by host system."
     },
     {
       "SPDXID": "SPDXRef-git-dev-tools-git-bundle",
@@ -71,7 +71,7 @@
       "licenseDeclared": "PSF-2.0",
       "copyrightText": "Copyright (c) 2001-2026 Python Software Foundation",
       "primaryPackagePurpose": "LIBRARY",
-      "comment": "Transitive dependency. Modules used: os, sys, subprocess, pathlib, hashlib, json, logging, argparse, shutil, tempfile. All part of CPython standard library — no pip installs required."
+      "comment": "Transitive dependency. Modules used: os, sys, subprocess, pathlib, hashlib, json, logging, argparse, shutil, tempfile. All part of CPython standard library -- no pip installs required."
     }
   ],
   "relationships": [

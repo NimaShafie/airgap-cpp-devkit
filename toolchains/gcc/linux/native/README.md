@@ -2,10 +2,10 @@
 
 Vendors Red Hat `toolchains/gcc/linux/native-15` RPMs for air-gapped RHEL 8 / Rocky Linux 8
 deployment. Provides GCC 15.1.1, G++ 15.1.1, and critically a modern
-`libstdc++` with `GLIBCXX_3.4.30+` — which fixes runtime errors from binaries
+`libstdc++` with `GLIBCXX_3.4.30+` -- which fixes runtime errors from binaries
 built with LLVM 22.x.
 
-**Linux only — no Windows component.**
+**Linux only -- no Windows component.**
 
 ## What's Included
 
@@ -44,7 +44,7 @@ g++ --version    # should show 15.1.1
 
 ## Install Path
 
-toolchains/gcc/linux/native always installs to `/opt/rh/toolchains/gcc/linux/native-15/` — this is the
+toolchains/gcc/linux/native always installs to `/opt/rh/toolchains/gcc/linux/native-15/` -- this is the
 standard SCL path and cannot be changed.
 
 ## libstdc++ for clang-format / clang-tidy

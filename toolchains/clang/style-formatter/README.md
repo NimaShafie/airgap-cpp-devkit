@@ -3,7 +3,7 @@
 ### Author: Nima Shafie
 
 > Pre-commit hook enforcement of [LLVM Coding Standards](https://llvm.org/docs/CodingStandards.html)
-> for C/C++ repositories — designed for air-gapped, multi-repo, multi-platform environments.
+> for C/C++ repositories -- designed for air-gapped, multi-repo, multi-platform environments.
 
 ---
 
@@ -11,16 +11,16 @@
 
 A self-contained submodule that installs `clang-format` from a vendored Python
 wheel and wires a pre-commit hook into any host repository. Every `git commit`
-is automatically checked against LLVM C++ style — no network access, no admin
+is automatically checked against LLVM C++ style -- no network access, no admin
 rights, no pre-installed tools required beyond Python 3.8+.
 
 **Install time: ~5 seconds. No compiler. No Visual Studio. No CMake.**
 
 ---
 
-## Install — Choose Your Situation
+## Install -- Choose Your Situation
 
-### Situation A — Your production repo already has setup.sh at the root
+### Situation A -- Your production repo already has setup.sh at the root
 
 This is the standard case after a maintainer has wired in the submodule.
 Run once after cloning:
@@ -34,7 +34,7 @@ LLVM style automatically.
 
 ---
 
-### Situation B — You have cloned this formatter directly (no setup.sh)
+### Situation B -- You have cloned this formatter directly (no setup.sh)
 
 Run `setup.sh` directly from inside the formatter directory:
 
@@ -47,13 +47,13 @@ bash setup.sh
 ```
 
 `setup.sh` works with or without a surrounding git repository:
-- **Inside a git repo** — installs clang-format and wires the pre-commit hook.
-- **Outside a git repo** — installs clang-format only; prints instructions
+- **Inside a git repo** -- installs clang-format and wires the pre-commit hook.
+- **Outside a git repo** -- installs clang-format only; prints instructions
   for installing the hook once you have a repo to target.
 
 ---
 
-### Situation C — You are a maintainer adding this to a new production repo
+### Situation C -- You are a maintainer adding this to a new production repo
 
 See [For Maintainers](#for-maintainers--adding-to-a-new-production-repository) below.
 
@@ -82,10 +82,10 @@ No compiler, no Visual Studio, no CMake, no internet access required.
 ## When a Commit Is Rejected
 
 ```
-╔══════════════════════════════════════════════════════════════════╗
-║  clang-format: LLVM style violations found — commit REJECTED    ║
-╚══════════════════════════════════════════════════════════════════╝
-    ✗  src/bad_indent.cpp
+
+  clang-format: LLVM style violations found -- commit REJECTED    
+
+    No  src/bad_indent.cpp
 
   Fix options:
     Auto-fix staged files:  bash tools/toolchains/clang-style-formatter/scripts/fix-format.sh
@@ -113,11 +113,11 @@ git commit --no-verify -m "emergency: skip formatting check"
 
 ---
 
-## For Maintainers — Adding to a New Production Repository
+## For Maintainers -- Adding to a New Production Repository
 
 Do this once per production repo. Developers only ever run `bash setup.sh`.
 
-### Step 1 — Add the submodule under a `tools/` folder
+### Step 1 -- Add the submodule under a `tools/` folder
 
 ```bash
 cd your-cpp-project/
@@ -129,7 +129,7 @@ git submodule add \
 git submodule update --init --recursive
 ```
 
-### Step 2 — Copy setup.sh to the repo root
+### Step 2 -- Copy setup.sh to the repo root
 
 `setup.sh` is a ~50 line wrapper that lives at the root of each production
 repo and delegates entirely to `setup.sh`. Copy it from the template:
@@ -138,13 +138,13 @@ repo and delegates entirely to `setup.sh`. Copy it from the template:
 cp tools/toolchains/clang-style-formatter/docs/production-repo-template/setup.sh ./setup.sh
 ```
 
-### Step 3 — Add .gitignore entries
+### Step 3 -- Add .gitignore entries
 
 ```bash
 cat tools/toolchains/clang-style-formatter/docs/gitignore-snippet.txt >> .gitignore
 ```
 
-### Step 4 — Commit and push
+### Step 4 -- Commit and push
 
 ```bash
 git add .gitmodules tools/toolchains/clang-style-formatter setup.sh .gitignore
@@ -156,15 +156,15 @@ git push
 
 ```
 your-cpp-project/
-├── setup.sh                          ← one file at root, run once per developer
-├── .gitmodules                       ← auto-generated submodule pointer
-├── tools/
-│   └── toolchains/clang-style-formatter/  ← submodule ref (zero bytes until init)
-│       ├── setup.sh
-│       ├── python-packages/          ← vendored wheels (no network needed)
-│       ├── config/                   ← style rules (.clang-format, .clang-tidy)
-│       └── scripts/
-└── ... (your project files)
+ setup.sh                           one file at root, run once per developer
+ .gitmodules                        auto-generated submodule pointer
+ tools/
+    toolchains/clang-style-formatter/   submodule ref (zero bytes until init)
+        setup.sh
+        python-packages/           vendored wheels (no network needed)
+        config/                    style rules (.clang-format, .clang-tidy)
+        scripts/
+ ... (your project files)
 ```
 
 ### Keeping the submodule up to date
@@ -203,7 +203,7 @@ After running `setup.sh` or `setup.sh`, a file is created at:
 tools/toolchains/clang-style-formatter/.llvm-hooks-local/hooks.conf
 ```
 
-This file is gitignored — changes are local to your machine only:
+This file is gitignored -- changes are local to your machine only:
 
 ```bash
 # Show per-file diffs when a commit is rejected
@@ -221,7 +221,7 @@ ENABLE_TIDY="true"
 ## Style Rules
 
 Style rules live in `config/.clang-format` and `config/.clang-tidy` inside
-the submodule. All production repos share the same rules — updating the
+the submodule. All production repos share the same rules -- updating the
 formatter submodule updates all repos at once.
 
 ---
@@ -230,8 +230,8 @@ formatter submodule updates all repos at once.
 
 | Path | Purpose |
 |------|---------|
-| `setup.sh` | Core install — works standalone or inside a git repo |
-| `python-packages/` | Vendored `.whl` files — clang-format installs from here |
+| `setup.sh` | Core install -- works standalone or inside a git repo |
+| `python-packages/` | Vendored `.whl` files -- clang-format installs from here |
 | `hooks/pre-commit` | The enforcement hook wired into `.git/hooks/` |
 | `config/.clang-format` | LLVM style rules |
 | `config/.clang-tidy` | Static analysis rules |

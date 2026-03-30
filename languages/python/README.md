@@ -1,9 +1,9 @@
-# Python 3.14.3 — Air-Gap Package
+# Python 3.14.3 -- Air-Gap Package
 
 Portable Python 3.14.3 interpreter for air-gapped Windows and Linux (RHEL 8 / x86-64) systems.
 
-- **Linux:** python-build-standalone (astral-sh) — self-contained, no system dependencies
-- **Windows:** Official Python.org embeddable package — no installer, no admin rights required
+- **Linux:** python-build-standalone (astral-sh) -- self-contained, no system dependencies
+- **Windows:** Official Python.org embeddable package -- no installer, no admin rights required
 
 ---
 
@@ -13,7 +13,7 @@ Portable Python 3.14.3 interpreter for air-gapped Windows and Linux (RHEL 8 / x8
 # Verify, reassemble (Linux), and install
 bash python/setup.sh
 
-# Verify SHA256 only — no installation
+# Verify SHA256 only -- no installation
 bash python/setup.sh --verify
 
 # Show what would be installed without installing

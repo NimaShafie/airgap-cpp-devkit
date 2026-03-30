@@ -27,7 +27,7 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "Top-level subproject. Vendors Servy 7.3 portable prebuilt for Windows x64. Windows-only tool — no Linux component. Supports admin and user install modes."
+      "comment": "Top-level subproject. Vendors Servy 7.3 portable prebuilt for Windows x64. Windows-only tool -- no Linux component. Supports admin and user install modes."
     },
     {
       "SPDXID": "SPDXRef-servy-upstream",
@@ -47,7 +47,7 @@
           "referenceLocator": "pkg:github/aelassas/servy@v7.3"
         }
       ],
-      "comment": "Servy — Windows service manager. Self-contained .NET 8.0 application. Supports Windows 10/11 and Windows Server x64. Includes GUI (Servy.exe), Manager (Servy.Manager.exe), CLI (servy-cli.exe), and PowerShell module (Servy.psm1). Release date: 2026-03-26."
+      "comment": "Servy -- Windows service manager. Self-contained .NET 8.0 application. Supports Windows 10/11 and Windows Server x64. Includes GUI (Servy.exe), Manager (Servy.Manager.exe), CLI (servy-cli.exe), and PowerShell module (Servy.psm1). Release date: 2026-03-26."
     },
     {
       "SPDXID": "SPDXRef-servy-part-aa",

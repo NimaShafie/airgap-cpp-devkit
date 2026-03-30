@@ -1,4 +1,4 @@
-# llvm-src/ — Vendored LLVM/Clang Source
+# llvm-src/ -- Vendored LLVM/Clang Source
 
 ### Author: Nima Shafie
 
@@ -9,12 +9,12 @@ used to build `clang-format` on air-gapped developer machines.
 
 ```
 llvm-src/
-├── llvm/                    ← LLVM core source
-│   └── tools/clang/         ← Clang frontend (nested inside LLVM as required by cmake)
-├── cmake/                   ← LLVM CMake build modules
-├── third-party/             ← LLVM third-party build dependencies
-├── SOURCE_INFO.txt          ← LLVM version, fetch date, original checksums
-└── .gitignore               ← Excludes build/ and install/ directories
+ llvm/                     LLVM core source
+    tools/clang/          Clang frontend (nested inside LLVM as required by cmake)
+ cmake/                    LLVM CMake build modules
+ third-party/              LLVM third-party build dependencies
+ SOURCE_INFO.txt           LLVM version, fetch date, original checksums
+ .gitignore                Excludes build/ and install/ directories
 ```
 
 ## What was stripped
@@ -42,7 +42,7 @@ See `scripts/fetch-llvm-source.sh --help` for options.
 
 ## Building
 
-On any developer machine (air-gapped is fine — no network needed):
+On any developer machine (air-gapped is fine -- no network needed):
 
 ```bash
 bash scripts/build-clang-format.sh

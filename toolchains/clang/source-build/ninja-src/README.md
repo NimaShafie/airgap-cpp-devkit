@@ -1,18 +1,18 @@
-# ninja-src/ — Vendored Ninja Build System
+# ninja-src/ -- Vendored Ninja Build System
 
 ### Author: Nima Shafie
 
 This directory contains the Ninja build system source tarball.
 Ninja dramatically reduces LLVM build time compared to `make`
-(typically 2–3x faster) and significantly reduces peak RAM usage
+(typically 2-3x faster) and significantly reduces peak RAM usage
 during the link step.
 
 ## Contents
 
 ```
 ninja-src/
-├── ninja-1.13.2.tar.gz    ← Ninja source tarball (~220 KB, committed)
-└── .gitignore              ← Ignores extracted source and build output
+ ninja-1.13.2.tar.gz     Ninja source tarball (~220 KB, committed)
+ .gitignore               Ignores extracted source and build output
 ```
 
 ## When is Ninja built?
@@ -22,7 +22,7 @@ If not found, it automatically builds Ninja from this tarball before
 building clang-format. The compiled `ninja` binary is placed at:
 
 - `bin/linux/ninja`         (Linux)
-- `bin/windows/ninja.exe`   (Windows — only if not found in VS install)
+- `bin/windows/ninja.exe`   (Windows -- only if not found in VS install)
 
 ## Source
 

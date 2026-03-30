@@ -1,5 +1,5 @@
 {
-  "_comment": "gRPC source build manifest. Contains entries for all vendored versions. SHA256 hashes are self-computed from vendored tarballs — gRPC does not publish official checksums for source archives.",
+  "_comment": "gRPC source build manifest. Contains entries for all vendored versions. SHA256 hashes are self-computed from vendored tarballs -- gRPC does not publish official checksums for source archives.",
 
   "versions": {
     "1.78.1": {

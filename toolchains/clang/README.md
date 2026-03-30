@@ -7,7 +7,7 @@ Supports Windows 11 and RHEL 8, admin and user install modes.
 
 ### clang-linux (Linux only)
 Slim Clang/LLVM 22.1.2 toolchain for Linux x86_64. Cherry-picked from the
-official LLVM 22.1.2 release — contains only the binaries needed for C/C++
+official LLVM 22.1.2 release -- contains only the binaries needed for C/C++
 compilation and toolchain use.
 
 | Binary | Purpose |
@@ -22,7 +22,7 @@ compilation and toolchain use.
 | `llvm-symbolizer` | Symbol resolution (used by sanitizers) |
 
 ### llvm-mingw (both platforms)
-llvm-mingw 20260324 (LLVM 22.1.2) — LLVM/Clang/LLD based mingw-w64 toolchain.
+llvm-mingw 20260324 (LLVM 22.1.2) -- LLVM/Clang/LLD based mingw-w64 toolchain.
 
 - **Linux**: Cross-compiler running on Linux x86_64, targeting all four Windows
   architectures (i686, x86_64, armv7, arm64). UCRT runtime.
@@ -40,12 +40,12 @@ clang-linux/
   toolchains/clang-22.1.2-linux-x64-slim.tar.xz.part-ac  (19 MB)
 
 llvm-mingw/
-  llvm-mingw-20260324-ucrt-ubuntu-22.04-x86_64.tar.xz.part-aa  (50 MB)  ← Linux
-  llvm-mingw-20260324-ucrt-ubuntu-22.04-x86_64.tar.xz.part-ab  (29 MB)  ← Linux
-  llvm-mingw-20260324-ucrt-x86_64.zip.part-aa  (50 MB)  ← Windows
-  llvm-mingw-20260324-ucrt-x86_64.zip.part-ab  (50 MB)  ← Windows
-  llvm-mingw-20260324-ucrt-x86_64.zip.part-ac  (50 MB)  ← Windows
-  llvm-mingw-20260324-ucrt-x86_64.zip.part-ad  (29 MB)  ← Windows
+  llvm-mingw-20260324-ucrt-ubuntu-22.04-x86_64.tar.xz.part-aa  (50 MB)   Linux
+  llvm-mingw-20260324-ucrt-ubuntu-22.04-x86_64.tar.xz.part-ab  (29 MB)   Linux
+  llvm-mingw-20260324-ucrt-x86_64.zip.part-aa  (50 MB)   Windows
+  llvm-mingw-20260324-ucrt-x86_64.zip.part-ab  (50 MB)   Windows
+  llvm-mingw-20260324-ucrt-x86_64.zip.part-ac  (50 MB)   Windows
+  llvm-mingw-20260324-ucrt-x86_64.zip.part-ad  (29 MB)   Windows
 ```
 
 ## Usage
@@ -73,7 +73,7 @@ bash toolchains/clang/setup.sh --prefix /opt/tools/llvm
 | Admin | Windows | `C:\Program Files\airgap-cpp-devkit\toolchains/clang\llvm-mingw\` | same |
 | User | Windows | `%LOCALAPPDATA%\airgap-cpp-devkit\toolchains/clang\llvm-mingw\` | same |
 
-## Cross-Compilation with llvm-mingw (Linux → Windows)
+## Cross-Compilation with llvm-mingw (Linux > Windows)
 
 After install, cross-compile for Windows from Linux:
 

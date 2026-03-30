@@ -1,7 +1,7 @@
 {
   "_comment": "toolchains/clang manifest for airgap-cpp-devkit. Vendors a slim Clang/LLVM 22.1.2 Linux toolchain and llvm-mingw 20260324 (LLVM 22.1.2) for Windows cross-compilation and native Windows use. All binaries are split into <=50MB parts committed to prebuilt-binaries submodule.",
   "clang_linux": {
-    "description": "Slim Clang/LLVM 22.1.2 Linux x86_64 toolchain — cherry-picked binaries only (clang, lld, llvm-ar, llvm-nm, llvm-objcopy, llvm-objdump, llvm-config, llvm-symbolizer)",
+    "description": "Slim Clang/LLVM 22.1.2 Linux x86_64 toolchain -- cherry-picked binaries only (clang, lld, llvm-ar, llvm-nm, llvm-objcopy, llvm-objdump, llvm-config, llvm-symbolizer)",
     "version": "22.1.2",
     "release_date": "2026-03-24",
     "upstream_release": "https://github.com/llvm/llvm-project/releases/tag/llvmorg-22.1.2",
@@ -45,7 +45,7 @@
     "_note": "Original 1.9GB tarball cherry-picked to ~619MB unstripped binaries, repacked to 119MB .tar.xz. Symlinks recreated by install script since Windows cannot create Linux symlinks."
   },
   "llvm_mingw_linux": {
-    "description": "llvm-mingw 20260324 — LLVM/Clang/LLD based mingw-w64 cross-compiler running on Linux x86_64, targeting all four Windows architectures (i686, x86_64, armv7, arm64). UCRT runtime.",
+    "description": "llvm-mingw 20260324 -- LLVM/Clang/LLD based mingw-w64 cross-compiler running on Linux x86_64, targeting all four Windows architectures (i686, x86_64, armv7, arm64). UCRT runtime.",
     "version": "20260324",
     "llvm_version": "22.1.2",
     "release_date": "2026-03-24",
@@ -66,7 +66,7 @@
     ]
   },
   "llvm_mingw_windows": {
-    "description": "llvm-mingw 20260324 — LLVM/Clang/LLD based mingw-w64 native toolchain for Windows x86_64, targeting all four Windows architectures (i686, x86_64, armv7, arm64). UCRT runtime.",
+    "description": "llvm-mingw 20260324 -- LLVM/Clang/LLD based mingw-w64 native toolchain for Windows x86_64, targeting all four Windows architectures (i686, x86_64, armv7, arm64). UCRT runtime.",
     "version": "20260324",
     "llvm_version": "22.1.2",
     "release_date": "2026-03-24",

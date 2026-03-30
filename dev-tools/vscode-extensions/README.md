@@ -1,4 +1,4 @@
-# VS Code Extensions — Air-Gap Package
+# VS Code Extensions -- Air-Gap Package
 
 Pre-downloaded VS Code extensions for offline installation on air-gapped Windows and Linux systems.
 
@@ -22,7 +22,7 @@ bash dev-tools/dev-tools/vscode-extensions/setup.sh
 # Verify SHA256 only (no install)
 bash dev-tools/dev-tools/vscode-extensions/setup.sh --verify
 
-# Dry run — show what would be installed without installing
+# Dry run -- show what would be installed without installing
 bash dev-tools/dev-tools/vscode-extensions/setup.sh --dry-run
 ```
 
@@ -52,11 +52,11 @@ The `ms-vscode.cpptools` extension is too large for a single file and is split i
 The `setup.sh` script handles reassembly automatically. To do it manually:
 
 ```bash
-# Windows (win32-x64) — 2 parts
+# Windows (win32-x64) -- 2 parts
 cat dev-tools/dev-tools/vscode-extensions/vendor/ms-vscode.cpptools-1.30.4-win32-x64.vsix.part-{aa,ab} \
     > dev-tools/dev-tools/vscode-extensions/vendor/ms-vscode.cpptools-1.30.4-win32-x64.vsix
 
-# Linux (linux-x64) — 3 parts
+# Linux (linux-x64) -- 3 parts
 cat dev-tools/dev-tools/vscode-extensions/vendor/ms-vscode.cpptools-1.30.4-linux-x64.vsix.part-{aa,ab,ac} \
     > dev-tools/dev-tools/vscode-extensions/vendor/ms-vscode.cpptools-1.30.4-linux-x64.vsix
 ```

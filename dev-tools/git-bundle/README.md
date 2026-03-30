@@ -2,8 +2,8 @@
 
 ### Author: Nima Shafie
 
-Python scripts for transferring Git repositories — including super repositories
-with deeply nested submodules at any depth — across air-gapped networks using
+Python scripts for transferring Git repositories -- including super repositories
+with deeply nested submodules at any depth -- across air-gapped networks using
 native Git bundle files.
 
 Every branch, tag, and commit is preserved exactly as it exists on the source
@@ -41,7 +41,7 @@ with no remote URLs configured.
 
 ```
 SOURCE NETWORK                         DESTINATION NETWORK
-────────────────────────────────       ─────────────────────────────────────
+       
 python bundle.py                       python export.py
      |                                      |
      v                                      v
@@ -85,17 +85,17 @@ library: `subprocess`, `pathlib`, `hashlib`, `shutil`, `datetime`.
 
 ```
 dev-tools/git-bundle/
-├── bundle.py                  # Step 1 — run on the source network
-├── export.py                  # Step 2 — run on the destination network
-├── sync.py                    # Optional — update an existing exported repo
-├── tests/
-│   ├── create_test_repo.py    # Creates a local test fixture
-│   ├── verify_test.py         # Verifies a completed bundle + export run
-│   └── test_repos/            # Created by create_test_repo.py (not committed)
-│       ├── full-test-repo/
-│       └── full-test-base-*/
-├── README.md
-└── SYNC_WORKFLOW.md
+ bundle.py                  # Step 1 -- run on the source network
+ export.py                  # Step 2 -- run on the destination network
+ sync.py                    # Optional -- update an existing exported repo
+ tests/
+    create_test_repo.py    # Creates a local test fixture
+    verify_test.py         # Verifies a completed bundle + export run
+    test_repos/            # Created by create_test_repo.py (not committed)
+        full-test-repo/
+        full-test-base-*/
+ README.md
+ SYNC_WORKFLOW.md
 ```
 
 ---
@@ -118,7 +118,7 @@ py --version
 |------------|--------------------------------------------------------------------|
 | `python`   | Python was installed and added to PATH (most Linux installs, some Windows installs via the Microsoft Store or the official installer with "Add to PATH" ticked) |
 | `python3`  | Common on Linux when both Python 2 and Python 3 are installed      |
-| `py`       | Windows Python Launcher — installed automatically by the official Python installer on Windows regardless of PATH settings |
+| `py`       | Windows Python Launcher -- installed automatically by the official Python installer on Windows regardless of PATH settings |
 
 The output will look something like this:
 
@@ -201,13 +201,13 @@ For the best day-to-day experience, use PowerShell or Git Bash.
 > fixture before pointing these scripts at a real repository.
 > Jump directly to [Testing the scripts](#testing-the-scripts).
 
-### 1 — Configure bundle.py
+### 1 -- Configure bundle.py
 
 Open `bundle.py` in any text editor.  Find the USER CONFIGURATION section near
 the top:
 
 ```python
-# ─────────────────────────────────────────────────────────────────────────────
+# 
 #  USER CONFIGURATION
 #
 #  Change REPO_PATH to point at the Git super repository you want to bundle.
@@ -221,15 +221,15 @@ the top:
 #  The default below points at the test repository created by running:
 #      python tests/create_test_repo.py
 #  No changes needed if you just want to test the workflow first.
-# ─────────────────────────────────────────────────────────────────────────────
+# 
 REPO_PATH = Path(__file__).parent / "tests" / "test_repos" / "full-test-repo"
 ```
 
 Change the `REPO_PATH` line to point at your super repository.  The remote Git
-address is detected automatically from the repository itself — no manual entry
+address is detected automatically from the repository itself -- no manual entry
 needed.
 
-**Windows example** — a repository called `my-project` on the Desktop:
+**Windows example** -- a repository called `my-project` on the Desktop:
 ```python
 REPO_PATH = Path(r"C:\Users\YourName\Desktop\my-project")
 ```
@@ -242,10 +242,10 @@ backslashes are not misread as escape characters.
 REPO_PATH = Path.home() / "Desktop" / "my-project"
 ```
 
-`REPO_PATH` must point at the root of a Git repository — the folder that
+`REPO_PATH` must point at the root of a Git repository -- the folder that
 directly contains `.git/`.
 
-### 2 — Run bundle.py
+### 2 -- Run bundle.py
 
 ```
 python bundle.py
@@ -271,7 +271,7 @@ Console output example:
 [OK]   Time        : 0m 18s
 ```
 
-### 3 — Verify the bundle log
+### 3 -- Verify the bundle log
 
 **Windows (cmd.exe or PowerShell):**
 ```
@@ -285,12 +285,12 @@ cat 20260309_1430_import/bundle_verification.txt
 
 Confirm every entry shows `Verification : VERIFIED` before transferring.
 
-### 4 — Transfer to the destination network
+### 4 -- Transfer to the destination network
 
 Burn the entire `YYYYMMDD_HHmm_import/` folder to CD/DVD (physical media only)
 and transport it to the destination machine.  Copy `export.py` alongside it.
 
-### 5 — Run export.py
+### 5 -- Run export.py
 
 ```
 python export.py
@@ -323,7 +323,7 @@ Console output example:
 [OK]   Time        : 0m 12s
 ```
 
-### 6 — Verify the export
+### 6 -- Verify the export
 
 ```
 cd 20260309_1430_export\my-project
@@ -351,13 +351,13 @@ Run this workflow before pointing the scripts at a real repository.  It creates
 a fully self-contained local test fixture and then verifies the complete
 bundle-and-export cycle against it.
 
-### Step 1 — Create the test fixture
+### Step 1 -- Create the test fixture
 
 ```
 python tests/create_test_repo.py
 ```
 
-This creates `tests/test_repos/full-test-repo/` — a super repository with a
+This creates `tests/test_repos/full-test-repo/` -- a super repository with a
 deliberately complex submodule structure designed to exercise every code path:
 
 ```
@@ -387,7 +387,7 @@ submodules that only appear on non-default branches.  `notification-service`
 and `feature-flags-lib` only exist on `develop`, so they can only be found by
 scanning all branch trees, not just the checked-out one.
 
-### Step 2 — Run the full workflow
+### Step 2 -- Run the full workflow
 
 `REPO_PATH` in `bundle.py` already points at the test fixture by default.
 No changes needed.
@@ -397,7 +397,7 @@ python bundle.py
 python export.py
 ```
 
-### Step 3 — Run verification
+### Step 3 -- Run verification
 
 ```
 python tests/verify_test.py
@@ -447,10 +447,10 @@ rm -rf tests/test_repos/ *_import/ *_export/
 | All local branches | Yes |
 | All tags | Yes |
 | Full commit history | Yes |
-| Remote-tracking refs | Yes — materialized as local branches, then origin is removed |
+| Remote-tracking refs | Yes -- materialized as local branches, then origin is removed |
 | Submodules at any depth | Yes |
-| Submodules on non-default branches | Yes — cross-branch tree scan |
-| Remote URL | Yes — auto-detected and written to metadata, then removed from exported repo |
+| Submodules on non-default branches | Yes -- cross-branch tree scan |
+| Remote URL | Yes -- auto-detected and written to metadata, then removed from exported repo |
 
 ---
 
@@ -467,16 +467,16 @@ Console output uses a consistent four-tag format:
 
 Log files are written alongside the bundles:
 
-- `bundle_verification.txt` — SHA256, branch list, tag list, commit count,
+- `bundle_verification.txt` -- SHA256, branch list, tag list, commit count,
   and file size for every bundled repository.
-- `export_log.txt` — step-by-step record of the export and submodule
+- `export_log.txt` -- step-by-step record of the export and submodule
   restoration process.
 
 ---
 
 ## Troubleshooting
 
-**python / python3 / py — which one do I use?**
+**python / python3 / py -- which one do I use?**
 
 See [Finding your Python command](#finding-your-python-command).  Run
 `python --version`, `python3 --version`, and `py --version` in your terminal.
@@ -520,8 +520,8 @@ alphabetically will be checked out instead.
 
 | Platform | Supported |
 |---|---|
-| Windows 10 / 11 | Yes — native Python, no Git Bash required |
-| Linux RHEL 8 | Yes — requires Python 3.11 installed separately |
+| Windows 10 / 11 | Yes -- native Python, no Git Bash required |
+| Linux RHEL 8 | Yes -- requires Python 3.11 installed separately |
 | Linux Ubuntu | Yes |
 
 ---

@@ -40,15 +40,15 @@ Default architecture is `x86_64`. Pass `i686` for 32-bit.
 ## How It Works
 
 The `.7z` (102MB) is too large to commit as a single file, so it is split into
-three parts in `vendor/` and committed directly to git — no Git LFS required.
+three parts in `vendor/` and committed directly to git -- no Git LFS required.
 
 `setup.sh` runs the following in sequence:
 
 ```
-verify.sh       — SHA256-checks each part against manifest.json
-reassemble.sh   — cats parts into the .7z, SHA256-checks the result
-install.sh      — extracts via 7z, smoke-tests gcc.exe
-env-setup.sh    — source this to activate the toolchain (printed at end)
+verify.sh       -- SHA256-checks each part against manifest.json
+reassemble.sh   -- cats parts into the .7z, SHA256-checks the result
+install.sh      -- extracts via 7z, smoke-tests gcc.exe
+env-setup.sh    -- source this to activate the toolchain (printed at end)
 ```
 
 Every step is gated: if any hash check fails, setup stops immediately and
@@ -95,30 +95,30 @@ echo "source '$(pwd)/scripts/env-setup.sh' x86_64" >> ~/.bashrc
 
 ```
 toolchains/gcc/windows/
-├── setup.sh               ← single user entry point
-├── manifest.json          ← version pin + all SHA256 hashes
-├── scripts/
-│   ├── verify.sh          ← checks parts or reassembled archive
-│   ├── reassemble.sh      ← joins parts, verifies result
-│   ├── install.sh         ← extracts + smoke tests
-│   └── env-setup.sh       ← source to activate toolchain
-├── vendor/
-│   ├── *.part-aa          ← committed to git
-│   ├── *.part-ab          ← committed to git
-│   └── *.part-ac          ← committed to git
-└── docs/
-    └── offline-transfer.md
+ setup.sh                single user entry point
+ manifest.json           version pin + all SHA256 hashes
+ scripts/
+    verify.sh           checks parts or reassembled archive
+    reassemble.sh       joins parts, verifies result
+    install.sh          extracts + smoke tests
+    env-setup.sh        source to activate toolchain
+ vendor/
+    *.part-aa           committed to git
+    *.part-ab           committed to git
+    *.part-ac           committed to git
+ docs/
+     offline-transfer.md
 ```
 
 ---
 
 ## Notes
 
-- **No system install.** WinLibs is fully relocatable — extracts to
+- **No system install.** WinLibs is fully relocatable -- extracts to
   `toolchain/x86_64/` with no registry writes or installers.
 - **UCRT runtime.** Compiled binaries require UCRT, built into Windows 10+
   or installable on Windows 7 SP1+.
 - **Coexists with LLVM.** This toolchain and `toolchains/clang-source-build/` sit
-  independently on PATH — `env-setup.sh` prepends for the current shell only.
+  independently on PATH -- `env-setup.sh` prepends for the current shell only.
 - **`vendor/*.7z` is gitignored.** Only the three parts are committed.
   The reassembled archive is a local artifact produced by `reassemble.sh`.

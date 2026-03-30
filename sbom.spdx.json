@@ -192,7 +192,7 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "Optional standalone subproject. Servy 7.3 Windows service manager — portable prebuilt for Windows x64 only. Linux exits gracefully. Requires 7-Zip for extraction. See DocumentRef-servy for full component SBOM."
+      "comment": "Optional standalone subproject. Servy 7.3 Windows service manager -- portable prebuilt for Windows x64 only. Linux exits gracefully. Requires 7-Zip for extraction. See DocumentRef-servy for full component SBOM."
     },
     {
       "SPDXID": "SPDXRef-subproject-languages-python",
@@ -205,7 +205,7 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "Optional subproject. Portable Python 3.14.3 — Windows embeddable zip + .7z ultra (8.9MB); Linux python-build-standalone tar.gz (3 split parts). No installer, no PATH modification until env-setup.sh is sourced. See DocumentRef-languages-python for full component SBOM."
+      "comment": "Optional subproject. Portable Python 3.14.3 -- Windows embeddable zip + .7z ultra (8.9MB); Linux python-build-standalone tar.gz (3 split parts). No installer, no PATH modification until env-setup.sh is sourced. See DocumentRef-languages-python for full component SBOM."
     },
     {
       "SPDXID": "SPDXRef-subproject-frameworks-grpc",

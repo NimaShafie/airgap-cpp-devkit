@@ -1,4 +1,4 @@
-# Production Repository Setup — toolchains/clang-style-formatter
+# Production Repository Setup -- toolchains/clang-style-formatter
 
 ### Author: Nima Shafie
 
@@ -18,7 +18,7 @@ repo. Developers only ever run one command after that.
 
 ## Maintainer Checklist (once per production repo)
 
-### 1 — Add the submodule
+### 1 -- Add the submodule
 
 From the root of your production repo:
 
@@ -30,19 +30,19 @@ git submodule add \
 git submodule update --init --recursive
 ```
 
-### 2 — Copy setup.sh into the repo root
+### 2 -- Copy setup.sh into the repo root
 
 ```bash
 cp tools/toolchains/clang-style-formatter/docs/production-repo-template/setup.sh ./setup.sh
 ```
 
-### 3 — Append .gitignore entries
+### 3 -- Append .gitignore entries
 
 ```bash
 cat tools/toolchains/clang-style-formatter/docs/gitignore-snippet.txt >> .gitignore
 ```
 
-### 4 — Commit everything
+### 4 -- Commit everything
 
 ```bash
 git add .gitmodules tools/toolchains/clang-style-formatter setup.sh .gitignore
@@ -69,24 +69,24 @@ bootstrap scripts, or clang-format.
 
 ```
 your-cpp-project/
-├── setup.sh              ← ~50 lines, the only new file at root
-├── .gitmodules           ← auto-generated, 3 lines
-└── tools/
-    └── toolchains/clang-style-formatter/   ← submodule (a single commit pointer)
+ setup.sh               ~50 lines, the only new file at root
+ .gitmodules            auto-generated, 3 lines
+ tools/
+     toolchains/clang-style-formatter/    submodule (a single commit pointer)
 ```
 
-The submodule itself is not stored in your production repo — only a pointer
+The submodule itself is not stored in your production repo -- only a pointer
 to a specific commit in the formatter repo. Running `setup.sh` pulls the
 actual content down on demand.
 
 ---
 
-## After Setup — Day-to-Day Developer Commands
+## After Setup -- Day-to-Day Developer Commands
 
 | Situation | Command |
 |-----------|---------|
-| Commit rejected — auto-fix | `bash tools/toolchains/clang-style-formatter/scripts/fix-format.sh` |
-| Commit rejected — preview only | `bash tools/toolchains/clang-style-formatter/scripts/fix-format.sh --dry-run` |
+| Commit rejected -- auto-fix | `bash tools/toolchains/clang-style-formatter/scripts/fix-format.sh` |
+| Commit rejected -- preview only | `bash tools/toolchains/clang-style-formatter/scripts/fix-format.sh --dry-run` |
 | Emergency bypass | `git commit --no-verify -m "message"` |
 | Verify installation | `bash tools/toolchains/clang-style-formatter/scripts/smoke-test.sh` |
 | Re-run setup (new machine) | `bash setup.sh` |

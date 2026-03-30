@@ -1,4 +1,4 @@
-← [Back to README](../README.md)
+ [Back to README](../README.md)
 
 # LLVM Build Prerequisites
 
@@ -26,7 +26,7 @@ present on the developer's machine for that build to succeed.
 
 ### Notes
 
-CMake and Ninja are bundled with Visual Studio 2019 and 2022 — no separate
+CMake and Ninja are bundled with Visual Studio 2019 and 2022 -- no separate
 installation needed if VS is present.
 
 The build script must be run from a shell where the MSVC compiler is on PATH.
@@ -35,7 +35,7 @@ The most reliable way is the **x64 Native Tools Command Prompt for VS 20xx**
 also source the VS environment:
 
 ```bash
-# VS 2022 example — adjust path to your edition
+# VS 2022 example -- adjust path to your edition
 cmd.exe /c '"C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat" && bash'
 ```
 
@@ -44,7 +44,7 @@ Then run:
 bash .llvm-hooks/scripts/build-clang-format.sh
 ```
 
-Build time: approximately 30–45 minutes with Ninja on a modern machine.
+Build time: approximately 30-45 minutes with Ninja on a modern machine.
 
 ---
 
@@ -76,7 +76,7 @@ Then run:
 bash .llvm-hooks/scripts/build-clang-format.sh
 ```
 
-Build time: approximately 45–60 minutes with Ninja on RHEL 8.
+Build time: approximately 45-60 minutes with Ninja on RHEL 8.
 
 ---
 
@@ -87,7 +87,7 @@ The compiled binary is placed at:
 - **Windows:** `bin/windows/clang-format.exe`
 - **Linux:** `bin/linux/clang-format`
 
-The pre-commit hook discovers these paths automatically via `find-tools.sh` —
+The pre-commit hook discovers these paths automatically via `find-tools.sh` --
 no PATH configuration is needed after building.
 
 The build directory (`llvm-src/build/`) can be deleted after a successful build
@@ -104,7 +104,7 @@ rm -rf .llvm-hooks/llvm-src/build/
 ### "cmake: not found" or "ninja: not found"
 
 Install the missing tool (see the table above for your platform).
-On Windows, verify you are running from a VS command prompt — not a plain
+On Windows, verify you are running from a VS command prompt -- not a plain
 Git Bash window that lacks the MSVC environment.
 
 ### Build fails with "No C++ compiler found"
@@ -117,7 +117,7 @@ sysadmin to install `gcc-c++`.
 
 ### Build fails partway through (out of memory / disk)
 
-The build needs approximately 4–5 GB of free disk space during compilation.
+The build needs approximately 4-5 GB of free disk space during compilation.
 If disk is low, consider passing `--jobs 2` to limit parallelism and reduce
 peak memory:
 
