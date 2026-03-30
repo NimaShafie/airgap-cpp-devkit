@@ -379,7 +379,6 @@ No internet access, no CPAN, no EPEL required.
 | Cross-platform | Windows 11 (Git Bash / MINGW64) + RHEL 8 |
 | Single entry point per tool | `bash setup.sh` or `.\setup.ps1` -- nothing else required |
 | Integrity verification | SHA256 pinned in `manifest.json` for all vendored archives and binaries |
-| No personal URLs | All SBOM namespaces use `airgap-cpp-devkit.internal` -- safe for internal distribution |
 
 ---
 
