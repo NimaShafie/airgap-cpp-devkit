@@ -1,16 +1,17 @@
 #!/usr/bin/env bash
 # Author: Nima Shafie
 # =============================================================================
-# frameworks/grpc/setup_grpc.sh
+# frameworks/grpc/setup.sh
 #
 # Bash entry point for the gRPC air-gap source build.
+# Call chain: setup.sh -> setup.bat -> setup.ps1
 #
 # PLATFORM SUPPORT:
 #   Windows : Full support. Builds gRPC from source using MSVC + CMake.
 #   Linux   : Not supported (requires MSVC/Windows SDK).
 #
 # USAGE:
-#   bash frameworks/grpc/setup_grpc.sh [--version 1.76.0|1.78.1] [--prefix <path>]
+#   bash frameworks/grpc/setup.sh [--version 1.76.0|1.78.1] [--prefix <path>]
 #
 # OPTIONS:
 #   --version <ver>   gRPC version to build (default: prompts interactively)
@@ -26,7 +27,7 @@ case "$(uname -s)" in
     MINGW*|MSYS*|CYGWIN*) OS="windows" ;;
     Linux*)
         echo ""
-        echo "  gRPC source build — Linux not supported."
+        echo "  gRPC source build -- Linux not supported."
         echo "  This build requires MSVC and the Windows SDK."
         echo "  For Linux gRPC, build manually from the vendored source tarball."
         echo ""
@@ -87,20 +88,12 @@ fi
 
 BAT_WIN="$(cygpath -w "${BAT_FILE}")"
 
-echo "[INFO] Invoking setup.bat..."
-echo ""
-
 # Check if we are already in a VS Developer environment
 if command -v cl.exe &>/dev/null; then
     echo "[INFO] VS Developer environment detected (cl.exe found)."
-    echo "[INFO] Running gRPC build directly..."
+    echo "[INFO] Invoking setup.bat -> setup.ps1..."
     echo ""
-    BAT_WIN_ESC="${BAT_WIN//\//\\}"
-    DEST_WIN_ESC="${DEST_WIN//\//\\}"
-    echo "[INFO] Changing to grpc directory and running bat..."
-    cd "${SCRIPT_DIR}"
-    cmd.exe /c "setup.bat --version ${GRPC_VERSION} --dest \"${DEST_WIN}\""
-    cd - > /dev/null
+    cmd.exe /c "${BAT_WIN}" -version "${GRPC_VERSION}" -dest "${DEST_WIN}"
     BAT_EXIT=$?
 else
     echo ""
@@ -108,15 +101,16 @@ else
     echo "  gRPC requires a Visual Studio Developer environment."
     echo "  ============================================================"
     echo ""
-    echo "  Please run this script from a VS Developer Command Prompt:"
+    echo "  Please run this script from a VS Developer Command Prompt"
+    echo "  or Developer PowerShell for Visual Studio:"
     echo ""
-    echo "    1. Open: Start -> Visual Studio 2026 -> Developer Command Prompt"
+    echo "    1. Open: Start -> Visual Studio -> Developer PowerShell"
     echo "    2. Run:  bash frameworks/grpc/setup.sh --version ${GRPC_VERSION}"
     echo ""
-    echo "  Or run the bat file directly from VS Developer Command Prompt:"
+    echo "  Or run setup.ps1 directly from Developer PowerShell:"
     echo ""
     echo "    cd C:\Users\n1mz\Desktop\airgap-cpp-devkit\frameworks\grpc"
-    echo "    setup.bat --version ${GRPC_VERSION} --dest ${DEST_WIN}"
+    echo "    .\setup.ps1 -version ${GRPC_VERSION} -dest ${DEST_WIN}"
     echo ""
     exit 1
 fi
