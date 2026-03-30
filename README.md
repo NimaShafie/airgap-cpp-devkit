@@ -76,7 +76,8 @@ To install system-wide on Windows, right-click Git Bash and select
 | [`build-tools/cmake/`](build-tools/cmake/README.md) | CMake 4.3.0 -- build from source or install pre-built; RHEL 8 + Windows | No |
 | [`dev-tools/git-bundle/`](dev-tools/git-bundle/README.md) | Transfers Git repositories with nested submodules across air-gapped boundaries | Yes |
 | [`build-tools/lcov/`](build-tools/lcov/README.md) | Code coverage reporting via lcov 2.4 + gcov, vendored Perl deps included | No |
-| [`languages/python/`](languages/python/README.md) | Portable Python 3.14.3 interpreter -- Windows embeddable + Linux standalone (python-build-standalone) | No |
+| [`languages/python/`](languages/python/README.md) | Portable Python 3.14.3 interpreter -- Windows embeddable + Linux standalone | No |
+| [`languages/dotnet/`](languages/dotnet/README.md) | Portable .NET 10 SDK 10.0.201 -- Windows + Linux, no installer required | No |
 | [`dev-tools/vscode-extensions/`](dev-tools/vscode-extensions/README.md) | Offline VS Code extensions: C/C++, C++ TestMate, Python (win32-x64 + linux-x64) | No |
 | [`toolchains/gcc/windows/`](toolchains/gcc/windows/README.md) | GCC 15.2.0 + MinGW-w64 13.0.0 UCRT toolchain for Windows | No -- standalone |
 | [`dev-tools/7zip/`](dev-tools/7zip/README.md) | 7-Zip 26.00 -- admin + user install for Windows and Linux | No -- standalone |
@@ -96,6 +97,12 @@ existing system Python. It does not modify your PATH until you explicitly
 run `source languages/python/scripts/env-setup.sh`. Other devkit tools that require
 Python will prefer this interpreter if active, and fall back to the system
 Python if not.
+
+**`languages/dotnet/`** installs a portable .NET 10 SDK 10.0.201 that lives alongside
+any existing system .NET installation. No installer, no registry changes, no elevation
+required for user install. Includes the C# 14 compiler, .NET Runtime, ASP.NET Core
+Runtime, MSBuild, NuGet client, and the full `dotnet` CLI. Supports building and
+publishing self-contained executables for Windows and Linux.
 
 **`dev-tools/vscode-extensions/`** installs offline VS Code extensions for C++
 development. Requires VS Code to be installed and `code` on PATH.
@@ -171,10 +178,10 @@ Developers only ever run `bash setup.sh`.
 **What lands in each production repo:**
 ```
 your-cpp-project/
- setup.sh                              <- ~50 lines, the only new root file
- .gitmodules                           <- 3-line auto-generated pointer
- tools/
-     style-formatter/                  <- submodule (a commit pointer, not a copy)
++-- setup.sh                              <- ~50 lines, the only new root file
++-- .gitmodules                           <- 3-line auto-generated pointer
++-- tools/
+    +-- style-formatter/                  <- submodule (a commit pointer, not a copy)
 ```
 
 ### Step 1 -- Add the submodule (once per repo)
@@ -287,14 +294,28 @@ source languages/python/scripts/env-setup.sh
 Installs a self-contained Python 3.14.3 alongside any existing system Python.
 Does not affect system Python until `env-setup.sh` is sourced.
 
-**Method 6 -- VS Code extensions (offline)**
+**Method 6 -- Portable .NET 10 SDK 10.0.201**
+```bash
+# Windows (Developer PowerShell):
+cd languages\dotnet
+.\install-prebuilt.ps1
+
+# Linux:
+bash languages/dotnet/setup.sh
+```
+Installs .NET 10 SDK 10.0.201 from prebuilt archives. No installer, no registry
+changes, no elevation required for user install. Includes C# 14 compiler,
+.NET Runtime, ASP.NET Core Runtime, MSBuild, NuGet client, and dotnet CLI.
+Supported until November 2028.
+
+**Method 7 -- VS Code extensions (offline)**
 ```bash
 bash dev-tools/vscode-extensions/setup.sh
 ```
 Installs C/C++, C++ TestMate, and Python extensions into VS Code offline.
 Requires VS Code installed and `code` on PATH.
 
-**Method 7 -- GCC toolchain for Windows**
+**Method 8 -- GCC toolchain for Windows**
 ```bash
 cd toolchains/gcc/windows
 bash setup.sh x86_64
@@ -303,34 +324,31 @@ source scripts/env-setup.sh x86_64
 Installs GCC 15.2.0 + MinGW-w64 13.0.0 UCRT. Only needed if you require
 GCC to compile C++ projects on Windows.
 
-**Method 8 -- 7-Zip 26.00 (Windows + Linux)**
+**Method 9 -- 7-Zip 26.00 (Windows + Linux)**
 ```bash
 bash dev-tools/7zip/setup.sh
 ```
 Installs 7-Zip 26.00. Admin mode: system-wide install. User mode: portable
-drop-in with no elevation required. Supports `.7z`, `.zip`, `.tar.xz`, and
-all major archive formats on both Windows and Linux.
+drop-in with no elevation required.
 
-**Method 9 -- Servy 7.3 (Windows service manager)**
+**Method 10 -- Servy 7.3 (Windows service manager)**
 ```bash
 bash dev-tools/servy/setup.sh
 ```
-Installs Servy 7.3 portable -- GUI, Manager app, CLI, and PowerShell module.
-Turns any executable into a native Windows service with health checks, log
-rotation, and restart policies. Admin: `C:\Program Files\servy\`. User:
-`%LOCALAPPDATA%\airgap-cpp-devkit\servy\`. Requires 7-Zip first. Windows only.
+Installs Servy 7.3 portable. Turns any executable into a native Windows
+service with health checks, log rotation, and restart policies.
+Requires 7-Zip first. Windows only.
 
-**Method 10 -- gRPC v1.78.1 for Windows (prebuilt)**
+**Method 11 -- gRPC v1.78.1 for Windows (prebuilt)**
 ```powershell
 cd frameworks\grpc
 .\install-prebuilt.ps1 -version 1.78.1
 .\setup.ps1 -version 1.78.1
 ```
 Extracts prebuilt gRPC from `prebuilt-binaries/frameworks/grpc/windows/1.78.1/`
-(69MB .7z > 1.6GB install). No compiler or Visual Studio required for install.
-`setup.ps1` then builds and launches the HelloWorld demo to verify end-to-end.
+(69MB .7z -> 1.6GB install). No compiler or Visual Studio required for install.
 
-**Method 11 -- gRPC v1.78.1 for Windows (source build)**
+**Method 12 -- gRPC v1.78.1 for Windows (source build)**
 ```powershell
 cd frameworks\grpc
 .\setup.ps1 -version 1.78.1
@@ -339,7 +357,7 @@ Builds gRPC from the vendored recursive source bundle (~40 minutes).
 Requires: Visual Studio 2019/2022/Insiders with Desktop C++ workload,
 CMake, Git Bash. All cmake deps sourced from `third_party/` -- no network access.
 
-**Method 12 -- lcov code coverage (RHEL 8 / Linux)**
+**Method 13 -- lcov code coverage (RHEL 8 / Linux)**
 ```bash
 bash build-tools/lcov/setup.sh
 source build-tools/lcov/scripts/env-setup.sh
@@ -369,56 +387,51 @@ No internet access, no CPAN, no EPEL required.
 
 ```
 airgap-cpp-devkit/
- README.md                              <- you are here
- sbom.spdx.json                         <- root aggregate SBOM (SPDX 2.3)
- install.sh                             <- top-level orchestrator
- uninstall.sh                           <- removes all installed tools
- .gitmodules                            <- prebuilt-binaries submodule pointer
-
- scripts/
-    install-mode.sh                    <- shared admin/user detection library
-    setup-prebuilt-submodule.sh        <- initialize prebuilt-binaries submodule
-    generate-sbom.sh                   <- regenerates all SBOM timestamps
-
- prebuilt-binaries/                     <- SUBMODULE (separate repo, optional)
-                                            Skip entirely in binary-restricted envs
-    build-tools/cmake/                 <- CMake 4.3.0 (Windows .zip + .7z, Linux .tar.gz)
-    dev-tools/7zip/                    <- 7-Zip 26.00 (Windows installer + portable, Linux)
-    dev-tools/servy/                   <- Servy 7.3 (Windows .7z split parts)
-    frameworks/grpc/windows/1.78.1/    <- gRPC prebuilt (.7z 69MB + .zip 162MB)
-    toolchains/clang/mingw/            <- llvm-mingw 20260324 (.zip + .7z, Linux .tar.xz)
-    toolchains/clang/rhel8/            <- Clang 20.1.8 RHEL8 RPMs (.tar split parts)
-    toolchains/clang/source-build/     <- clang-format, clang-tidy, Ninja binaries
-    toolchains/gcc/linux/              <- gcc-toolset-15 RHEL8 RPMs (.tar split parts)
-    toolchains/gcc/windows/            <- WinLibs GCC 15.2.0 (.zip + .7z split parts)
-
- build-tools/
-    cmake/                             <- CMake 4.3.0 source + scripts
-    lcov/                              <- lcov 2.4 + vendored Perl deps (Linux)
-
- dev-tools/
-    7zip/                              <- 7-Zip 26.00 scripts + manifests
-    servy/                             <- Servy 7.3 scripts + manifests
-    vscode-extensions/                 <- offline VS Code extensions
-
- frameworks/
-    grpc/                              <- gRPC v1.78.1 (Windows)
-        setup.bat                      <- thin launcher
-        setup.ps1                      <- full build + demo pipeline
-        setup.sh                       <- bash entry point
-        install-prebuilt.ps1           <- extracts from prebuilt-binaries/
-        manifest.json                  <- SHA256 pins for vendor parts
-        scripts/                       <- verify.sh + reassemble.sh
-        vendor/                        <- grpc-1.78.1.tar.gz split parts (3x ~45MB)
-
- languages/
-    python/                            <- Python 3.14.3 (Windows .zip + .7z, Linux .tar.gz)
-
- toolchains/
-     clang/
-        source-build/                  <- clang-format + clang-tidy build from LLVM source
-        style-formatter/               <- LLVM C++ style enforcement (Git pre-commit hook)
-     gcc/
-         linux/                         <- gcc-toolset-15 for RHEL 8
-         windows/                       <- WinLibs GCC 15.2.0 for Windows
++-- README.md                              <- you are here
++-- TOOLS.md                               <- single-page tool inventory
++-- sbom.spdx.json                         <- root aggregate SBOM (SPDX 2.3)
++-- install.sh                             <- top-level orchestrator
++-- uninstall.sh                           <- removes all installed tools
++-- .gitmodules                            <- prebuilt-binaries submodule pointer
+|
++-- scripts/
+|   +-- install-mode.sh                    <- shared admin/user detection library
+|   +-- setup-prebuilt-submodule.sh        <- initialize prebuilt-binaries submodule
+|   +-- generate-sbom.sh                   <- regenerates all SBOM timestamps
+|
++-- prebuilt-binaries/                     <- SUBMODULE (separate repo, optional)
+|   +-- build-tools/cmake/                 <- CMake 4.3.0 (Windows .zip + .7z, Linux .tar.gz)
+|   +-- dev-tools/7zip/                    <- 7-Zip 26.00
+|   +-- dev-tools/servy/                   <- Servy 7.3
+|   +-- frameworks/grpc/windows/1.78.1/    <- gRPC prebuilt (.7z 69MB + .zip 162MB)
+|   +-- languages/dotnet/10.0.201/         <- .NET 10 SDK (.7z 148MB + .zip 290MB, Linux .tar.gz 231MB)
+|   +-- toolchains/clang/mingw/            <- llvm-mingw 20260324
+|   +-- toolchains/clang/rhel8/            <- Clang 20.1.8 RHEL8 RPMs
+|   +-- toolchains/clang/source-build/     <- clang-format, clang-tidy, Ninja binaries
+|   +-- toolchains/gcc/linux/              <- gcc-toolset-15 RHEL8 RPMs
+|   +-- toolchains/gcc/windows/            <- WinLibs GCC 15.2.0
+|
++-- build-tools/
+|   +-- cmake/                             <- CMake 4.3.0 source + scripts
+|   +-- lcov/                              <- lcov 2.4 + vendored Perl deps (Linux)
+|
++-- dev-tools/
+|   +-- 7zip/                              <- 7-Zip 26.00 scripts + manifests
+|   +-- servy/                             <- Servy 7.3 scripts + manifests
+|   +-- vscode-extensions/                 <- offline VS Code extensions
+|
++-- frameworks/
+|   +-- grpc/                              <- gRPC v1.78.1 (Windows)
+|
++-- languages/
+|   +-- python/                            <- Python 3.14.3 (Windows + Linux)
+|   +-- dotnet/                            <- .NET 10 SDK 10.0.201 (Windows + Linux)
+|
++-- toolchains/
+    +-- clang/
+    |   +-- source-build/                  <- clang-format + clang-tidy from LLVM source
+    |   +-- style-formatter/               <- LLVM C++ style enforcement
+    +-- gcc/
+        +-- linux/                         <- gcc-toolset-15 for RHEL 8
+        +-- windows/                       <- WinLibs GCC 15.2.0 for Windows
 ```

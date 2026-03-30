@@ -87,6 +87,14 @@
         "algorithm": "SHA1",
         "checksumValue": "0000000000000000000000000000000000000000"
       }
+    },
+    {
+      "externalDocumentId": "DocumentRef-languages-dotnet",
+      "spdxDocument": "https://airgap-cpp-devkit.internal/languages/dotnet/sbom.spdx.json",
+      "checksum": {
+        "algorithm": "SHA1",
+        "checksumValue": "0000000000000000000000000000000000000000"
+      }
     }
   ],
   "packages": [
@@ -208,6 +216,19 @@
       "comment": "Optional subproject. Portable Python 3.14.3 -- Windows embeddable zip + .7z ultra (8.9MB); Linux python-build-standalone tar.gz (3 split parts). No installer, no PATH modification until env-setup.sh is sourced. See DocumentRef-languages-python for full component SBOM."
     },
     {
+      "SPDXID": "SPDXRef-subproject-languages-dotnet",
+      "name": "languages/dotnet",
+      "versionInfo": "10.0.201",
+      "supplier": "Organization: airgap-cpp-devkit",
+      "downloadLocation": "https://airgap-cpp-devkit.internal",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "Copyright (c) .NET Foundation and Contributors",
+      "primaryPackagePurpose": "APPLICATION",
+      "comment": "Optional subproject. Portable .NET 10 SDK 10.0.201 -- Windows x64 (.zip 290MB, .7z 148MB, both split into parts) and Linux x64 (.tar.gz 231MB, split into parts). No installer, no registry changes. Includes C# 14 compiler, .NET Runtime 10.0.5, ASP.NET Core Runtime, MSBuild, NuGet client, dotnet CLI. Supported until November 2028. See DocumentRef-languages-dotnet for full component SBOM."
+    },
+    {
       "SPDXID": "SPDXRef-subproject-frameworks-grpc",
       "name": "frameworks/grpc",
       "versionInfo": "1.78.1",
@@ -270,6 +291,11 @@
     {
       "spdxElementId": "SPDXRef-airgap-cpp-devkit",
       "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-subproject-languages-dotnet"
+    },
+    {
+      "spdxElementId": "SPDXRef-airgap-cpp-devkit",
+      "relationshipType": "CONTAINS",
       "relatedSpdxElement": "SPDXRef-subproject-frameworks-grpc"
     },
     {
@@ -311,6 +337,11 @@
       "spdxElementId": "SPDXRef-subproject-languages-python",
       "relationshipType": "DESCRIBED_BY",
       "relatedSpdxElement": "DocumentRef-languages-python:SPDXRef-python-linux"
+    },
+    {
+      "spdxElementId": "SPDXRef-subproject-languages-dotnet",
+      "relationshipType": "DESCRIBED_BY",
+      "relatedSpdxElement": "DocumentRef-languages-dotnet:SPDXRef-dotnet-sdk-windows"
     },
     {
       "spdxElementId": "SPDXRef-subproject-frameworks-grpc",

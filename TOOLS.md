@@ -53,6 +53,8 @@ gRPC prebuilt includes: `bin/` (protoc, grpc_cpp_plugin, all plugins), `include/
 |------|---------|----------|-----------|----------|
 | **Python** | 3.14.3 | Windows (embeddable) | Yes Yes (.7z 8.9MB) | `languages/python/` |
 | **Python** | 3.14.3 | Linux x86_64 | Yes Yes (tar.gz, 3 parts) | `languages/python/` |
+| **.NET SDK** | 10.0.201 | Windows x64 | Yes (.7z 148MB) | `languages/dotnet/` |
+| **.NET SDK** | 10.0.201 | Linux x64 | Yes (.tar.gz 231MB) | `languages/dotnet/` |
 
 ---
 
