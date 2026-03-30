@@ -18,6 +18,11 @@
 #   - Git Bash (bash.exe) on PATH
 #   - CMake installed to C:\Program Files\CMake\
 #   - Run from: frameworks\grpc\ directory
+#
+# AIR-GAP GUARANTEE:
+#   cmake is invoked with FETCHCONTENT_FULLY_DISCONNECTED=ON and all
+#   dependency providers set to "module" (bundled third_party/ sources).
+#   No network access is attempted during configure or build.
 # =============================================================================
 
 param(
@@ -225,6 +230,9 @@ foreach ($d in @($DEMO_DIR, $DEMO_HELLO, $DEMO_PROTOS)) {
 
 # -----------------------------
 # Step 10: Build gRPC
+# Air-gap cmake flags:
+#   FETCHCONTENT_FULLY_DISCONNECTED=ON  -- hard-block any FetchContent download
+#   gRPC_*_PROVIDER=module              -- use bundled third_party/ for all deps
 # -----------------------------
 Step "Checking build status"
 $pluginExe = "$OUTPUT_DIR\bin\grpc_cpp_plugin.exe"
@@ -241,7 +249,7 @@ if (Test-Path $pluginExe) {
 }
 
 if ($needsBuild) {
-    Step "Building gRPC v$GRPC_VERSION"
+    Step "Building gRPC v$GRPC_VERSION (air-gap mode)"
 
     $cmakeBuildDir = "$DEST_GRPC\cmake\build"
     if (-not (Test-Path $cmakeBuildDir)) {
@@ -256,7 +264,20 @@ set CC=
 set CXX=
 cd /d "$cmakeBuildDir"
 if errorlevel 1 exit /b 1
-"$CmakeExe" -G Ninja -DCMAKE_BUILD_TYPE=Release -DgRPC_INSTALL=ON -DgRPC_BUILD_TESTS=OFF -DCMAKE_CXX_STANDARD=17 -DCMAKE_INSTALL_PREFIX="$DEST_GRPC" ..\..
+"$CmakeExe" -G Ninja ^
+    -DCMAKE_BUILD_TYPE=Release ^
+    -DCMAKE_CXX_STANDARD=17 ^
+    -DCMAKE_INSTALL_PREFIX="$DEST_GRPC" ^
+    -DgRPC_INSTALL=ON ^
+    -DgRPC_BUILD_TESTS=OFF ^
+    -DFETCHCONTENT_FULLY_DISCONNECTED=ON ^
+    -DgRPC_ABSL_PROVIDER=module ^
+    -DgRPC_CARES_PROVIDER=module ^
+    -DgRPC_PROTOBUF_PROVIDER=module ^
+    -DgRPC_RE2_PROVIDER=module ^
+    -DgRPC_SSL_PROVIDER=module ^
+    -DgRPC_ZLIB_PROVIDER=module ^
+    ..\..
 if errorlevel 1 exit /b 1
 "$CmakeExe" --build . --target install -j 4
 if errorlevel 1 exit /b 1
@@ -266,6 +287,7 @@ if errorlevel 1 exit /b 1
     [System.IO.File]::WriteAllText($tmpBat, $buildScript, [System.Text.Encoding]::ASCII)
 
     Info "Activating VS environment (amd64) and running cmake build..."
+    Info "Air-gap mode: all dependencies sourced from third_party/ -- no network access."
     cmd.exe /c "`"$tmpBat`""
     $buildExit = $LASTEXITCODE
     Remove-Item $tmpBat -Force -ErrorAction SilentlyContinue
@@ -342,7 +364,11 @@ set CC=
 set CXX=
 cd /d "$DEMO_HELLO\.build"
 if errorlevel 1 exit /b 1
-"$CmakeExe" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$DEST_GRPC" ..
+"$CmakeExe" -G Ninja ^
+    -DCMAKE_BUILD_TYPE=Release ^
+    -DCMAKE_PREFIX_PATH="$DEST_GRPC" ^
+    -DFETCHCONTENT_FULLY_DISCONNECTED=ON ^
+    ..
 if errorlevel 1 exit /b 1
 "$CmakeExe" --build . -j 4
 if errorlevel 1 exit /b 1
