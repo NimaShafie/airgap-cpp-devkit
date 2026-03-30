@@ -2,7 +2,7 @@
   "SPDXID": "SPDXRef-DOCUMENT",
   "spdxVersion": "SPDX-2.3",
   "creationInfo": {
-    "created": "2026-03-27T00:00:00Z",
+    "created": "2026-03-30T00:00:00Z",
     "creators": [
       "Organization: airgap-cpp-devkit",
       "Tool: airgap-cpp-devkit/scripts/generate-sbom.sh"
@@ -71,6 +71,22 @@
         "algorithm": "SHA1",
         "checksumValue": "79d61759c05c0addbba82562ea583aa148a18371"
       }
+    },
+    {
+      "externalDocumentId": "DocumentRef-languages-python",
+      "spdxDocument": "https://airgap-cpp-devkit.internal/languages/python/sbom.spdx.json",
+      "checksum": {
+        "algorithm": "SHA1",
+        "checksumValue": "0000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "externalDocumentId": "DocumentRef-frameworks-grpc",
+      "spdxDocument": "https://airgap-cpp-devkit.internal/frameworks/grpc/sbom.spdx.json",
+      "checksum": {
+        "algorithm": "SHA1",
+        "checksumValue": "0000000000000000000000000000000000000000"
+      }
     }
   ],
   "packages": [
@@ -137,7 +153,7 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "Optional subproject. Code coverage reporting via lcov 2.4 + gcov for RHEL 8 / Linux. Vendored lcov source and Perl dependencies (Capture::Tiny, DateTime, DateTime::TimeZone) as pre-built tarballs. No internet access, CPAN, or EPEL required. See DocumentRef-build-tools-lcov for full component SBOM."
+      "comment": "Optional subproject. Code coverage reporting via lcov 2.4 + gcov for RHEL 8 / Linux. Vendored lcov source and Perl dependencies as pre-built tarballs. No internet access, CPAN, or EPEL required. See DocumentRef-build-tools-lcov for full component SBOM."
     },
     {
       "SPDXID": "SPDXRef-subproject-toolchains-gcc-windows",
@@ -150,7 +166,7 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "Optional standalone subproject. Pre-built GCC 15.2.0 toolchain for Windows x86_64. Can be excluded without affecting other tools. See DocumentRef-toolchains-gcc-windows for full component SBOM."
+      "comment": "Optional standalone subproject. Pre-built GCC 15.2.0 toolchain for Windows x86_64. Available as .zip (6 parts) and .7z ultra (3 parts). See DocumentRef-toolchains-gcc-windows for full component SBOM."
     },
     {
       "SPDXID": "SPDXRef-subproject-7zip",
@@ -177,6 +193,32 @@
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
       "comment": "Optional standalone subproject. Servy 7.3 Windows service manager — portable prebuilt for Windows x64 only. Linux exits gracefully. Requires 7-Zip for extraction. See DocumentRef-servy for full component SBOM."
+    },
+    {
+      "SPDXID": "SPDXRef-subproject-languages-python",
+      "name": "languages/python",
+      "versionInfo": "3.14.3",
+      "supplier": "Organization: airgap-cpp-devkit",
+      "downloadLocation": "https://airgap-cpp-devkit.internal",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "APPLICATION",
+      "comment": "Optional subproject. Portable Python 3.14.3 — Windows embeddable zip + .7z ultra (8.9MB); Linux python-build-standalone tar.gz (3 split parts). No installer, no PATH modification until env-setup.sh is sourced. See DocumentRef-languages-python for full component SBOM."
+    },
+    {
+      "SPDXID": "SPDXRef-subproject-frameworks-grpc",
+      "name": "frameworks/grpc",
+      "versionInfo": "1.78.1",
+      "supplier": "Organization: airgap-cpp-devkit",
+      "downloadLocation": "https://airgap-cpp-devkit.internal",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0",
+      "copyrightText": "Copyright 2015 gRPC authors.",
+      "primaryPackagePurpose": "LIBRARY",
+      "comment": "Optional standalone subproject. gRPC v1.78.1 for air-gapped Windows C++ development. Two install paths: prebuilt extract (69MB .7z, instant) or source build from vendored recursive bundle (127MB, ~40 min, MSVC required). Full cmake --target install output: bin/, include/, lib/, share/. HelloWorld demo built and verified end-to-end. See DocumentRef-frameworks-grpc for full component SBOM."
     }
   ],
   "relationships": [
@@ -221,6 +263,16 @@
       "relatedSpdxElement": "SPDXRef-subproject-servy"
     },
     {
+      "spdxElementId": "SPDXRef-airgap-cpp-devkit",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-subproject-languages-python"
+    },
+    {
+      "spdxElementId": "SPDXRef-airgap-cpp-devkit",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-subproject-frameworks-grpc"
+    },
+    {
       "spdxElementId": "SPDXRef-subproject-toolchains-clang-source-build",
       "relationshipType": "DESCRIBED_BY",
       "relatedSpdxElement": "DocumentRef-toolchains-clang-source-build:SPDXRef-toolchains-clang-source-build"
@@ -254,6 +306,16 @@
       "spdxElementId": "SPDXRef-subproject-servy",
       "relationshipType": "DESCRIBED_BY",
       "relatedSpdxElement": "DocumentRef-servy:SPDXRef-servy-subproject"
+    },
+    {
+      "spdxElementId": "SPDXRef-subproject-languages-python",
+      "relationshipType": "DESCRIBED_BY",
+      "relatedSpdxElement": "DocumentRef-languages-python:SPDXRef-python-linux"
+    },
+    {
+      "spdxElementId": "SPDXRef-subproject-frameworks-grpc",
+      "relationshipType": "DESCRIBED_BY",
+      "relatedSpdxElement": "DocumentRef-frameworks-grpc:SPDXRef-frameworks-grpc"
     }
   ]
 }

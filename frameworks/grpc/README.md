@@ -2,129 +2,178 @@
 
 ### Author: Nima Shafie
 
-Vendored gRPC source build for air-gapped Windows environments.
-Supports multiple versions with a built-in version selector.
-Part of the `airgap-cpp-devkit` suite.
+Vendored gRPC source build and prebuilt binaries for air-gapped Windows
+environments. Part of the `airgap-cpp-devkit` suite.
 
 ---
 
 ## Vendored Versions
 
-| Version | Status | Compressed Size | SHA256 (reassembled) |
-|---------|--------|-----------------|----------------------|
-| **v1.76.0** | ✅ Production-tested | ~89MB | `000a283359a03581c4e944a67d295ba52b760532877efbe605b4bf49a303a8d3` |
-| **v1.78.1** | 🧪 Candidate-testing | ~15MB | `3bb18f315a09e5a14cd9d3b5b76529fd0cd8d4c52b02fee2d9f32e409e63934d` |
+| Version | Status | Source Bundle | SHA256 (reassembled) |
+|---------|--------|---------------|----------------------|
+| **v1.78.1** | ✅ Production-tested | 127MB (3 parts) | `99a8d16ad8aa9ced75d255e1e92247de556e91483fd0e0e73c158a76c9913871` |
 
-Both versions are flat source extractions — all `third_party/` dependencies
-(protobuf, abseil-cpp, boringssl, re2, zlib, c-ares) are included inline.
-No git submodules, no network access required to extract or build.
-
-Upstream releases:
-- [grpc/grpc v1.76.0](https://github.com/grpc/grpc/releases/tag/v1.76.0)
-- [grpc/grpc v1.78.1](https://github.com/grpc/grpc/releases/tag/v1.78.1)
+The source bundle is a full recursive clone — all `third_party/` dependencies
+(protobuf, abseil-cpp, boringssl, re2, zlib, c-ares, and all nested submodules)
+are included inline. No git submodules, no network access required to build.
 
 ---
 
-## Quickstart
+## Quickstart — Prebuilt (Recommended)
 
-Run `setup_grpc.bat` from a regular cmd or PowerShell window — it handles
-everything automatically:
+No compiler or Visual Studio required for installation. Just extract and use.
 
-```cmd
-cd frameworks/grpc
-setup_grpc.bat
+**Step 1 — Install from prebuilt:**
+```powershell
+cd frameworks\grpc
+.\install-prebuilt.ps1 -version 1.78.1
 ```
 
-The script will prompt you to select a version:
-
+**Step 2 — Run the HelloWorld demo:**
+```powershell
+.\setup.ps1 -version 1.78.1
 ```
-============================================================
- gRPC Air-Gap Source Build
-============================================================
 
- Available versions:
-   [1] gRPC v1.76.0  (production-tested)
-   [2] gRPC v1.78.1  (candidate-testing)
+The demo builds and launches `greeter_server.exe` + `greeter_client.exe`
+automatically. Expected output: `Greeter received: Hello world`.
 
- Select version (1 or 2):
+---
+
+## Quickstart — Source Build
+
+Builds gRPC from the vendored source tarball using MSVC. Takes ~40 minutes.
+
+**From Developer PowerShell:**
+```powershell
+cd frameworks\grpc
+.\setup.ps1 -version 1.78.1 -dest "C:\MyPath\grpc-1.78.1"
+```
+
+**From Git Bash (auto-detects VS environment):**
+```bash
+bash frameworks/grpc/setup.sh --version 1.78.1
 ```
 
 ---
 
-## What `setup_grpc.bat` Does
+## What `setup.ps1` Does
 
-Single entry point — no separate bash invocation needed. Runs the full
-pipeline in one shot:
+Single entry point for both prebuilt and source build paths:
 
 ```
-1. Prompts for version selection
-2. bash scripts/verify.sh <version>     -- SHA256-checks parts vs manifest
-3. bash scripts/reassemble.sh <version> -- joins parts into .tar.gz, verifies
-4. bash tar -xzf                        -- extracts to src/<extract_root>/
-5. VsDevCmd.bat                         -- initializes VS 2022 Insiders env
-6. xcopy                                -- copies source to FTE_Software\grpc-<version>
-7. cmake configure + build + install    -- builds gRPC with MSVC
-8. protoc                               -- generates HelloWorld protobuf sources
-9. cmake (demo)                         -- builds HelloWorld demo
-10. PowerShell (x2)                     -- launches greeter_server + greeter_client
+1. Verifies vendored source parts (SHA256 vs manifest.json)
+2. Reassembles grpc-1.78.1.tar.gz from split parts
+3. Extracts source tree to src/grpc-1.78.1/
+4. Detects install type:
+   a. Prebuilt layout (bin/ present) → populates outputs/ and skips build
+   b. No binaries → runs full source build via MSVC + Ninja + cmake
+5. Copies HelloWorld demo files from install dir or source tree
+6. Patches CMakeLists.txt proto path
+7. Generates protobuf sources via protoc + grpc_cpp_plugin
+8. Builds HelloWorld demo (Ninja + MSVC)
+9. Launches greeter_server.exe + greeter_client.exe
 ```
 
-**Requirements:**
-- Git Bash (`bash.exe`) on PATH
-- Visual Studio 2022 Insiders with Desktop C++ workload
-- CMake ≥ 3.16 / MSVC ≥ 19.44
+**Air-gap cmake flags (source build only):**
+```
+-DFETCHCONTENT_FULLY_DISCONNECTED=ON
+-DgRPC_ABSL_PROVIDER=module
+-DgRPC_CARES_PROVIDER=module
+-DgRPC_PROTOBUF_PROVIDER=module
+-DgRPC_RE2_PROVIDER=module
+-DgRPC_SSL_PROVIDER=module
+-DgRPC_ZLIB_PROVIDER=module
+```
+All dependencies are sourced from `third_party/` — no network access.
 
 ---
 
-## Build Output Locations
+## Call Chain
 
-| Item | Path |
+```
+setup.sh  (bash entry point)
+  └── setup.bat  (thin PowerShell launcher)
+        └── setup.ps1  (all logic)
+```
+
+`setup.sh` is the entry point when running from Git Bash.
+`setup.ps1` can also be invoked directly from Developer PowerShell.
+
+---
+
+## Requirements
+
+### Prebuilt install (`install-prebuilt.ps1`)
+- Any PowerShell
+- 7-Zip (auto-detected; falls back to `prebuilt-binaries/dev-tools/7zip/`)
+- No compiler, no Visual Studio, no CMake required
+
+### Source build (`setup.ps1`)
+- Visual Studio 2019 / 2022 / Insiders with Desktop C++ workload
+- CMake ≥ 3.16 (at `C:\Program Files\CMake\bin\cmake.exe`)
+- Git Bash (`bash.exe` on PATH)
+
+---
+
+## Install Locations
+
+| Mode | Path |
 |------|------|
-| gRPC install (v1.76.0) | `C:\Users\Public\FTE_Software\grpc-1.76.0\` |
-| gRPC install (v1.78.1) | `C:\Users\Public\FTE_Software\grpc-1.78.1\` |
-| Build outputs | `<install>\outputs\bin\` and `outputs\lib\` |
-| HelloWorld demo | `%USERPROFILE%\Desktop\grpc_demo\` |
+| Admin (default) | `C:\Program Files\airgap-cpp-devkit\grpc-1.78.1\` |
+| User | `%LOCALAPPDATA%\airgap-cpp-devkit\grpc-1.78.1\` |
+| Custom | Pass `-dest <path>` to `setup.ps1` or `install-prebuilt.ps1` |
+
+---
+
+## Prebuilt Package
+
+The prebuilt binaries live in `prebuilt-binaries/frameworks/grpc/windows/1.78.1/`
+and contain the full `cmake --target install` output:
+
+| Directory | Contents |
+|-----------|----------|
+| `bin/` | `protoc.exe`, `grpc_cpp_plugin.exe`, all language plugins |
+| `include/` | All headers (grpc++, protobuf, abseil, etc.) |
+| `lib/` | Static `.lib` files for all gRPC components and dependencies |
+| `share/` | CMake config files (`find_package(gRPC)` support) |
+
+Available as `.7z` (69MB, 2 parts) and `.zip` (162MB, 4 parts).
+`install-prebuilt.ps1` auto-selects `.7z` if 7-Zip is available.
 
 ---
 
 ## Manual CMake Steps
 
-If you prefer to build manually after extraction:
+If you prefer to build manually after extracting the source:
 
 ```powershell
-# v1.76.0
-cd src\grpc_unbuilt_v1.76.0
-mkdir cmake\build && cd cmake\build
-cmake -DgRPC_INSTALL=ON -DgRPC_BUILD_TESTS=OFF `
-      -DCMAKE_CXX_STANDARD=17 `
-      -DCMAKE_INSTALL_PREFIX="C:\Users\Public\FTE_Software\grpc-1.76.0" `
-      ..\..
-cmake --build . --config Release --target install
-
-# v1.78.1
 cd src\grpc-1.78.1
-mkdir cmake\build && cd cmake\build
-cmake -DgRPC_INSTALL=ON -DgRPC_BUILD_TESTS=OFF `
+mkdir cmake\build
+cd cmake\build
+cmake -G Ninja `
+      -DCMAKE_BUILD_TYPE=Release `
       -DCMAKE_CXX_STANDARD=17 `
-      -DCMAKE_INSTALL_PREFIX="C:\Users\Public\FTE_Software\grpc-1.78.1" `
+      -DCMAKE_INSTALL_PREFIX="C:\MyPath\grpc-1.78.1" `
+      -DgRPC_INSTALL=ON `
+      -DgRPC_BUILD_TESTS=OFF `
+      -DFETCHCONTENT_FULLY_DISCONNECTED=ON `
+      -DgRPC_ABSL_PROVIDER=module `
+      -DgRPC_CARES_PROVIDER=module `
+      -DgRPC_PROTOBUF_PROVIDER=module `
+      -DgRPC_RE2_PROVIDER=module `
+      -DgRPC_SSL_PROVIDER=module `
+      -DgRPC_ZLIB_PROVIDER=module `
       ..\..
-cmake --build . --config Release --target install
+cmake --build . --target install -j 4
 ```
 
 ---
 
 ## Integrity
 
-SHA256 hashes are pinned in `manifest.json` and were self-computed from the
-vendored tarballs at time of pinning. gRPC does not publish official checksums
-for source archives.
-
-`scripts/verify.sh` accepts a version argument and checks all parts for that
-version against the manifest before any reassembly or extraction occurs.
-`scripts/reassemble.sh` does the same before joining parts.
-
-Both scripts are called automatically by `setup_grpc.bat` — integrity is
-always verified before anything is extracted or built.
+SHA256 hashes are pinned in `manifest.json` for all vendor parts.
+`scripts/verify.sh` and `scripts/reassemble.sh` check parts before
+any extraction or build. Both are called automatically by `setup.ps1`.
 
 ---
 
@@ -132,17 +181,21 @@ always verified before anything is extracted or built.
 
 ```
 frameworks/grpc/
-├── setup_grpc.bat         <- single entry point (verify + extract + build)
-├── manifest.json          <- SHA256 pins for all vendored versions
+├── setup.bat              <- thin launcher (calls setup.ps1)
+├── setup.ps1              <- full build + demo pipeline
+├── setup.sh               <- bash entry point (calls setup.bat)
+├── install-prebuilt.ps1   <- extracts prebuilt from prebuilt-binaries/
+├── manifest.json          <- SHA256 pins for vendored source parts
 ├── README.md
 ├── scripts/
-│   ├── verify.sh          <- offline SHA256 check (accepts version arg)
+│   ├── verify.sh          <- SHA256 check (accepts version arg)
 │   └── reassemble.sh      <- joins parts into .tar.gz (accepts version arg)
 ├── vendor/                <- split .tar.gz parts committed to git
-│   ├── grpc-1.76.0.tar.gz.part-aa     <- ~89MB (production-tested)
-│   └── grpc-1.78.1.tar.gz.part-aa     <- ~15MB (candidate-testing)
-└── src/                   <- extracted here by setup_grpc.bat (gitignored)
-    ├── grpc_unbuilt_v1.76.0/
+│   ├── grpc-1.78.1.tar.gz             <- reassembled tarball (gitignored)
+│   ├── grpc-1.78.1.tar.gz.part-aa     <- 45MB
+│   ├── grpc-1.78.1.tar.gz.part-ab     <- 45MB
+│   └── grpc-1.78.1.tar.gz.part-ac     <- 37MB
+└── src/                   <- extracted here by setup.ps1 (gitignored)
     └── grpc-1.78.1/
 ```
 
@@ -151,11 +204,9 @@ frameworks/grpc/
 ## Notes
 
 - **`vendor/*.tar.gz` is gitignored.** Only `*.part-*` files are committed.
-- **`src/` is gitignored.** The extracted tree is never committed.
-- **Windows only.** `setup_grpc.bat` targets MSVC/Visual Studio 2022 Insiders.
-  Linux build support is not included in this module.
-- **`setup.sh` has been retired.** All functionality is now in `setup_grpc.bat`
-  which handles both the bash extraction steps and the Windows CMake build in
-  one unified script.
-- **Both versions can coexist.** They install to separate directories under
-  `C:\Users\Public\FTE_Software\` and do not conflict.
+- **`src/` is gitignored.** The extracted source tree is never committed.
+- **Windows only.** `setup.ps1` targets MSVC. Linux build not supported.
+- **VS 2019, 2022, and 2026 Insiders** all work — generator is Ninja,
+  not a VS solution generator, so no version-specific cmake generator needed.
+- **Prebuilt and source build are independent.** Either path produces a
+  fully functional install at the same destination layout.

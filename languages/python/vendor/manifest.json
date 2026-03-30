@@ -1,0 +1,43 @@
+{
+  "_comment": "Python vendor manifest. SHA256 hashes self-computed from vendored archives.",
+
+  "version": "3.14.3",
+
+  "archives": {
+    "windows-x86_64": {
+      "zip": {
+        "filename": "python-3.14.3-embed-amd64.zip",
+        "sha256": "ad4961a479dedbeb7c7d113253f8db1b1935586b73c27488712beec4f2c894e6"
+      },
+      "7z": {
+        "filename": "python-3.14.3-embed-amd64.7z",
+        "sha256": "a5cab02eb58efd92fe74e7a96248e98d0176a17b573b3afecef0f15ced5889d2",
+        "split_parts": [
+          {
+            "filename": "python-3.14.3-embed-amd64.7z.part-aa",
+            "sha256": "a5cab02eb58efd92fe74e7a96248e98d0176a17b573b3afecef0f15ced5889d2"
+          }
+        ]
+      }
+    },
+    "linux-x86_64": {
+      "tar.gz": {
+        "filename": "cpython-3.14.3+20260203-x86_64-unknown-linux-gnu-install_only.tar.gz",
+        "split_parts": [
+          {
+            "filename": "cpython-3.14.3+20260203-x86_64-unknown-linux-gnu-install_only.tar.gz.part-aa",
+            "sha256": "3352f763121ba929cd9fbcedd5a1e7b28f41ecff8246185ed01fcbb98b777b24"
+          },
+          {
+            "filename": "cpython-3.14.3+20260203-x86_64-unknown-linux-gnu-install_only.tar.gz.part-ab",
+            "sha256": "9058061cf39b41bd5e3adf8c566354cafcc838138a20b578cc80cb544c6580e6"
+          },
+          {
+            "filename": "cpython-3.14.3+20260203-x86_64-unknown-linux-gnu-install_only.tar.gz.part-ac",
+            "sha256": "12f5f6d8af2ee1fa6946b1732e6733ddd504d729ca4a70cda76e7be3439985ff"
+          }
+        ]
+      }
+    }
+  }
+}

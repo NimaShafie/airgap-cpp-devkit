@@ -1,0 +1,143 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "airgap-cpp-devkit-frameworks-grpc",
+  "documentNamespace": "https://airgap-cpp-devkit.internal/frameworks/grpc/sbom.spdx.json",
+  "creationInfo": {
+    "created": "2026-03-30T00:00:00Z",
+    "creators": [
+      "Tool: airgap-cpp-devkit",
+      "Organization: airgap-cpp-devkit"
+    ]
+  },
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-frameworks-grpc",
+      "name": "gRPC",
+      "versionInfo": "1.78.1",
+      "supplier": "Organization: gRPC Authors",
+      "downloadLocation": "https://github.com/grpc/grpc/releases/tag/v1.78.1",
+      "filesAnalyzed": false,
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "99a8d16ad8aa9ced75d255e1e92247de556e91483fd0e0e73c158a76c9913871"
+        }
+      ],
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0",
+      "copyrightText": "Copyright 2015 gRPC authors.",
+      "comment": "Vendored as a full recursive source bundle (127MB, 3 split parts). All third_party/ submodules included inline. Built with MSVC 19.50 (VS 2026 Insiders), Release, x64, Ninja generator. Prebuilt also available as .7z (69MB, 2 parts) and .zip (162MB, 4 parts) in prebuilt-binaries/frameworks/grpc/windows/1.78.1/."
+    },
+    {
+      "SPDXID": "SPDXRef-grpc-abseil-cpp",
+      "name": "abseil-cpp",
+      "versionInfo": "20240722",
+      "supplier": "Organization: Google LLC",
+      "downloadLocation": "https://github.com/abseil/abseil-cpp",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0",
+      "copyrightText": "Copyright 2017 The Abseil Authors.",
+      "comment": "Vendored as third_party/abseil-cpp inside the gRPC source bundle."
+    },
+    {
+      "SPDXID": "SPDXRef-grpc-protobuf",
+      "name": "protobuf",
+      "versionInfo": "31.1.0",
+      "supplier": "Organization: Google LLC",
+      "downloadLocation": "https://github.com/protocolbuffers/protobuf",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-3-Clause",
+      "licenseDeclared": "BSD-3-Clause",
+      "copyrightText": "Copyright 2008 Google Inc.",
+      "comment": "Vendored as third_party/protobuf inside the gRPC source bundle."
+    },
+    {
+      "SPDXID": "SPDXRef-grpc-boringssl",
+      "name": "boringssl",
+      "versionInfo": "0.0.0-20240530",
+      "supplier": "Organization: Google LLC",
+      "downloadLocation": "https://github.com/google/boringssl",
+      "filesAnalyzed": false,
+      "licenseConcluded": "OpenSSL",
+      "licenseDeclared": "OpenSSL",
+      "copyrightText": "Copyright 2015 The BoringSSL Authors.",
+      "comment": "Vendored as third_party/boringssl-with-bazel inside the gRPC source bundle."
+    },
+    {
+      "SPDXID": "SPDXRef-grpc-re2",
+      "name": "re2",
+      "versionInfo": "2024-07-02",
+      "supplier": "Organization: Google LLC",
+      "downloadLocation": "https://github.com/google/re2",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-3-Clause",
+      "licenseDeclared": "BSD-3-Clause",
+      "copyrightText": "Copyright 2003-2009 The RE2 Authors.",
+      "comment": "Vendored as third_party/re2 inside the gRPC source bundle."
+    },
+    {
+      "SPDXID": "SPDXRef-grpc-cares",
+      "name": "c-ares",
+      "versionInfo": "1.34.5",
+      "supplier": "Organization: c-ares authors",
+      "downloadLocation": "https://github.com/c-ares/c-ares",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "Copyright (c) 2007 - 2018 by the c-ares project and its contributors.",
+      "comment": "Vendored as third_party/cares/cares inside the gRPC source bundle."
+    },
+    {
+      "SPDXID": "SPDXRef-grpc-zlib",
+      "name": "zlib",
+      "versionInfo": "1.3.1",
+      "supplier": "Organization: zlib authors",
+      "downloadLocation": "https://github.com/madler/zlib",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Zlib",
+      "licenseDeclared": "Zlib",
+      "copyrightText": "Copyright (C) 1995-2024 Jean-loup Gailly and Mark Adler.",
+      "comment": "Vendored as third_party/zlib inside the gRPC source bundle."
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-frameworks-grpc"
+    },
+    {
+      "spdxElementId": "SPDXRef-frameworks-grpc",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-grpc-abseil-cpp"
+    },
+    {
+      "spdxElementId": "SPDXRef-frameworks-grpc",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-grpc-protobuf"
+    },
+    {
+      "spdxElementId": "SPDXRef-frameworks-grpc",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-grpc-boringssl"
+    },
+    {
+      "spdxElementId": "SPDXRef-frameworks-grpc",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-grpc-re2"
+    },
+    {
+      "spdxElementId": "SPDXRef-frameworks-grpc",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-grpc-cares"
+    },
+    {
+      "spdxElementId": "SPDXRef-frameworks-grpc",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-grpc-zlib"
+    }
+  ]
+}
