@@ -16,37 +16,45 @@
     "x86_64": {
       "filename": "winlibs-x86_64-posix-seh-gcc-15.2.0-mingw-w64ucrt-13.0.0-r6.zip",
       "url": "https://github.com/brechtsanders/winlibs_mingw/releases/download/15.2.0posix-13.0.0-ucrt-r6/winlibs-x86_64-posix-seh-gcc-15.2.0-mingw-w64ucrt-13.0.0-r6.zip",
+      "sha256_reassembled": {
+        "value": "87bbb05e50fe399fb2a4b123495146090076b91751782d6e41b6327192858ce7"
+      },
+      "compression": "deflate-9",
       "split_parts": [
         {
           "filename": "winlibs-x86_64-posix-seh-gcc-15.2.0-mingw-w64ucrt-13.0.0-r6.zip.part-aa",
-          "sha256": "299cb64a48e1ade491f58070f2bd6b82042a4fe9551f8f62b718df30a713482d"
+          "sha256": "428060e54cdb297727842c6ab1b7412014d39e2046f2b8aeeb795e979c58f667",
+          "size_bytes": 51380224
         },
         {
           "filename": "winlibs-x86_64-posix-seh-gcc-15.2.0-mingw-w64ucrt-13.0.0-r6.zip.part-ab",
-          "sha256": "51131a9515b3a307a7a6b7dd4b325f3441b3b4c14ceb21aa2775b3e5bdf737e3"
+          "sha256": "9f66f22e86c31b95546457f3b6f12a2a40de7f6ffb9f97a23193fb6a54e3f900",
+          "size_bytes": 51380224
         },
         {
           "filename": "winlibs-x86_64-posix-seh-gcc-15.2.0-mingw-w64ucrt-13.0.0-r6.zip.part-ac",
-          "sha256": "b3439cd8c7582623280abeab88c349e035273306d4f76afd9bb21d92c17db8d9"
+          "sha256": "a7a69b23b76736dd2faa7baf50b5b60788515afc55239a3efa38df4579d85621",
+          "size_bytes": 51380224
         },
         {
           "filename": "winlibs-x86_64-posix-seh-gcc-15.2.0-mingw-w64ucrt-13.0.0-r6.zip.part-ad",
-          "sha256": "ddb152767617fd2713636c22e62876e33de50a6a5cc89bcd80bcf2ed8c22034a"
+          "sha256": "3ab8e336d8f003fa85af2420fa7d38d0a1bf4e8a563de7a53a697c48895d22c1",
+          "size_bytes": 51380224
         },
         {
           "filename": "winlibs-x86_64-posix-seh-gcc-15.2.0-mingw-w64ucrt-13.0.0-r6.zip.part-ae",
-          "sha256": "0a6fe6ad3b8f48e8443544df70ce3cfd7d53049d41b5abdfff40ef2688d4d04c"
+          "sha256": "6f5388fa0a5f0924b2f5ffb7643e491568b860e942a3e2ec3b72092cc3ad55fe",
+          "size_bytes": 51380224
         },
         {
           "filename": "winlibs-x86_64-posix-seh-gcc-15.2.0-mingw-w64ucrt-13.0.0-r6.zip.part-af",
-          "sha256": "9ba13529c0afd1ad36b8acbb8216bd73518fb411c82b4bde91efeb407a3f3d84"
+          "sha256": "373bdc2b57ba428f478ce23de65440d14e0693ef9fa8a65df4d58dac0886ed0c",
+          "size_bytes": 20353740
         }
       ],
-      "sha256_reassembled": {
-        "value": "9f3ee66dd11f1c40a85850976ab9a740469cd3bc43a234a2e9f91c04c92c4f57"
-      },
       "extract_root": "mingw64",
-      "arch_note": "x86_64 SEH -- 64-bit Windows, structured exception handling"
+      "arch_note": "x86_64 SEH -- 64-bit Windows, structured exception handling",
+      "_note": "Reassemble with: cat winlibs-x86_64-posix-seh-gcc-15.2.0-mingw-w64ucrt-13.0.0-r6.zip.part-* > winlibs-x86_64-posix-seh-gcc-15.2.0-mingw-w64ucrt-13.0.0-r6.zip"
     },
     "i686": {
       "filename": "winlibs-i686-posix-dwarf-gcc-15.2.0-mingw-w64ucrt-13.0.0-r6.zip",

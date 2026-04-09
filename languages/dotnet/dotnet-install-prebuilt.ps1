@@ -1,6 +1,6 @@
 # Author: Nima Shafie
 # =============================================================================
-# install-prebuilt.ps1
+# dotnet-install-prebuilt.ps1
 # Installs .NET 10 SDK from prebuilt-binaries submodule.
 # No internet access, no system installer, no elevation required for user install.
 #
@@ -9,18 +9,15 @@
 #
 # USAGE:
 #   cd languages\dotnet
-#   .\install-prebuilt.ps1
-#   .\install-prebuilt.ps1 -dest "C:\MyPath\dotnet"
-#   .\install-prebuilt.ps1 -format zip
+#   .\dotnet-install-prebuilt.ps1
+#   .\dotnet-install-prebuilt.ps1 -dest "C:\MyPath\dotnet"
 #
 # OPTIONS:
-#   -dest   <path>    Install destination (default: auto-detected)
-#   -format 7z|zip    Archive format (default: 7z if 7-Zip found, else zip)
+#   -dest <path>    Install destination (default: auto-detected)
 # =============================================================================
 
 param(
-    [string]$dest   = "",
-    [string]$format = ""
+    [string]$dest = ""
 )
 
 Set-StrictMode -Version Latest
@@ -30,7 +27,6 @@ $ScriptDir    = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $RepoRoot     = Split-Path -Parent (Split-Path -Parent $ScriptDir)
 $SDK_VERSION  = "10.0.201"
 $PrebuiltDir  = Join-Path $RepoRoot "prebuilt-binaries\languages\dotnet\$SDK_VERSION"
-$VendoredDir  = Join-Path $RepoRoot "prebuilt-binaries\dev-tools\7zip"
 
 function Info  { param($m) Write-Host "[INFO] $m" }
 function Warn  { param($m) Write-Host "[WARNING] $m" -ForegroundColor Yellow }
@@ -71,70 +67,31 @@ if (-not $dest) {
 Info "Install destination: $dest"
 
 # -----------------------------
-# Step 2: Locate 7-Zip
-# -----------------------------
-function Find-SevenZip {
-    $candidates = @(
-        "C:\Program Files\7-Zip\7z.exe",
-        "C:\Program Files (x86)\7-Zip\7z.exe",
-        "$env:LOCALAPPDATA\7-Zip\7z.exe"
-    )
-    foreach ($c in $candidates) { if (Test-Path $c) { return $c } }
-    $fromPath = Get-Command 7z.exe -ErrorAction SilentlyContinue
-    if ($fromPath) { return $fromPath.Source }
-    $vendored = Join-Path $VendoredDir "7z2600-x64.exe"
-    if (Test-Path $vendored) {
-        Info "Using vendored 7-Zip from prebuilt-binaries/dev-tools/7zip/"
-        return $vendored
-    }
-    return $null
-}
-
-$sevenZipExe = Find-SevenZip
-
-# -----------------------------
-# Step 3: Check prebuilt parts exist
+# Step 2: Check prebuilt parts exist
 # -----------------------------
 Step "Locating prebuilt parts"
 if (-not (Test-Path $PrebuiltDir)) {
     Die "Prebuilt directory not found: $PrebuiltDir`nRun: git submodule update --init prebuilt-binaries"
 }
 
-$has7z  = (Get-ChildItem $PrebuiltDir -Filter "dotnet-sdk-$SDK_VERSION-win-x64.7z.part-*"  -ErrorAction SilentlyContinue).Count -gt 0
-$hasZip = (Get-ChildItem $PrebuiltDir -Filter "dotnet-sdk-$SDK_VERSION-win-x64.zip.part-*" -ErrorAction SilentlyContinue).Count -gt 0
+$archiveName = "dotnet-sdk-$SDK_VERSION-win-x64.zip"
+$parts = Get-ChildItem $PrebuiltDir -Filter "$archiveName.part-*" -ErrorAction SilentlyContinue | Sort-Object Name
 
-if (-not $has7z -and -not $hasZip) {
+if ($parts.Count -eq 0) {
     Die "No prebuilt parts found in $PrebuiltDir for SDK $SDK_VERSION"
 }
 
-if (-not $format) {
-    if ($has7z -and $sevenZipExe) { $format = "7z" }
-    elseif ($hasZip)              { $format = "zip"; Warn "7-Zip not found -- falling back to .zip format." }
-    else { Die "No suitable format available." }
-}
-Info "Archive format: .$format"
-
-if ($format -eq "7z" -and -not $sevenZipExe) {
-    Die "7-Zip required for .7z but not found. Install 7-Zip or use -format zip"
-}
-
-# -----------------------------
-# Step 4: Reassemble
-# -----------------------------
-Step "Reassembling archive from parts"
-
-if ($format -eq "7z") {
-    $archiveName = "dotnet-sdk-$SDK_VERSION-win-x64.7z"
-} else {
-    $archiveName = "dotnet-sdk-$SDK_VERSION-win-x64.zip"
-}
-
-$parts = Get-ChildItem $PrebuiltDir -Filter "$archiveName.part-*" | Sort-Object Name
 Info "Found $($parts.Count) part(s):"
 foreach ($p in $parts) { Info "  $($p.Name)  ($(Format-Size $p.Length))" }
 
+# -----------------------------
+# Step 3: Reassemble
+# -----------------------------
+Step "Reassembling archive from parts"
+
 $tmpDir     = Join-Path $env:TEMP "dotnet-prebuilt-$SDK_VERSION"
 $tmpArchive = Join-Path $tmpDir $archiveName
+
 if (Test-Path $tmpDir) { Remove-Item $tmpDir -Recurse -Force }
 New-Item -ItemType Directory -Path $tmpDir -Force | Out-Null
 
@@ -149,14 +106,13 @@ try {
 OK "Reassembled: $(Format-Size (Get-Item $tmpArchive).Length)"
 
 # -----------------------------
-# Step 5: Verify SHA256
+# Step 4: Verify SHA256
 # -----------------------------
 Step "Verifying integrity"
 $manifestPath = Join-Path $PrebuiltDir "manifest.json"
 if (Test-Path $manifestPath) {
     $manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
-    $archiveKey = if ($format -eq "7z") { "7z" } else { "zip" }
-    $expectedHash = $manifest.archives."windows-x64".$archiveKey.sha256
+    $expectedHash = $manifest.platforms."windows-x64".sha256
     if ($expectedHash) {
         $actualHash = (Get-FileHash $tmpArchive -Algorithm SHA256).Hash.ToLower()
         if ($actualHash -ne $expectedHash.ToLower()) {
@@ -165,14 +121,14 @@ if (Test-Path $manifestPath) {
         }
         OK "SHA256 verified."
     } else {
-        Warn "No hash in manifest for .$format -- skipping verification."
+        Warn "No hash in manifest -- skipping verification."
     }
 } else {
     Warn "manifest.json not found -- skipping integrity check."
 }
 
 # -----------------------------
-# Step 6: Extract
+# Step 5: Extract
 # -----------------------------
 Step "Extracting to $dest"
 if (Test-Path $dest) {
@@ -182,24 +138,20 @@ if (Test-Path $dest) {
 }
 New-Item -ItemType Directory -Path $dest -Force | Out-Null
 
-if ($format -eq "7z") {
-    & "$sevenZipExe" x "$tmpArchive" -o"$dest" -y
-    Require-Exit $LASTEXITCODE "Extraction failed"
-} else {
-    Add-Type -AssemblyName System.IO.Compression.FileSystem
-    [System.IO.Compression.ZipFile]::ExtractToDirectory($tmpArchive, $dest)
-}
+# Use .NET for zip -- no 7-Zip dependency
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+[System.IO.Compression.ZipFile]::ExtractToDirectory($tmpArchive, $dest)
 
 Remove-Item $tmpDir -Recurse -Force
 
 # -----------------------------
-# Step 7: Verify
+# Step 6: Verify
 # -----------------------------
 Step "Verifying installation"
 $dotnetExe = Join-Path $dest "dotnet.exe"
 if (Test-Path $dotnetExe) {
-    $version = & "$dotnetExe" --version 2>&1
-    OK "dotnet.exe found: $version"
+    $ver = & "$dotnetExe" --version 2>&1
+    OK "dotnet.exe found: $ver"
 } else {
     Die "dotnet.exe not found at $dest -- extraction may have failed."
 }

@@ -2,7 +2,7 @@
 # =============================================================================
 # install-prebuilt.ps1
 # Installs prebuilt gRPC binaries from the prebuilt-binaries submodule.
-# No build required — extracts directly to the destination path.
+# No build required -- extracts directly to the destination path.
 #
 # Run from: frameworks/grpc/
 # Run in:   any PowerShell
@@ -14,13 +14,11 @@
 # OPTIONS:
 #   -version <ver>    gRPC version to install (default: 1.78.1)
 #   -dest    <path>   Install destination (default: auto-detected)
-#   -format  7z|zip   Archive format to use (default: 7z if 7-Zip found, else zip)
 # =============================================================================
 
 param(
     [string]$version = "1.78.1",
-    [string]$dest    = "",
-    [string]$format  = ""
+    [string]$dest    = ""
 )
 
 Set-StrictMode -Version Latest
@@ -29,7 +27,6 @@ $ErrorActionPreference = "Stop"
 $ScriptDir   = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $RepoRoot    = Split-Path -Parent (Split-Path -Parent $ScriptDir)
 $PrebuiltDir = Join-Path $RepoRoot "prebuilt-binaries\frameworks\grpc\windows\$version"
-$VendoredDir = Join-Path $RepoRoot "prebuilt-binaries\dev-tools\7zip"
 
 function Info  { param($m) Write-Host "[INFO] $m" }
 function Warn  { param($m) Write-Host "[WARNING] $m" -ForegroundColor Yellow }
@@ -51,37 +48,7 @@ function Format-Size {
 }
 
 # -----------------------------
-# Step 1: Locate 7-Zip
-# Search order:
-#   1. Common install locations
-#   2. PATH
-#   3. Vendored 7z.exe from prebuilt-binaries/dev-tools/7zip/
-# -----------------------------
-function Find-SevenZip {
-    $candidates = @(
-        "C:\Program Files\7-Zip\7z.exe",
-        "C:\Program Files (x86)\7-Zip\7z.exe",
-        "$env:LOCALAPPDATA\7-Zip\7z.exe",
-        "$env:ProgramFiles\7-Zip\7z.exe"
-    )
-    foreach ($c in $candidates) {
-        if (Test-Path $c) { return $c }
-    }
-    # Try PATH
-    $fromPath = Get-Command 7z.exe -ErrorAction SilentlyContinue
-    if ($fromPath) { return $fromPath.Source }
-
-    # Try vendored
-    $vendored = Join-Path $VendoredDir "7z2600-x64.exe"
-    if (Test-Path $vendored) {
-        Info "Using vendored 7-Zip from prebuilt-binaries/dev-tools/7zip/"
-        return $vendored
-    }
-    return $null
-}
-
-# -----------------------------
-# Step 2: Determine install dest
+# Step 1: Determine install dest
 # -----------------------------
 Step "Determining install destination"
 if (-not $dest) {
@@ -100,51 +67,27 @@ if (-not $dest) {
 Info "Install destination: $dest"
 
 # -----------------------------
-# Step 3: Check prebuilt parts exist
+# Step 2: Check prebuilt parts exist
 # -----------------------------
 Step "Locating prebuilt parts"
 if (-not (Test-Path $PrebuiltDir)) {
     Die "Prebuilt directory not found: $PrebuiltDir`nRun: git submodule update --init prebuilt-binaries"
 }
 
-# Determine format to use
-$has7z  = (Get-ChildItem $PrebuiltDir -Filter "grpc-$version-windows-x64.7z.part-*"  -ErrorAction SilentlyContinue).Count -gt 0
-$hasZip = (Get-ChildItem $PrebuiltDir -Filter "grpc-$version-windows-x64.zip.part-*" -ErrorAction SilentlyContinue).Count -gt 0
+$archiveName = "grpc-$version-windows-x64.zip"
+$parts = Get-ChildItem $PrebuiltDir -Filter "$archiveName.part-*" -ErrorAction SilentlyContinue | Sort-Object Name
 
-if (-not $has7z -and -not $hasZip) {
+if ($parts.Count -eq 0) {
     Die "No prebuilt parts found in $PrebuiltDir for v$version"
 }
 
-$sevenZipExe = Find-SevenZip
-
-if (-not $format) {
-    if ($has7z -and $sevenZipExe) {
-        $format = "7z"
-    } elseif ($hasZip) {
-        $format = "zip"
-        if (-not $sevenZipExe) {
-            Warn "7-Zip not found -- falling back to .zip format."
-        }
-    } else {
-        Die "No suitable archive format available. Install 7-Zip or ensure .zip parts are present."
-    }
-}
-
-Info "Archive format: .$format"
-
-if ($format -eq "7z" -and -not $sevenZipExe) {
-    Die "7-Zip required for .7z format but not found.`nInstall 7-Zip from https://www.7-zip.org or use -format zip"
-}
-
-# -----------------------------
-# Step 4: Reassemble parts
-# -----------------------------
-Step "Reassembling archive from parts"
-$archiveName = "grpc-$version-windows-x64.$format"
-$parts = Get-ChildItem $PrebuiltDir -Filter "$archiveName.part-*" | Sort-Object Name
-
 Info "Found $($parts.Count) part(s):"
 foreach ($p in $parts) { Info "  $($p.Name)  ($(Format-Size $p.Length))" }
+
+# -----------------------------
+# Step 3: Reassemble parts
+# -----------------------------
+Step "Reassembling archive from parts"
 
 $tmpDir     = Join-Path $env:TEMP "grpc-prebuilt-$version"
 $tmpArchive = Join-Path $tmpDir $archiveName
@@ -167,15 +110,14 @@ $archiveSize = (Get-Item $tmpArchive).Length
 OK "Archive reassembled: $(Format-Size $archiveSize)"
 
 # -----------------------------
-# Step 5: Verify SHA256
+# Step 4: Verify SHA256
 # -----------------------------
 Step "Verifying archive integrity"
 
-# Load manifest
 $manifestPath = Join-Path $PrebuiltDir "manifest.json"
 if (Test-Path $manifestPath) {
     $manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
-    $expectedHash = $manifest.archives.$format.sha256
+    $expectedHash = $manifest.archives.zip.sha256
     if ($expectedHash) {
         $actualHash = (Get-FileHash $tmpArchive -Algorithm SHA256).Hash.ToLower()
         if ($actualHash -ne $expectedHash.ToLower()) {
@@ -184,14 +126,14 @@ if (Test-Path $manifestPath) {
         }
         OK "SHA256 verified."
     } else {
-        Warn "No SHA256 in manifest for .$format format -- skipping verification."
+        Warn "No SHA256 in manifest -- skipping verification."
     }
 } else {
     Warn "manifest.json not found -- skipping integrity check."
 }
 
 # -----------------------------
-# Step 6: Extract
+# Step 5: Extract
 # -----------------------------
 Step "Extracting to $dest"
 if (Test-Path $dest) {
@@ -201,17 +143,12 @@ if (Test-Path $dest) {
 }
 New-Item -ItemType Directory -Path $dest -Force | Out-Null
 
-if ($format -eq "7z") {
-    & "$sevenZipExe" x "$tmpArchive" -o"$dest" -y
-    Require-Exit $LASTEXITCODE "Extraction failed"
-} else {
-    # Use .NET for zip (no 7-Zip needed)
-    Add-Type -AssemblyName System.IO.Compression.FileSystem
-    [System.IO.Compression.ZipFile]::ExtractToDirectory($tmpArchive, $dest)
-}
+# Use .NET for zip -- no 7-Zip dependency
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+[System.IO.Compression.ZipFile]::ExtractToDirectory($tmpArchive, $dest)
 
 # -----------------------------
-# Step 7: Cleanup temp
+# Step 6: Cleanup temp
 # -----------------------------
 Remove-Item $tmpDir -Recurse -Force
 

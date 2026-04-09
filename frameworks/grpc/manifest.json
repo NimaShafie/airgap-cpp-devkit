@@ -1,47 +1,43 @@
 {
-  "_comment": "gRPC source build manifest. Contains entries for all vendored versions. SHA256 hashes are self-computed from vendored tarballs -- gRPC does not publish official checksums for source archives.",
+  "_comment": "gRPC prebuilt binary manifest for Windows x64. SHA256 hashes are self-computed at package time.",
 
-  "versions": {
-    "1.78.1": {
-      "release_tag": "v1.78.1",
-      "upstream_release": "https://github.com/grpc/grpc/releases/tag/v1.78.1",
-      "tarball_filename": "grpc-1.78.1.tar.gz",
-      "extract_root": "grpc-1.78.1",
-      "dest_folder": "grpc-1.78.1",
-      "source_type": "flat",
-      "status": "production-tested",
+  "version": "1.78.1",
+  "arch": "x64",
+  "compiler": "MSVC 19.50 (VS 2026 Insiders)",
+  "build_type": "Release",
+  "built_on": "2026-03-29",
+  "built_from": "frameworks/grpc/vendor/grpc-1.78.1.tar.gz",
+  "includes": ["bin", "include", "lib", "share"],
+
+  "archives": {
+    "zip": {
+      "filename": "grpc-1.78.1-windows-x64.zip",
+      "sha256": "6e4edc61067569afcb6e82bd761164cb73a58a521d79c5536ba8cb65ab1fa809",
+      "size_bytes": 177695940,
+      "compression": "deflate-9",
       "split_parts": [
         {
-          "filename": "grpc-1.78.1.tar.gz.part-aa",
-          "sha256": "a9679740431080adda2f23ba023e74d65753cb8a69476e41ec2029930f7e4fdd"
+          "filename": "grpc-1.78.1-windows-x64.zip.part-aa",
+          "sha256": "e6bfdd3a5d74b3e69cc2cb4d2db52c9f3e5d00b18021445a07fe2d24c6d2d421",
+          "size_bytes": 51380224
         },
         {
-          "filename": "grpc-1.78.1.tar.gz.part-ab",
-          "sha256": "8473c1b6cf998a6f2c19afea95db9458ca258739f86a7ad1fd6c838250c3be00"
+          "filename": "grpc-1.78.1-windows-x64.zip.part-ab",
+          "sha256": "8e81fe8fc779524e35c46211c4d9c3fd20952e6c26c6448427cdf37cb9e9ec49",
+          "size_bytes": 51380224
         },
         {
-          "filename": "grpc-1.78.1.tar.gz.part-ac",
-          "sha256": "28d8434ca68ae3e4e4d1ec2694e620d8246e0f7e9b321b4cc5dd82b09bb0d8d2"
+          "filename": "grpc-1.78.1-windows-x64.zip.part-ac",
+          "sha256": "1827b628bdd5c120751fedb62ef77b6b2f2ebdee56250c98045df98559272738",
+          "size_bytes": 51380224
+        },
+        {
+          "filename": "grpc-1.78.1-windows-x64.zip.part-ad",
+          "sha256": "f3ed427d345b37a88f45ce89d1bc1fa2dc99d72eb92a306fbed099bb32e59d85",
+          "size_bytes": 23555268
         }
       ],
-      "sha256_reassembled": {
-        "value": "99a8d16ad8aa9ced75d255e1e92247de556e91483fd0e0e73c158a76c9913871",
-        "sources": [
-          {
-            "name": "Self-computed from recursive clone (2026-03-29)",
-            "url": "https://github.com/grpc/grpc/releases/tag/v1.78.1"
-          }
-        ]
-      }
-    }
-  },
-
-  "build_requirements": {
-    "windows": {
-      "cmake": ">=3.16",
-      "visual_studio": "2019 / 2022 / Insiders",
-      "msvc": ">=19.28",
-      "script": "setup.bat"
+      "_note": "Reassemble with: cat grpc-1.78.1-windows-x64.zip.part-* > grpc-1.78.1-windows-x64.zip"
     }
   }
 }

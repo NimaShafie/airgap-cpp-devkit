@@ -9,11 +9,78 @@
   "platforms": {
     "windows-x64": {
       "archive_zip": "dotnet-sdk-10.0.201-win-x64.zip",
-      "archive_7z":  "dotnet-sdk-10.0.201-win-x64.7z",
+      "sha256": "5a82892849aece840b818e5a7692b6a889df15943b61e72f16552127ca01e893",
+      "compression": "deflate-9",
+      "split_parts": [
+        {
+          "filename": "dotnet-sdk-10.0.201-win-x64.zip.part-aa",
+          "sha256": "4893cb64ff7fa2091a483db1debc4d6ab22a9bc10f8551450266c79a17acbc7f",
+          "size_bytes": 51380224
+        },
+        {
+          "filename": "dotnet-sdk-10.0.201-win-x64.zip.part-ab",
+          "sha256": "7f881df1ab011977a4cfb2d0f76ba949660c2337b2e7f1d88ce613a9f7bd3ca6",
+          "size_bytes": 51380224
+        },
+        {
+          "filename": "dotnet-sdk-10.0.201-win-x64.zip.part-ac",
+          "sha256": "eef8eda08890497bbd67c9fc7c46d95a12a3c296f9311db601a3742df2a0eb51",
+          "size_bytes": 51380224
+        },
+        {
+          "filename": "dotnet-sdk-10.0.201-win-x64.zip.part-ad",
+          "sha256": "ebf90737bb633def14c09676de5e055069485e036d524c1ebd11af057a974b4e",
+          "size_bytes": 51380224
+        },
+        {
+          "filename": "dotnet-sdk-10.0.201-win-x64.zip.part-ae",
+          "sha256": "df41186783d50722a87d8dcc5c7faecc73982ca6cdadeb7b276b6092f8930476",
+          "size_bytes": 51380224
+        },
+        {
+          "filename": "dotnet-sdk-10.0.201-win-x64.zip.part-af",
+          "sha256": "fea253efe719ea1d3e6df1a54fc198e7bbbcbbff053747ca54e40d841c5aacb2",
+          "size_bytes": 39619372
+        }
+      ],
+      "_note": "Reassemble with: cat dotnet-sdk-10.0.201-win-x64.zip.part-* > dotnet-sdk-10.0.201-win-x64.zip",
       "install_script": "install-prebuilt.ps1"
     },
     "linux-x64": {
       "archive_targz": "dotnet-sdk-10.0.201-linux-x64.tar.gz",
+      "split_parts": [
+        {
+          "filename": "dotnet-sdk-10.0.201-linux-x64.tar.gz.part-aa",
+          "sha256": "3a8f5797677348ff4dd3f6b0b4723f2573fc993438427dee4cdda1c2a1db4d64",
+          "size_bytes": 47185920
+        },
+        {
+          "filename": "dotnet-sdk-10.0.201-linux-x64.tar.gz.part-ab",
+          "sha256": "48fa038ea90a7999421f53bcf42ba53f7c78a61a69d4ef0a316ecb69c249621c",
+          "size_bytes": 47185920
+        },
+        {
+          "filename": "dotnet-sdk-10.0.201-linux-x64.tar.gz.part-ac",
+          "sha256": "fca8710342d0c89955abfb85d22006f2077352aece9ad6635f9e0ee27de8c647",
+          "size_bytes": 47185920
+        },
+        {
+          "filename": "dotnet-sdk-10.0.201-linux-x64.tar.gz.part-ad",
+          "sha256": "836445440042084c0075bf0e8d15d6eede15fbfb5950f2893febb9c1fd049b14",
+          "size_bytes": 47185920
+        },
+        {
+          "filename": "dotnet-sdk-10.0.201-linux-x64.tar.gz.part-ae",
+          "sha256": "1fb60b99f6b31efede11c9118b51ac1544f5e4a904d030fa81827192c01f9b76",
+          "size_bytes": 47185920
+        },
+        {
+          "filename": "dotnet-sdk-10.0.201-linux-x64.tar.gz.part-af",
+          "sha256": "713a493a2c1665d3da09f13ab0f47fd9bc46a8ec3de4c9c9ef67fa601952f826",
+          "size_bytes": 6095593
+        }
+      ],
+      "_note": "Reassemble with: cat dotnet-sdk-10.0.201-linux-x64.tar.gz.part-* > dotnet-sdk-10.0.201-linux-x64.tar.gz",
       "install_script": "setup.sh"
     }
   }
