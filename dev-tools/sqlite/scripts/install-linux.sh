@@ -18,7 +18,7 @@ MODE="${1:-user}"
 PREFIX_OVERRIDE="${2:-}"
 VERSION="3.51.3"
 VENDOR_DIR="${REPO_ROOT}/prebuilt-binaries/dev-tools/sqlite"
-ARCHIVE="${VENDOR_DIR}/sqlite-tools-linux-x64-3510300.zip"
+ARCHIVE="${VENDOR_DIR}/sqlite-tools-linux-x64-3530000.zip"
 
 # ---------------------------------------------------------------------------
 # Determine install directory

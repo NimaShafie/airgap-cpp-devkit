@@ -228,20 +228,28 @@ _install_pip_packages() {
   local installed=0 failed=0 skipped=0
 
   for pkg in "${packages[@]}"; do
-    # Find any matching wheel (handle both hyphen and underscore in name)
-    local pkg_underscore="${pkg//-/_}"
+    # Strip version specifier (e.g. "numpy==2.4.4" -> "numpy")
+    local pkg_name="${pkg%%==*}"
+    local pkg_name="${pkg_name%%>=*}"
+    # Convert hyphens to underscores for filename matching (pip wheel convention)
+    local pkg_underscore="${pkg_name//-/_}"
+    local pkg_hyphen="${pkg_name//_/-}"
+
+    # Check if any matching wheel exists before attempting install
     local whl_file
     whl_file="$(find "${PIP_PKG_DIR}" \
-      \( -iname "${pkg}-*.whl" -o -iname "${pkg_underscore}-*.whl" \) \
+      \( -iname "${pkg_name}-*.whl" \
+      -o -iname "${pkg_underscore}-*.whl" \
+      -o -iname "${pkg_hyphen}-*.whl" \) \
       2>/dev/null | head -1 || true)"
 
     if [[ -z "${whl_file}" ]]; then
-      printf "  [--]  %-22s not found in pip-packages/ -- skipped\n" "${pkg}"
+      printf "  [--]  %-22s not found in pip-packages/ -- skipped\n" "${pkg_name}"
       (( skipped++ )) || true
       continue
     fi
 
-    printf "  [....] %-22s" "${pkg}"
+    printf "  [....] %-22s" "${pkg_name}"
     if "${python_bin}" -m pip install \
         --quiet --no-index \
         --find-links="${PIP_PKG_DIR}" \
