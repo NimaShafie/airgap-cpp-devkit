@@ -193,36 +193,36 @@ _install_pip_packages() {
   echo "  Installing vendored pip packages (${whl_count} wheels found)..."
   echo ""
 
-  # Full package list -- pip resolves .whl files from find-links directory
+  # Full package list with pinned versions matching vendored wheels
   local packages=(
     # Data science core
-    "numpy"
-    "pandas"
-    "scipy"
-    "scikit-learn"
-    "matplotlib"
+    "numpy==2.4.4"
+    "pandas==3.0.2"
+    "scipy"          # 1.17.1 Windows / 1.16.3 Linux -- pip picks correct platform wheel
+    "scikit-learn==1.8.0"
+    "matplotlib==3.10.8"
     # Visualization
-    "plotly"
-    "pillow"
+    "plotly==6.7.0"
+    "pillow==12.2.0"
     # Web application
-    "streamlit"
+    "streamlit==1.56.0"
     # Database
-    "sqlalchemy"
+    "sqlalchemy==2.0.49"
     # HTTP
-    "requests"
+    "requests==2.33.1"
     # Data formats and serialization
-    "PyYAML"
-    "pydantic"
-    "openpyxl"
+    "PyYAML==6.0.3"
+    "pydantic==2.12.5"
+    "openpyxl==3.1.5"
     # Templating and configuration
-    "Jinja2"
-    "python-dotenv"
+    "Jinja2==3.1.6"
+    "python-dotenv==1.2.2"
     # CLI and developer tools
-    "click"
-    "rich"
-    "loguru"
+    "click==8.3.2"
+    "rich==14.3.3"
+    "loguru==0.7.3"
     # Testing
-    "pytest"
+    "pytest==9.0.3"
   )
 
   local installed=0 failed=0 skipped=0

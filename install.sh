@@ -20,6 +20,8 @@
 #   - dev-tools/vscode-extensions  (requires VS Code + 'code' on PATH)
 #   - winlibs-gcc-ucrt   (Windows only)
 #   - frameworks/grpc    (Windows only, requires Visual Studio)
+#   - sqlite             3.53.0 (CLI binary, Windows + Linux)
+#   - matlab             (verification only -- checks Database Toolbox + Compiler)
 #
 # USAGE:
 #   bash install.sh [--prefix <path>] [--rebuild] [--yes]
@@ -130,6 +132,8 @@ if [[ "${AUTO_YES}" == "false" ]]; then
     echo "   [10] winlibs-gcc-ucrt         GCC 15.2.0 + MinGW-w64"
     echo "   [11] frameworks/grpc          gRPC C++ (requires Visual Studio)"
     fi
+    echo "   [12] sqlite                   3.53.0 CLI (database inspection, Windows + Linux)"
+    echo "   [13] matlab                   verification only (checks Database Toolbox + Compiler)"
     echo ""
     _section "  INSTALL MODE"
     echo ""
@@ -173,6 +177,8 @@ if [[ "${AUTO_YES}" == "false" ]]; then
     INSTALL_VSCODE=false
     INSTALL_WINLIBS=false
     INSTALL_GRPC=false
+    INSTALL_SQLITE=false
+    INSTALL_MATLAB=false
     GRPC_VERSION="1.78.1"
 
     printf "  Install 7zip 26.00? (archive tool, Windows + Linux) [y/N]: "
@@ -213,6 +219,14 @@ if [[ "${AUTO_YES}" == "false" ]]; then
         echo ""
     fi
 
+    printf "  Install sqlite 3.53.0 CLI? (database inspection, Windows + Linux) [y/N]: "
+    read -r reply
+    [[ "${reply^^}" == "Y" ]] && INSTALL_SQLITE=true
+
+    printf "  Install matlab verification? (checks Database Toolbox + Compiler) [y/N]: "
+    read -r reply
+    [[ "${reply^^}" == "Y" ]] && INSTALL_MATLAB=true
+
     # --- Final confirmation ---
     echo ""
     _header "  Ready to install -- please confirm"
@@ -229,6 +243,8 @@ if [[ "${AUTO_YES}" == "false" ]]; then
     [[ "${INSTALL_VSCODE}"  == "true" ]]  && echo "    [OK] dev-tools/vscode-extensions"
     [[ "${INSTALL_WINLIBS}" == "true" ]]  && echo "    [OK] winlibs-gcc-ucrt"
     [[ "${INSTALL_GRPC}"    == "true" ]]  && echo "    [OK] frameworks/grpc ${GRPC_VERSION}"
+    [[ "${INSTALL_SQLITE}"  == "true" ]]  && echo "    [OK] sqlite 3.53.0"
+    [[ "${INSTALL_MATLAB}"  == "true" ]]  && echo "    [OK] matlab (verification only)"
     echo ""
     _sep2
     echo ""
@@ -248,6 +264,8 @@ else
     INSTALL_VSCODE=false
     INSTALL_WINLIBS=false
     INSTALL_GRPC=false
+    INSTALL_SQLITE=false
+    INSTALL_MATLAB=false
     GRPC_VERSION="1.78.1"
 
     echo ""
@@ -349,7 +367,7 @@ echo ""
 # ---------------------------------------------------------------------------
 # Step 1: prebuilt-binaries submodule
 # ---------------------------------------------------------------------------
-echo "  [1/11] Checking prebuilt-binaries submodule..."
+echo "  [1/13] Checking prebuilt-binaries submodule..."
 if ! git -C "${REPO_ROOT}" submodule status prebuilt-binaries 2>/dev/null | grep -q "^[^-]"; then
     im_progress_start "Initialising prebuilt-binaries submodule"
     git -C "${REPO_ROOT}" submodule update --init --recursive prebuilt-binaries
@@ -362,7 +380,7 @@ fi
 # Step 2: toolchains/clang
 # ---------------------------------------------------------------------------
 echo ""
-echo "  [2/11] Installing toolchains/clang (required)..."
+echo "  [2/13] Installing toolchains/clang (required)..."
 _run_bootstrap "toolchains/clang" \
     "${REPO_ROOT}/toolchains/clang/source-build/setup.sh"
 
@@ -370,7 +388,7 @@ _run_bootstrap "toolchains/clang" \
 # Step 3: cmake
 # ---------------------------------------------------------------------------
 echo ""
-echo "  [3/11] Installing cmake 4.3.1 (required)..."
+echo "  [3/13] Installing cmake 4.3.1 (required)..."
 _run_bootstrap "cmake" \
     "${REPO_ROOT}/build-tools/cmake/setup.sh"
 
@@ -378,7 +396,7 @@ _run_bootstrap "cmake" \
 # Step 4: python
 # ---------------------------------------------------------------------------
 echo ""
-echo "  [4/11] Installing python 3.14.4 (required)..."
+echo "  [4/13] Installing python 3.14.4 (required)..."
 _run_bootstrap "python" \
     "${REPO_ROOT}/languages/python/setup.sh"
 
@@ -387,12 +405,12 @@ _run_bootstrap "python" \
 # ---------------------------------------------------------------------------
 if [[ "${OS}" == "linux" ]]; then
     echo ""
-    echo "  [5/11] Installing lcov 2.4 (required on Linux)..."
+    echo "  [5/13] Installing lcov 2.4 (required on Linux)..."
     _run_bootstrap "lcov" \
         "${REPO_ROOT}/build-tools/lcov/setup.sh"
 else
     echo ""
-    echo "  [5/11] lcov -- skipped (Linux only)"
+    echo "  [5/13] lcov -- skipped (Linux only)"
     SKIPPED_TOOLS+=("lcov (Linux only)")
 fi
 
@@ -400,7 +418,7 @@ fi
 # Step 6: style-formatter
 # ---------------------------------------------------------------------------
 echo ""
-echo "  [6/11] Installing style-formatter (required)..."
+echo "  [6/13] Installing style-formatter (required)..."
 _run_bootstrap_no_prefix "style-formatter" \
     "${REPO_ROOT}/toolchains/clang/style-formatter/bootstrap.sh"
 
@@ -408,7 +426,7 @@ _run_bootstrap_no_prefix "style-formatter" \
 # Step 7: 7zip (optional)
 # ---------------------------------------------------------------------------
 echo ""
-echo "  [7/11] 7-Zip 26.00 (optional)..."
+echo "  [7/13] 7-Zip 26.00 (optional)..."
 if [[ "${INSTALL_7ZIP}" == "true" ]]; then
     _run_setup "7zip" "${REPO_ROOT}/dev-tools/7zip/setup.sh"
 else
@@ -420,7 +438,7 @@ fi
 # Step 8: servy (optional, Windows only)
 # ---------------------------------------------------------------------------
 echo ""
-echo "  [8/11] Servy 7.8 (optional, Windows only)..."
+echo "  [8/13] Servy 7.8 (optional, Windows only)..."
 if [[ "${INSTALL_SERVY}" == "true" ]]; then
     _run_setup "servy" "${REPO_ROOT}/dev-tools/servy/setup.sh"
 else
@@ -432,7 +450,7 @@ fi
 # Step 9: conan (optional, both platforms)
 # ---------------------------------------------------------------------------
 echo ""
-echo "  [9/11] Conan 2.27.0 (optional)..."
+echo "  [9/13] Conan 2.27.0 (optional)..."
 if [[ "${INSTALL_CONAN}" == "true" ]]; then
     _run_setup "conan" "${REPO_ROOT}/dev-tools/conan/setup.sh"
 else
@@ -444,7 +462,7 @@ fi
 # Step 10: dev-tools/vscode-extensions (optional)
 # ---------------------------------------------------------------------------
 echo ""
-echo "  [10/11] VS Code extensions (optional)..."
+echo "  [10/13] VS Code extensions (optional)..."
 if [[ "${INSTALL_VSCODE}" == "true" ]]; then
     _run_bootstrap_no_prefix "dev-tools/vscode-extensions" \
         "${REPO_ROOT}/dev-tools/vscode-extensions/setup.sh"
@@ -457,7 +475,7 @@ fi
 # Step 11: optional platform tools (Windows only)
 # ---------------------------------------------------------------------------
 echo ""
-echo "  [11/11] Optional platform tools..."
+echo "  [11/13] Optional platform tools..."
 if [[ "${OS}" == "windows" ]]; then
     if [[ "${INSTALL_WINLIBS}" == "true" ]]; then
         _run_bootstrap_winlibs "winlibs-gcc-ucrt" \
@@ -479,6 +497,31 @@ else
     echo "  [--]  winlibs-gcc-ucrt  -- skipped (Windows only)"
     echo "  [--]  frameworks/grpc  -- skipped (Windows only)"
     SKIPPED_TOOLS+=("winlibs-gcc-ucrt (Windows only)" "frameworks/grpc (Windows only)")
+fi
+
+# ---------------------------------------------------------------------------
+# Step 12: SQLite CLI (optional, both platforms)
+# ---------------------------------------------------------------------------
+echo ""
+echo "  [12/13] SQLite 3.53.0 CLI (optional)..."
+if [[ "${INSTALL_SQLITE}" == "true" ]]; then
+    _run_setup "sqlite" "${REPO_ROOT}/dev-tools/sqlite/setup.sh"
+else
+    echo "  [--]  Skipped: sqlite"
+    SKIPPED_TOOLS+=("sqlite")
+fi
+
+# ---------------------------------------------------------------------------
+# Step 13: MATLAB verification (optional, both platforms)
+# ---------------------------------------------------------------------------
+echo ""
+echo "  [13/13] MATLAB toolbox verification (optional)..."
+if [[ "${INSTALL_MATLAB}" == "true" ]]; then
+    _run_bootstrap_no_prefix "matlab" \
+        "${REPO_ROOT}/dev-tools/matlab/setup.sh"
+else
+    echo "  [--]  Skipped: matlab"
+    SKIPPED_TOOLS+=("matlab")
 fi
 
 # ---------------------------------------------------------------------------
@@ -548,7 +591,7 @@ if [[ ${#FAILED_TOOLS[@]} -gt 0 ]]; then
     echo "  [!!] Some tools failed. Check logs in:"
     case "${OS}" in
         windows) echo "         %TEMP%\\airgap-cpp-devkit\\logs\\" ;;
-        linux)   echo "         /var/log/airgap-cpp-devkit/" ;;
+        linux)   echo "         /var/log/airgap-cpp-devkit/" >&2 ;;
     esac
     echo ""
     exit 1

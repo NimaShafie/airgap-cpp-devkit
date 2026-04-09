@@ -1,0 +1,65 @@
+# airgap-cpp-devkit -- Python pip packages
+# All packages are vendored as .whl files in this directory.
+# Installed offline by languages/python/setup.sh.
+# Compatible with Python 3.14.
+#
+# Platform-specific wheels are provided for both Windows (win_amd64) and
+# Linux (manylinux_2_28_x86_64). Pure Python wheels (py3-none-any or
+# py2.py3-none-any) work on both platforms without separate files.
+#
+# sqlite3 is part of the Python standard library -- no wheel required.
+#
+# ============================================================
+# Data science core
+# ============================================================
+numpy==2.4.4              # Windows + Linux (platform wheels)
+pandas==3.0.2             # Windows + Linux (platform wheels)
+scipy==1.17.1             # Windows: 1.17.1 / Linux: 1.16.3 (latest for each platform)
+scikit-learn==1.8.0       # Windows + Linux (platform wheels)
+matplotlib==3.10.8        # Windows + Linux (platform wheels)
+#
+# ============================================================
+# Visualization
+# ============================================================
+plotly==6.7.0             # Pure Python
+pillow==12.2.0            # Windows + Linux (platform wheels)
+#
+# ============================================================
+# Web application
+# ============================================================
+streamlit==1.56.0         # Pure Python
+#
+# ============================================================
+# Database
+# ============================================================
+sqlalchemy==2.0.49        # Windows + Linux (platform wheels)
+#
+# ============================================================
+# HTTP
+# ============================================================
+requests==2.33.1          # Pure Python
+#
+# ============================================================
+# Data formats and serialization
+# ============================================================
+PyYAML==6.0.3             # Windows + Linux (platform wheels)
+pydantic==2.12.5          # Pure Python
+openpyxl==3.1.5           # Pure Python
+#
+# ============================================================
+# Templating and configuration
+# ============================================================
+Jinja2==3.1.6             # Pure Python
+python-dotenv==1.2.2      # Pure Python
+#
+# ============================================================
+# CLI and developer tools
+# ============================================================
+click==8.3.2              # Pure Python
+rich==14.3.3              # Pure Python
+loguru==0.7.3             # Pure Python
+#
+# ============================================================
+# Testing
+# ============================================================
+pytest==9.0.3             # Pure Python
