@@ -48,3 +48,7 @@ reports/
 .clang-tidy
 .llvm-hooks-local/
 mintty*.png
+
+# Claude Code
+CLAUDE.md
+.claude/
