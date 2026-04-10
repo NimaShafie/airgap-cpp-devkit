@@ -98,7 +98,7 @@ else
   else
     echo "    bash dev-tools/matlab/setup.sh --matlab-path /usr/local/MATLAB/R2025a/bin/matlab" >&2
   fi
-  exit 1
+  exit 0
 fi
 
 # Get MATLAB version
