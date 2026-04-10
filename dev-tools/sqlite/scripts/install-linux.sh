@@ -68,9 +68,10 @@ if _is_rhel8; then
   fi
 
   if [[ "${MODE}" == "admin" ]]; then
-    # Install RPM system-wide
+    # Install RPM system-wide -- places sqlite3 at /usr/bin/sqlite3
     rpm -i --nodeps "${RPM}" 2>/dev/null || rpm -U --nodeps "${RPM}" 2>/dev/null || true
-    SQLITE_BIN="$(command -v sqlite3 2>/dev/null || echo "/usr/bin/sqlite3")"
+    # Do NOT copy to /usr/local/bin -- RPM already installs to /usr/bin/sqlite3
+    SQLITE_BIN="/usr/bin/sqlite3"
   else
     # Extract RPM contents and copy binary to user dir (no root needed)
     TMPDIR="$(mktemp -d)"
