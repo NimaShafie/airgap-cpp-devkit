@@ -7,10 +7,11 @@
 # Supports admin (system-wide) and user (no-elevation) install modes.
 #
 # USAGE:
-#   bash dev-tools/servy/setup.sh [--prefix <path>]
+#   bash dev-tools/servy/setup.sh [--prefix <path>] [--rebuild]
 #
 # OPTIONS:
 #   --prefix <path>   Install to a custom path instead of auto-detected default
+#   --rebuild         Force reinstall even if already present
 #
 # INSTALL MODES (auto-detected via scripts/install-mode.sh):
 #   admin   C:\Program Files\servy\
@@ -20,17 +21,20 @@
 #       print an informational message and exit cleanly.
 # =============================================================================
 set -euo pipefail
-
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 SCRIPTS_DIR="${SCRIPT_DIR}/scripts"
-
 VERSION="7.8"
 PREFIX_OVERRIDE=""
+REBUILD=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --prefix) PREFIX_OVERRIDE="$2"; shift 2 ;;
+    --prefix)  PREFIX_OVERRIDE="$2"; shift 2 ;;
+    --rebuild) REBUILD=true; shift ;;
+    -h|--help)
+      sed -n '2,/^[^#]/{/^#/!q; s/^# \?//; p}' "$0"
+      exit 0 ;;
     *) echo "ERROR: Unknown argument: $1" >&2; exit 1 ;;
   esac
 done
@@ -54,6 +58,30 @@ source "${REPO_ROOT}/scripts/install-mode.sh"
 install_mode_init "servy" "${VERSION}"
 install_log_capture_start
 
+# ---------------------------------------------------------------------------
+# Determine install directory
+# ---------------------------------------------------------------------------
+if [[ -n "${PREFIX_OVERRIDE}" ]]; then
+  INSTALL_DIR="${PREFIX_OVERRIDE}"
+elif [[ "${INSTALL_MODE}" == "admin" ]]; then
+  INSTALL_DIR="/c/Program Files/servy"
+else
+  LOCALAPPDATA_UNIX="$(cygpath -u "${LOCALAPPDATA:-${HOME}/AppData/Local}" 2>/dev/null || echo "${HOME}/AppData/Local")"
+  INSTALL_DIR="${LOCALAPPDATA_UNIX}/airgap-cpp-devkit/servy"
+fi
+
+CLI_BIN="${INSTALL_DIR}/servy-cli.exe"
+
+# ---------------------------------------------------------------------------
+# Already installed check
+# ---------------------------------------------------------------------------
+if [[ -f "${CLI_BIN}" && "${REBUILD}" == "false" ]]; then
+  echo "  [OK]  Servy ${VERSION} already installed at ${INSTALL_DIR}"
+  echo "        Use --rebuild to force reinstall."
+  install_receipt_write "success" "cli:${CLI_BIN}" "version:${VERSION}" "mode:${INSTALL_MODE}"
+  exit 0
+fi
+
 echo ""
 echo "============================================================"
 echo " Servy ${VERSION} — Setup"
@@ -72,19 +100,6 @@ echo ""
 im_progress_start "Installing Servy ${VERSION}"
 bash "${SCRIPTS_DIR}/install-windows.sh" "${INSTALL_MODE}" "${PREFIX_OVERRIDE}"
 im_progress_stop "Installation complete"
-
-# ---------------------------------------------------------------------------
-# Determine installed binary paths for receipt
-# ---------------------------------------------------------------------------
-if [[ -n "${PREFIX_OVERRIDE}" ]]; then
-  INSTALL_DIR="${PREFIX_OVERRIDE}"
-elif [[ "${INSTALL_MODE}" == "admin" ]]; then
-  INSTALL_DIR="/c/Program Files/servy"
-else
-  INSTALL_DIR="${LOCALAPPDATA}/airgap-cpp-devkit/servy"
-fi
-
-CLI_BIN="${INSTALL_DIR}/servy-cli.exe"
 
 install_receipt_write "success" \
   "cli:${CLI_BIN}" \
