@@ -516,6 +516,7 @@
       <div class="header-actions">
         <button class="btn" onclick="refreshAll()">↺ Refresh</button>
         <button class="btn" onclick="runTests(false)" title="Run smoke tests">✓ Run Tests</button>
+        <button class="btn" onclick="runTests(true)" title="Run smoke tests (verbose — shows binary versions)">✓ Tests -v</button>
         <button class="btn btn-primary" onclick="showProfileModal('cpp-dev')">▷ Install Profile</button>
       </div>
     </div>
@@ -648,6 +649,8 @@
                 <button class="btn btn-sm" onclick="installTool('{{ tool.id }}', '{{ tool.name }}', true)">
                   ↺ Rebuild
                 </button>
+                <button class="btn btn-sm btn-danger" onclick="confirmUninstall('{{ tool.id }}', '{{ tool.name }}')"
+                        title="Remove install directory">✕</button>
               {% else %}
                 <button class="btn btn-sm btn-success" onclick="installTool('{{ tool.id }}', '{{ tool.name }}', false)">
                   ↓ Install
@@ -1045,6 +1048,44 @@
       output.scrollTop = output.scrollHeight;
     };
     evtSource.onerror = () => evtSource.close();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Uninstall
+  // ---------------------------------------------------------------------------
+  function confirmUninstall(toolId, toolName) {
+    if (!confirm(`Remove ${toolName}?\n\nThis deletes the install directory from the prefix. You can reinstall at any time.`)) return;
+    document.getElementById('install-modal-title').textContent = 'Uninstalling: ' + toolName;
+    const output = document.getElementById('install-output');
+    output.textContent = '';
+    openModal('install-modal');
+
+    fetch(`/uninstall/${toolId}`, { method: 'DELETE' }).then(resp => {
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      function read() {
+        reader.read().then(({ done, value }) => {
+          if (done) return;
+          decoder.decode(value).split('\n').forEach(line => {
+            if (!line.startsWith('data: ')) return;
+            const msg = line.slice(6);
+            if (msg.startsWith('DONE:')) {
+              const ok = msg === 'DONE:success';
+              showToast(ok ? `✓ ${toolName} removed` : `✗ Uninstall failed`, ok ? 'success' : 'error');
+              return;
+            }
+            const span = document.createElement('span');
+            span.className = 'terminal-line' + (msg.startsWith('✓') ? ' ok' : msg.startsWith('✗') ? ' err' : '');
+            span.textContent = msg;
+            output.appendChild(span);
+            output.appendChild(document.createTextNode('\n'));
+            output.scrollTop = output.scrollHeight;
+          });
+          read();
+        });
+      }
+      read();
+    });
   }
 
   // ---------------------------------------------------------------------------

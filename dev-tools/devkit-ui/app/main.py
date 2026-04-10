@@ -200,6 +200,42 @@ TOOLS = [
         "estimate": "~2s",
         "uses_prebuilt": False,
     },
+    {
+        "id": "dotnet",
+        "name": ".NET SDK",
+        "version": "10.0.201",
+        "category": "Languages",
+        "platform": "both",
+        "description": "Portable .NET 10 SDK — C# 14, MSBuild, NuGet, dotnet CLI",
+        "setup": "languages/dotnet/setup.sh",
+        "receipt_name": "dotnet",
+        "estimate": "~1min",
+        "uses_prebuilt": True,
+    },
+    {
+        "id": "grpc",
+        "name": "gRPC",
+        "version": "1.78.1",
+        "category": "Frameworks",
+        "platform": "windows",
+        "description": "gRPC C++ framework — prebuilt install or full source build",
+        "setup": "frameworks/grpc/setup_grpc.sh",
+        "receipt_name": "grpc-1.78.1",
+        "estimate": "~20min",
+        "uses_prebuilt": True,
+    },
+    {
+        "id": "gcc-linux",
+        "name": "GCC Toolset 15",
+        "version": "15",
+        "category": "Toolchains",
+        "platform": "linux",
+        "description": "gcc-toolset-15 for RHEL 8 — GCC, G++, GDB via RPMs",
+        "setup": "toolchains/gcc/linux/native/setup.sh",
+        "receipt_name": "gcc-linux",
+        "estimate": "~2min",
+        "uses_prebuilt": True,
+    },
 ]
 
 PROFILES = {
@@ -573,6 +609,34 @@ async def get_log(path: str):
         return JSONResponse({"content": content})
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=404)
+
+
+@app.delete("/uninstall/{tool_id:path}")
+async def uninstall_tool(tool_id: str):
+    """Remove a tool's install directory from the prefix."""
+    tool = next((t for t in TOOLS if t["id"] == tool_id), None)
+    if not tool:
+        return JSONResponse({"error": "Tool not found"}, status_code=404)
+
+    receipt_path = _get_receipt_path(tool["receipt_name"])
+    install_dir = receipt_path.parent  # <prefix>/<tool>/
+
+    async def stream():
+        yield f"data: Uninstalling {tool['name']}...\n\n"
+        if not install_dir.exists():
+            yield "data: Nothing to remove — directory does not exist.\n\n"
+            yield "data: DONE:success\n\n"
+            return
+        try:
+            import shutil
+            shutil.rmtree(str(install_dir))
+            yield f"data: ✓ Removed {install_dir}\n\n"
+            yield "data: DONE:success\n\n"
+        except Exception as e:
+            yield f"data: ✗ ERROR: {e}\n\n"
+            yield "data: DONE:failed\n\n"
+
+    return StreamingResponse(stream(), media_type="text/event-stream")
 
 
 @app.get("/health")
