@@ -96,6 +96,20 @@ install_receipt_write "success" \
 
 install_env_register "${LCOV_BIN}"
 
+# Inject PERL5LIB into shared env.sh so lcov works without sourcing env-setup.sh
+GLOBAL_ENV="${INSTALL_PREFIX%/*}/env.sh"
+if [[ -f "${GLOBAL_ENV}" ]]; then
+    PERL5LIB_LINE="export PERL5LIB=\"${PERL_LIBS}\${PERL5LIB:+:\${PERL5LIB}}\""
+    if ! grep -qF "${PERL_LIBS}" "${GLOBAL_ENV}" 2>/dev/null; then
+        echo "" >> "${GLOBAL_ENV}"
+        echo "# lcov perl libs" >> "${GLOBAL_ENV}"
+        echo "${PERL5LIB_LINE}" >> "${GLOBAL_ENV}"
+        echo "  [OK]  PERL5LIB registered in ${GLOBAL_ENV}"
+    else
+        echo "  [OK]  PERL5LIB already registered in ${GLOBAL_ENV}"
+    fi
+fi
+
 install_mode_print_footer "success" \
     "lcov:${LCOV_BIN}/lcov" \
     "genhtml:${LCOV_BIN}/genhtml"
