@@ -141,8 +141,8 @@ if [[ "${AUTO_YES}" == "false" ]]; then
     echo ""
     echo "  Windows-only:"
     echo "   [11] servy          7.8      Windows service manager          [~3s]"
-    echo "   [12] winlibs-gcc   15.2.0   GCC + MinGW-w64                  [~8min]"
-    echo "   [13] grpc           1.78.1   C++ framework (needs VS)         [~20min]"
+    echo "   [12] winlibs-gcc   15.2.0   GCC + MinGW-w64                [~8min]"
+    echo "   [13] grpc           1.78.1   C++ framework (needs VS)       [~20min]"
     fi
     echo ""
     echo "  Tip: use --profile <name> to skip prompts"
@@ -260,11 +260,11 @@ if [[ "${AUTO_YES}" == "false" ]]; then
             read -r reply
             [[ "${reply^^}" == "Y" ]] && INSTALL_SERVY=true
 
-            printf "  Install winlibs-gcc-ucrt?      GCC 15.2.0 + MinGW-w64      [~8min][y/N]: "
+            printf "  Install winlibs-gcc-ucrt?      GCC 15.2.0 + MinGW-w64     [~8min]  [y/N]: "
             read -r reply
             [[ "${reply^^}" == "Y" ]] && INSTALL_WINLIBS=true
 
-            printf "  Install frameworks/grpc?       Requires Visual Studio       [~20min][y/N]: "
+            printf "  Install frameworks/grpc?       Requires Visual Studio      [~20min] [y/N]: "
             read -r reply
             if [[ "${reply^^}" == "Y" ]]; then
                 INSTALL_GRPC=true
