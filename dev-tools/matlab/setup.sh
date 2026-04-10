@@ -34,7 +34,8 @@ while [[ $# -gt 0 ]]; do
     -h|--help)
       sed -n '2,/^[^#]/{/^#/!q; s/^# \?//; p}' "$0"
       exit 0 ;;
-    *) echo "ERROR: Unknown argument: $1" >&2; exit 1 ;;
+        --rebuild) shift ;; # no-op: matlab check reruns by default
+        *) echo "ERROR: Unknown argument: $1" >&2; exit 1 ;;
   esac
 done
 

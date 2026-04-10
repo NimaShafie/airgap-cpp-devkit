@@ -32,6 +32,7 @@ while [[ $# -gt 0 ]]; do
         -h|--help)
             grep '^#' "$0" | grep -v '#!/' | sed 's/^# \?//'
             exit 0 ;;
+        --rebuild) shift ;; # no-op: extensions reinstall by default
         *) echo "[ERROR] Unknown argument: $1" >&2; exit 1 ;;
     esac
 done
