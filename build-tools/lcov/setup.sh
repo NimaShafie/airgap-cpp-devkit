@@ -23,7 +23,7 @@ PREFIX_OVERRIDE=""
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --prefix) PREFIX_OVERRIDE="$2"; shift 2 ;;
-        --rebuild) ;; # accepted, reinstall is default behavior
+        --rebuild) shift ;; # accepted, reinstall is default behavior
         *) echo "ERROR: Unknown argument: $1" >&2; exit 1 ;;
     esac
 done

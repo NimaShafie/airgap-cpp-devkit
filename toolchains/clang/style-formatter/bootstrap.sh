@@ -34,7 +34,7 @@ while [[ $# -gt 0 ]]; do
         --force)
         ;; FORCE="--force"; FORCE_BOOL=true; shift ;;
         -h|--help) echo "Usage: $0 [--force]"; exit 0 ;;
-        --rebuild) ;; # no-op: style-formatter reinstalls by default
+        --rebuild) shift ;; # no-op: style-formatter reinstalls by default
         *) echo "ERROR: Unknown argument: $1" >&2; exit 1 ;;
     esac
 done
