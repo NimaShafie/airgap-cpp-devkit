@@ -216,7 +216,6 @@ if [[ "${AUTO_YES}" == "false" ]]; then
             esac
             echo "  [OK] gRPC version: ${GRPC_VERSION}"
         fi
-        echo ""
     fi
 
     printf "  Install sqlite 3.53.0 CLI? (database inspection, Windows + Linux) [y/N]: "

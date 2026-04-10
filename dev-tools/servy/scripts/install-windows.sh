@@ -60,7 +60,7 @@ if [[ -z "${EXTRACTOR}" ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Extract
+# Extract -- clean install dir first to avoid mv conflicts on rebuild
 # ---------------------------------------------------------------------------
 mkdir -p "${INSTALL_DIR}"
 
@@ -70,8 +70,9 @@ echo "  Extracting servy-7.8-x64-portable.7z..."
 # Flatten if the archive extracted into a named subdirectory
 for nested in "${INSTALL_DIR}/servy-7.8-x64-portable" "${INSTALL_DIR}/Servy"; do
   if [[ -d "${nested}" ]]; then
-    mv "${nested}"/* "${INSTALL_DIR}/"
-    rmdir "${nested}" 2>/dev/null || true
+    # Use cp+rm instead of mv to handle non-empty subdirectories on rebuild
+    cp -rf "${nested}/." "${INSTALL_DIR}/"
+    rm -rf "${nested}"
     break
   fi
 done

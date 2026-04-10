@@ -99,7 +99,7 @@ _install_python() {
 
       im_progress_start "Extracting Python ${PYTHON_VERSION} (Windows embeddable)"
       if command -v unzip &>/dev/null; then
-        unzip -q "${archive}" -d "${INSTALL_PREFIX}"
+        unzip -q -o "${archive}" -d "${INSTALL_PREFIX}"
       elif command -v 7z &>/dev/null; then
         7z x "${archive}" -o"${INSTALL_PREFIX}" -y > /dev/null
       else

@@ -16,9 +16,9 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 
 MODE="${1:-user}"
 PREFIX_OVERRIDE="${2:-}"
-VERSION="3.51.3"
+VERSION="3.53.0"
 VENDOR_DIR="${REPO_ROOT}/prebuilt-binaries/dev-tools/sqlite"
-ARCHIVE="${VENDOR_DIR}/sqlite-tools-win-x64-3510300.zip"
+ARCHIVE="${VENDOR_DIR}/sqlite-tools-win-x64-3530000.zip"
 
 # ---------------------------------------------------------------------------
 # Determine install directory
@@ -51,7 +51,7 @@ TMPDIR="$(mktemp -d)"
 trap 'rm -rf "${TMPDIR}"' EXIT
 
 if command -v unzip &>/dev/null; then
-  unzip -q "${ARCHIVE}" -d "${TMPDIR}"
+  unzip -q -o "${ARCHIVE}" -d "${TMPDIR}"
 elif command -v 7z &>/dev/null; then
   7z x "${ARCHIVE}" -o"${TMPDIR}" -y > /dev/null
 else
@@ -59,7 +59,6 @@ else
   exit 1
 fi
 
-# sqlite3.exe may be in a subdirectory
 found_exe="$(find "${TMPDIR}" -name "sqlite3.exe" | head -1)"
 if [[ -z "${found_exe}" ]]; then
   echo "ERROR: sqlite3.exe not found in archive after extraction." >&2
