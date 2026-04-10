@@ -38,17 +38,33 @@ def _detect_os() -> str:
 OS = _detect_os()
 
 
+_PREFIX_OVERRIDE_FILE = REPO_ROOT / "dev-tools" / "devkit-ui" / ".devkit-prefix"
+
+
 def _detect_prefix() -> Path:
+    # 1. Persisted UI override
+    if _PREFIX_OVERRIDE_FILE.exists():
+        try:
+            p = _PREFIX_OVERRIDE_FILE.read_text(encoding="utf-8").strip()
+            if p:
+                return Path(p)
+        except Exception:
+            pass
+    # 2. Auto-detect
     if OS == "windows":
         local = os.environ.get("LOCALAPPDATA", str(Path.home() / "AppData" / "Local"))
         return Path(local) / "airgap-cpp-devkit"
-    # Linux: prefer system-wide
     if Path("/opt/airgap-cpp-devkit").exists():
         return Path("/opt/airgap-cpp-devkit")
     return Path.home() / ".local" / "share" / "airgap-cpp-devkit"
 
 
 INSTALL_PREFIX = _detect_prefix()
+
+
+def _current_prefix() -> Path:
+    """Return live prefix (re-reads override file each request)."""
+    return _detect_prefix()
 
 # ---------------------------------------------------------------------------
 # Tool definitions
@@ -236,6 +252,18 @@ TOOLS = [
         "estimate": "~2min",
         "uses_prebuilt": True,
     },
+    {
+        "id": "gcc-linux-cross",
+        "name": "GCC Cross (x86_64-bionic)",
+        "version": "15",
+        "category": "Toolchains",
+        "platform": "linux",
+        "description": "GCC 15 cross-compiler targeting x86_64-bionic-linux-gnu",
+        "setup": "toolchains/gcc/linux/cross/setup.sh",
+        "receipt_name": "gcc-linux-cross",
+        "estimate": "~2min",
+        "uses_prebuilt": True,
+    },
 ]
 
 PROFILES = {
@@ -343,7 +371,7 @@ def _parse_receipt(path: Path) -> dict:
 def _get_receipt_path(receipt_name: str) -> Path:
     # Handle nested names like "toolchains/clang"
     clean = receipt_name.replace("/", os.sep)
-    return INSTALL_PREFIX / clean / "INSTALL_RECEIPT.txt"
+    return _current_prefix() / clean / "INSTALL_RECEIPT.txt"
 
 
 def get_tool_status(tool: dict) -> dict:
@@ -401,10 +429,40 @@ async def dashboard(request: Request):
         "available_count": available_count,
         "total_count": len(tools),
         "os": OS,
-        "prefix": str(INSTALL_PREFIX),
+        "prefix": str(_current_prefix()),
         "hostname": platform.node(),
         "submodule": submodule,
     })
+
+
+@app.get("/api/prefix", response_class=JSONResponse)
+async def api_get_prefix():
+    return {
+        "prefix": str(_current_prefix()),
+        "is_override": _PREFIX_OVERRIDE_FILE.exists(),
+        "default": str(_detect_prefix() if not _PREFIX_OVERRIDE_FILE.exists() else None),
+    }
+
+
+@app.post("/api/prefix")
+async def api_set_prefix(request: Request):
+    body = await request.json()
+    new_prefix = body.get("prefix", "").strip()
+    if not new_prefix:
+        return JSONResponse({"error": "prefix cannot be empty"}, status_code=400)
+    try:
+        _PREFIX_OVERRIDE_FILE.write_text(new_prefix, encoding="utf-8")
+        return {"prefix": new_prefix, "ok": True}
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
+@app.delete("/api/prefix")
+async def api_reset_prefix():
+    """Remove override, revert to auto-detected prefix."""
+    if _PREFIX_OVERRIDE_FILE.exists():
+        _PREFIX_OVERRIDE_FILE.unlink()
+    return {"prefix": str(_detect_prefix()), "ok": True}
 
 
 @app.get("/api/submodule", response_class=JSONResponse)
@@ -641,4 +699,4 @@ async def uninstall_tool(tool_id: str):
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "os": OS, "prefix": str(INSTALL_PREFIX)}
+    return {"status": "ok", "os": OS, "prefix": str(_current_prefix())}

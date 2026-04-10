@@ -52,3 +52,6 @@ mintty*.png
 # Claude Code
 CLAUDE.md
 .claude/
+
+# devkit-ui local overrides
+dev-tools/devkit-ui/.devkit-prefix

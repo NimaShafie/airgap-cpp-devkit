@@ -500,9 +500,12 @@
       </div>
     </div>
 
-    <div style="padding: 16px 12px 0; font-size: 10px; color: var(--text2); line-height: 1.6;">
-      Prefix:<br>
-      <span style="color:var(--text); word-break:break-all;">{{ prefix }}</span>
+    <div style="padding: 14px 10px 0;">
+      <div style="font-size:10px;color:var(--text2);margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;">
+        <span>Install Prefix</span>
+        <button onclick="openPrefixEditor()" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:10px;padding:0;">✎ edit</button>
+      </div>
+      <div id="prefix-display" style="font-size:10px;color:var(--text);word-break:break-all;line-height:1.5;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:6px 8px;">{{ prefix }}</div>
     </div>
   </nav>
 
@@ -789,6 +792,37 @@
     </div>
     <div class="modal-footer">
       <button class="btn" onclick="closeModal('submodule-modal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Prefix Editor Modal -->
+<div class="modal-overlay" id="prefix-modal">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-header">
+      <div class="modal-title">Install Prefix</div>
+      <button class="modal-close" onclick="closeModal('prefix-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:11px;color:var(--text2);margin-bottom:12px;line-height:1.6">
+        All tools install into subdirectories of this path.<br>
+        Leave blank to revert to auto-detected default.
+      </div>
+      <div style="margin-bottom:10px">
+        <div style="font-size:10px;color:var(--text2);margin-bottom:4px">Current prefix</div>
+        <input id="prefix-input" type="text" value="{{ prefix }}"
+               style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);
+                      padding:7px 10px;border-radius:var(--radius);font-family:var(--font);font-size:12px;outline:none;">
+      </div>
+      <div style="font-size:10px;color:var(--text2)">
+        Defaults — Windows: <code>%LOCALAPPDATA%\airgap-cpp-devkit</code><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Linux: <code>/opt/airgap-cpp-devkit</code> or <code>~/.local/share/airgap-cpp-devkit</code>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger" onclick="resetPrefix()">↺ Reset to default</button>
+      <button class="btn" onclick="closeModal('prefix-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="savePrefix()">Save</button>
     </div>
   </div>
 </div>
@@ -1086,6 +1120,41 @@
       }
       read();
     });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Prefix editor
+  // ---------------------------------------------------------------------------
+  function openPrefixEditor() {
+    openModal('prefix-modal');
+  }
+
+  async function savePrefix() {
+    const val = document.getElementById('prefix-input').value.trim();
+    const resp = await fetch('/api/prefix', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prefix: val }),
+    });
+    const data = await resp.json();
+    if (data.ok) {
+      document.getElementById('prefix-display').textContent = data.prefix;
+      closeModal('prefix-modal');
+      showToast('✓ Prefix updated — refresh to reload tool status', 'success');
+    } else {
+      showToast('✗ ' + (data.error || 'Failed'), 'error');
+    }
+  }
+
+  async function resetPrefix() {
+    const resp = await fetch('/api/prefix', { method: 'DELETE' });
+    const data = await resp.json();
+    if (data.ok) {
+      document.getElementById('prefix-input').value = data.prefix;
+      document.getElementById('prefix-display').textContent = data.prefix;
+      closeModal('prefix-modal');
+      showToast('✓ Prefix reset to default', 'success');
+    }
   }
 
   // ---------------------------------------------------------------------------
