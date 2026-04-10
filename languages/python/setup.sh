@@ -231,6 +231,7 @@ _install_pip_packages() {
     "click==8.3.2"
     "rich==14.3.3"
     "loguru==0.7.3"
+    "win32-setctime==1.2.0"  # loguru dep on Windows
     # Testing
     "pytest==9.0.3"
   )
