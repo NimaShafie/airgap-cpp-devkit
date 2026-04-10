@@ -515,12 +515,13 @@
       </div>
       <div class="header-actions">
         <button class="btn" onclick="refreshAll()">↺ Refresh</button>
+        <button class="btn" onclick="runTests(false)" title="Run smoke tests">✓ Run Tests</button>
         <button class="btn btn-primary" onclick="showProfileModal('cpp-dev')">▷ Install Profile</button>
       </div>
     </div>
 
-    <!-- Stats -->
-    <div class="info-grid">
+    <!-- Stats + Submodule status -->
+    <div class="info-grid" style="grid-template-columns: 1fr 1fr 1fr;">
       <div class="info-card">
         <div class="info-label">Installed</div>
         <div class="info-value green">{{ installed_count }} / {{ available_count }}</div>
@@ -528,6 +529,24 @@
       <div class="info-card">
         <div class="info-label">Platform</div>
         <div class="info-value accent">{{ os | upper }}</div>
+      </div>
+      <!-- Prebuilt-binaries submodule card -->
+      <div class="info-card" id="submodule-card"
+           style="border-color: {% if submodule.initialized %}{% if submodule.stale %}var(--yellow){% else %}var(--green){% endif %}{% else %}var(--yellow){% endif %}; cursor:pointer"
+           onclick="showSubmoduleModal()">
+        <div class="info-label">prebuilt-binaries</div>
+        {% if submodule.initialized %}
+          {% if submodule.stale %}
+            <div class="info-value" style="color:var(--yellow)">⚠ Stale</div>
+            <div style="font-size:10px;color:var(--text2);margin-top:3px">{{ submodule.commit }} · run git pull</div>
+          {% else %}
+            <div class="info-value green">✓ Ready</div>
+            <div style="font-size:10px;color:var(--text2);margin-top:3px">{{ submodule.commit if submodule.commit else 'checked out' }}</div>
+          {% endif %}
+        {% else %}
+          <div class="info-value" style="color:var(--yellow)">⚠ Not initialised</div>
+          <div style="font-size:10px;color:var(--text2);margin-top:3px">{{ submodule.prebuilt_tool_count }} tools affected · click to init</div>
+        {% endif %}
       </div>
     </div>
 
@@ -541,6 +560,11 @@
       {% for cat in cats %}
       <button class="filter-btn" onclick="filterTools(this, '{{ cat }}')">{{ cat }}</button>
       {% endfor %}
+      <input id="search-input" type="text" placeholder="Search tools..."
+             oninput="searchTools(this.value)"
+             style="margin-left:auto;background:var(--bg2);border:1px solid var(--border);
+                    color:var(--text);padding:4px 10px;border-radius:20px;font-family:var(--font);
+                    font-size:11px;outline:none;width:160px;">
     </div>
 
     <!-- Tools by category -->
@@ -595,7 +619,17 @@
             {% elif tool.platform == 'windows' %}Windows
             {% else %}Linux{% endif %}
           </span>
-          <span class="badge-category">{{ tool.estimate }}</span>
+          {% if tool.uses_prebuilt %}
+            {% if submodule.initialized %}
+              <span class="badge-category" style="color:var(--green);border-color:rgba(63,185,80,0.3)">⚡ prebuilt</span>
+              <span class="badge-category">{{ tool.estimate }}</span>
+            {% else %}
+              <span class="badge-category" style="color:var(--yellow);border-color:rgba(210,153,34,0.4)"
+                    title="prebuilt-binaries not initialised — will build from source">⚠ source build</span>
+            {% endif %}
+          {% else %}
+            <span class="badge-category">{{ tool.estimate }}</span>
+          {% endif %}
         </div>
 
         <div class="tool-footer">
@@ -697,6 +731,61 @@
     <div class="modal-footer">
       <button class="btn" onclick="closeModal('profile-modal')">Cancel</button>
       <button class="btn btn-primary" id="profile-install-btn">▷ Install</button>
+    </div>
+  </div>
+</div>
+
+<!-- Submodule Modal -->
+<div class="modal-overlay" id="submodule-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">prebuilt-binaries submodule</div>
+      <button class="modal-close" onclick="closeModal('submodule-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      {% if submodule.initialized %}
+        <div class="info-grid" style="margin-bottom:16px">
+          <div class="info-card">
+            <div class="info-label">Status</div>
+            <div class="info-value {% if submodule.stale %}" style="color:var(--yellow){% else %}green{% endif %}">
+              {% if submodule.stale %}⚠ Stale{% else %}✓ Ready{% endif %}
+            </div>
+          </div>
+          <div class="info-card">
+            <div class="info-label">Commit</div>
+            <div class="info-value accent">{{ submodule.commit if submodule.commit else '—' }}</div>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:12px">
+          Path: <span style="color:var(--text)">{{ submodule.path }}</span>
+        </div>
+        {% if submodule.stale %}
+          <div style="font-size:11px;color:var(--yellow);margin-bottom:12px">
+            The submodule pointer has changed. Run <code>git submodule update --remote prebuilt-binaries</code>
+            or use the button below to re-sync.
+          </div>
+          <button class="btn btn-primary" onclick="initSubmodule()">↺ Re-sync Submodule</button>
+        {% else %}
+          <div style="font-size:11px;color:var(--text2)">
+            All {{ submodule.prebuilt_tool_count }} tools that use prebuilt binaries will install via fast path.
+          </div>
+        {% endif %}
+      {% else %}
+        <div style="color:var(--yellow);font-size:12px;margin-bottom:14px">
+          ⚠ The <strong>prebuilt-binaries</strong> submodule is not initialised.
+        </div>
+        <div style="font-size:11px;color:var(--text2);line-height:1.7;margin-bottom:16px">
+          <strong>{{ submodule.prebuilt_tool_count }} tools</strong> use prebuilt binaries for fast, compiler-free installs.
+          Without the submodule they will fall back to building from vendored source archives, which takes significantly longer.<br><br>
+          Click <strong>Initialise</strong> to run:<br>
+          <div class="terminal" style="max-height:40px;margin-top:6px">git submodule update --init --recursive prebuilt-binaries</div>
+        </div>
+        <button class="btn btn-primary" onclick="initSubmodule()">⬇ Initialise Submodule</button>
+      {% endif %}
+      <div class="terminal" id="submodule-output" style="margin-top:14px;display:none"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('submodule-modal')">Close</button>
     </div>
   </div>
 </div>
@@ -852,6 +941,104 @@
       if (line.includes('[OK]') || line.includes('SUCCESS') || line.startsWith('✓')) span.classList.add('ok');
       else if (line.includes('[!!]') || line.includes('ERROR') || line.includes('FAIL')) span.classList.add('err');
       else if (line.includes('[--]') || line.includes('──')) span.classList.add('info');
+      span.textContent = line;
+      output.appendChild(span);
+      output.appendChild(document.createTextNode('\n'));
+      output.scrollTop = output.scrollHeight;
+    };
+    evtSource.onerror = () => evtSource.close();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Search
+  // ---------------------------------------------------------------------------
+  function searchTools(query) {
+    const q = query.toLowerCase().trim();
+    // Clear active filter btn highlight when searching
+    if (q) {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    }
+    document.querySelectorAll('.tool-card').forEach(card => {
+      const name = card.querySelector('.tool-name')?.textContent.toLowerCase() || '';
+      const desc = card.querySelector('.tool-desc')?.textContent.toLowerCase() || '';
+      card.style.display = (!q || name.includes(q) || desc.includes(q)) ? '' : 'none';
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Submodule
+  // ---------------------------------------------------------------------------
+  function showSubmoduleModal() {
+    openModal('submodule-modal');
+  }
+
+  function initSubmodule() {
+    const output = document.getElementById('submodule-output');
+    output.textContent = '';
+    output.style.display = 'block';
+
+    const evtSource = new EventSource('/init-submodule', { method: undefined });
+    // EventSource is GET-only; use fetch+ReadableStream for POST
+    evtSource.close();
+
+    fetch('/init-submodule', { method: 'POST' }).then(resp => {
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      function read() {
+        reader.read().then(({ done, value }) => {
+          if (done) return;
+          const text = decoder.decode(value);
+          // Parse SSE lines
+          text.split('\n').forEach(line => {
+            if (!line.startsWith('data: ')) return;
+            const msg = line.slice(6);
+            if (msg.startsWith('DONE:')) {
+              const ok = msg === 'DONE:success';
+              showToast(ok ? '✓ Submodule initialised' : '✗ Submodule init failed', ok ? 'success' : 'error');
+              if (ok) setTimeout(() => window.location.reload(), 1500);
+              return;
+            }
+            const span = document.createElement('span');
+            span.className = 'terminal-line';
+            if (msg.startsWith('✓') || msg.includes('done')) span.classList.add('ok');
+            else if (msg.startsWith('✗') || msg.includes('ERROR')) span.classList.add('err');
+            span.textContent = msg;
+            output.appendChild(span);
+            output.appendChild(document.createTextNode('\n'));
+            output.scrollTop = output.scrollHeight;
+          });
+          read();
+        });
+      }
+      read();
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Run Tests
+  // ---------------------------------------------------------------------------
+  function runTests(verbose) {
+    document.getElementById('install-modal-title').textContent = 'Smoke Tests';
+    const output = document.getElementById('install-output');
+    output.textContent = '';
+    openModal('install-modal');
+
+    const url = `/run-tests${verbose ? '?verbose=true' : ''}`;
+    const evtSource = new EventSource(url);
+    evtSource.onmessage = function(e) {
+      const line = e.data;
+      if (line.startsWith('DONE:')) {
+        evtSource.close();
+        const ok = line === 'DONE:success';
+        showToast(ok ? '✓ All tests passed' : '✗ Some tests failed', ok ? 'success' : 'error');
+        return;
+      }
+      const span = document.createElement('span');
+      span.className = 'terminal-line';
+      if (line.includes('[OK]') || line.includes('passed') || line.startsWith('✓')) span.classList.add('ok');
+      else if (line.includes('[FAIL]') || line.includes('FAIL') || line.startsWith('✗')) span.classList.add('err');
+      else if (line.includes('[SKIP]')) span.classList.add('warn');
+      else if (line.includes('===') || line.includes('---')) span.classList.add('info');
       span.textContent = line;
       output.appendChild(span);
       output.appendChild(document.createTextNode('\n'));

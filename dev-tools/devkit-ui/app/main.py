@@ -22,8 +22,8 @@ from fastapi.templating import Jinja2Templates
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
-APP_DIR = Path(__file__).parent
-REPO_ROOT = APP_DIR.parent.parent  # devkit-ui/../.. = repo root
+APP_DIR = Path(__file__).parent          # .../devkit-ui/app/
+REPO_ROOT = APP_DIR.parent.parent.parent  # app/ -> devkit-ui/ -> dev-tools/ -> repo root
 TEMPLATES_DIR = APP_DIR / "templates"
 STATIC_DIR = APP_DIR / "static"
 
@@ -53,6 +53,8 @@ INSTALL_PREFIX = _detect_prefix()
 # ---------------------------------------------------------------------------
 # Tool definitions
 # ---------------------------------------------------------------------------
+# uses_prebuilt: True  = installs from prebuilt-binaries submodule (fast path)
+#                False = installs from vendored source/scripts only (no submodule needed)
 TOOLS = [
     {
         "id": "toolchains/clang",
@@ -64,6 +66,7 @@ TOOLS = [
         "setup": "toolchains/clang/source-build/setup.sh",
         "receipt_name": "toolchains/clang",
         "estimate": "~2min",
+        "uses_prebuilt": True,
     },
     {
         "id": "cmake",
@@ -75,6 +78,7 @@ TOOLS = [
         "setup": "build-tools/cmake/setup.sh",
         "receipt_name": "cmake",
         "estimate": "~30s",
+        "uses_prebuilt": True,
     },
     {
         "id": "python",
@@ -86,6 +90,7 @@ TOOLS = [
         "setup": "languages/python/setup.sh",
         "receipt_name": "python",
         "estimate": "~45s",
+        "uses_prebuilt": True,
     },
     {
         "id": "lcov",
@@ -97,6 +102,7 @@ TOOLS = [
         "setup": "build-tools/lcov/setup.sh",
         "receipt_name": "lcov",
         "estimate": "~10s",
+        "uses_prebuilt": False,
     },
     {
         "id": "style-formatter",
@@ -108,6 +114,7 @@ TOOLS = [
         "setup": "toolchains/clang/style-formatter/bootstrap.sh",
         "receipt_name": "style-formatter",
         "estimate": "~5s",
+        "uses_prebuilt": False,
     },
     {
         "id": "conan",
@@ -119,6 +126,7 @@ TOOLS = [
         "setup": "dev-tools/conan/setup.sh",
         "receipt_name": "conan",
         "estimate": "~5s",
+        "uses_prebuilt": True,
     },
     {
         "id": "sqlite",
@@ -130,6 +138,7 @@ TOOLS = [
         "setup": "dev-tools/sqlite/setup.sh",
         "receipt_name": "sqlite",
         "estimate": "~3s",
+        "uses_prebuilt": True,
     },
     {
         "id": "7zip",
@@ -141,6 +150,7 @@ TOOLS = [
         "setup": "dev-tools/7zip/setup.sh",
         "receipt_name": "7zip",
         "estimate": "~2s",
+        "uses_prebuilt": True,
     },
     {
         "id": "servy",
@@ -152,6 +162,7 @@ TOOLS = [
         "setup": "dev-tools/servy/setup.sh",
         "receipt_name": "servy",
         "estimate": "~3s",
+        "uses_prebuilt": True,
     },
     {
         "id": "vscode-extensions",
@@ -163,6 +174,7 @@ TOOLS = [
         "setup": "dev-tools/vscode-extensions/setup.sh",
         "receipt_name": "dev-tools/vscode-extensions",
         "estimate": "~30s",
+        "uses_prebuilt": False,
     },
     {
         "id": "winlibs-gcc-ucrt",
@@ -174,6 +186,7 @@ TOOLS = [
         "setup": "toolchains/gcc/windows/setup.sh",
         "receipt_name": "winlibs-gcc-ucrt",
         "estimate": "~8min",
+        "uses_prebuilt": True,
     },
     {
         "id": "matlab",
@@ -185,6 +198,7 @@ TOOLS = [
         "setup": "dev-tools/matlab/setup.sh",
         "receipt_name": "matlab",
         "estimate": "~2s",
+        "uses_prebuilt": False,
     },
 ]
 
@@ -214,6 +228,50 @@ PROFILES = {
         "color": "purple",
     },
 }
+
+# ---------------------------------------------------------------------------
+# Prebuilt-binaries submodule detection
+# ---------------------------------------------------------------------------
+def get_submodule_status() -> dict:
+    """Check whether the prebuilt-binaries submodule is initialised and up to date."""
+    submodule_dir = REPO_ROOT / "prebuilt-binaries"
+    result = {
+        "initialized": False,
+        "stale": False,       # True if submodule pointer is ahead/behind
+        "commit": None,
+        "path": str(submodule_dir),
+        "prebuilt_tool_count": sum(1 for t in TOOLS if t.get("uses_prebuilt")),
+    }
+
+    if not submodule_dir.exists():
+        return result
+
+    # Non-empty directory means the submodule has been checked out
+    try:
+        contents = list(submodule_dir.iterdir())
+    except PermissionError:
+        contents = []
+    result["initialized"] = len(contents) > 0
+
+    if not result["initialized"]:
+        return result
+
+    # Ask git for the submodule status line
+    try:
+        proc = subprocess.run(
+            ["git", "-C", str(REPO_ROOT), "submodule", "status", "prebuilt-binaries"],
+            capture_output=True, text=True, timeout=5,
+        )
+        line = proc.stdout.strip()
+        if line:
+            # Leading char: ' ' = OK, '+' = stale (commit differs), '-' = not init
+            result["stale"] = line[0] == "+"
+            result["commit"] = line.lstrip(" +-").split()[0][:10]
+    except Exception:
+        pass
+
+    return result
+
 
 # ---------------------------------------------------------------------------
 # Receipt reader
@@ -297,6 +355,7 @@ async def dashboard(request: Request):
         if cat not in categories:
             categories[cat] = []
         categories[cat].append(t)
+    submodule = get_submodule_status()
     return render("dashboard.html", {
         "request": request,
         "tools": tools,
@@ -308,7 +367,77 @@ async def dashboard(request: Request):
         "os": OS,
         "prefix": str(INSTALL_PREFIX),
         "hostname": platform.node(),
+        "submodule": submodule,
     })
+
+
+@app.get("/api/submodule", response_class=JSONResponse)
+async def api_submodule():
+    return get_submodule_status()
+
+
+@app.post("/init-submodule")
+async def init_submodule():
+    """Stream output of git submodule update --init --recursive prebuilt-binaries."""
+    async def stream():
+        yield "data: Initialising prebuilt-binaries submodule...\n\n"
+        cmd = [
+            "git", "-C", str(REPO_ROOT),
+            "submodule", "update", "--init", "--recursive", "prebuilt-binaries",
+        ]
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT,
+            )
+            async for line in proc.stdout:
+                text = line.decode("utf-8", errors="replace").rstrip()
+                if text:
+                    yield f"data: {text}\n\n"
+            await proc.wait()
+            if proc.returncode == 0:
+                yield "data: ✓ prebuilt-binaries initialised successfully\n\n"
+                yield "data: DONE:success\n\n"
+            else:
+                yield f"data: ✗ git exited with code {proc.returncode}\n\n"
+                yield "data: DONE:failed\n\n"
+        except Exception as e:
+            yield f"data: ERROR: {e}\n\n"
+            yield "data: DONE:failed\n\n"
+
+    return StreamingResponse(stream(), media_type="text/event-stream")
+
+
+@app.get("/run-tests")
+async def run_tests(verbose: bool = False):
+    """Stream output of tests/run-tests.sh."""
+    async def stream():
+        yield "data: Running smoke tests...\n\n"
+        cmd = ["bash", str(REPO_ROOT / "tests" / "run-tests.sh")]
+        if verbose:
+            cmd.append("--verbose")
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT,
+                cwd=str(REPO_ROOT),
+            )
+            async for line in proc.stdout:
+                text = line.decode("utf-8", errors="replace").rstrip()
+                if text:
+                    yield f"data: {text}\n\n"
+            await proc.wait()
+            if proc.returncode == 0:
+                yield "data: DONE:success\n\n"
+            else:
+                yield "data: DONE:failed\n\n"
+        except Exception as e:
+            yield f"data: ERROR: {e}\n\n"
+            yield "data: DONE:failed\n\n"
+
+    return StreamingResponse(stream(), media_type="text/event-stream")
 
 
 @app.get("/api/tools", response_class=JSONResponse)
