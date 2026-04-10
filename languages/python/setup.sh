@@ -250,6 +250,23 @@ _install_pip_packages() {
     fi
 
     printf "  [....] %-22s" "${pkg_name}"
+
+    # streamlit on Linux: watchdog has no Linux wheel but is optional (hot-reload only)
+    # Install with --no-deps then pip resolves remaining deps from find-links
+    if [[ "${pkg_name}" == "streamlit" && "${OS}" == "linux" ]]; then
+      if "${python_bin}" -m pip install \
+          --quiet --no-index \
+          --find-links="${PIP_PKG_DIR}" \
+          --no-deps streamlit 2>/dev/null; then
+        printf "  [OK] (watchdog skipped -- no Linux wheel)\n"
+        (( installed++ )) || true
+      else
+        printf "  [!!] FAILED\n" >&2
+        (( failed++ )) || true
+      fi
+      continue
+    fi
+
     if "${python_bin}" -m pip install \
         --quiet --no-index \
         --find-links="${PIP_PKG_DIR}" \
