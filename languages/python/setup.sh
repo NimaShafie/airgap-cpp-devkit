@@ -273,14 +273,14 @@ _install_pip_packages() {
       local sdep_ok=true
       for sdep in "${streamlit_deps[@]}"; do
         "${python_bin}" -m pip install \
-            --quiet --no-index \
+            --quiet --no-index --no-deps \
             --find-links="${PIP_PKG_DIR}" \
             "${sdep}" 2>/dev/null || true
       done
       if "${python_bin}" -m pip install \
-          --quiet --no-index \
+          --quiet --no-index --no-deps \
           --find-links="${PIP_PKG_DIR}" \
-          --no-deps streamlit 2>/dev/null; then
+          streamlit 2>/dev/null; then
         printf "  [OK] (watchdog skipped -- no Linux wheel)\n"
         (( installed++ )) || true
       else
@@ -291,7 +291,7 @@ _install_pip_packages() {
     fi
 
     if "${python_bin}" -m pip install \
-        --quiet --no-index \
+        --quiet --no-index --no-deps \
         --find-links="${PIP_PKG_DIR}" \
         "${pkg}" 2>/dev/null; then
       printf "  [OK]\n"
