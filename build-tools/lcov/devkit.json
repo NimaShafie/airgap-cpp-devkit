@@ -1,0 +1,13 @@
+{
+  "id": "lcov",
+  "name": "lcov",
+  "version": "2.4",
+  "category": "Build Tools",
+  "platform": "linux",
+  "description": "Code coverage reporting tool",
+  "setup": "build-tools/lcov/setup.sh",
+  "receipt_name": "lcov",
+  "estimate": "~10s",
+  "uses_prebuilt": false,
+  "sort_order": 4
+}

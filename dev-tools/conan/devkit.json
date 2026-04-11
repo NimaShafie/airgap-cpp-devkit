@@ -1,0 +1,13 @@
+{
+  "id": "conan",
+  "name": "Conan",
+  "version": "2.27.0",
+  "category": "Developer Tools",
+  "platform": "both",
+  "description": "C/C++ package manager (self-contained, no Python required)",
+  "setup": "dev-tools/conan/setup.sh",
+  "receipt_name": "conan",
+  "estimate": "~5s",
+  "uses_prebuilt": true,
+  "sort_order": 6
+}

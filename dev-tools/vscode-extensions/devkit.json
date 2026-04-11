@@ -1,0 +1,24 @@
+{
+  "id": "vscode-extensions",
+  "name": "VS Code Extensions",
+  "version": "Various",
+  "version_label": "8 extensions",
+  "category": "Plugins",
+  "platform": "both",
+  "description": "Offline VS Code extension pack for C++ development \u2014 C/C++, TestMate, Python, and more. VS Code must be installed with 'code' on PATH.",
+  "setup": "dev-tools/vscode-extensions/setup.sh",
+  "receipt_name": "dev-tools/vscode-extensions",
+  "estimate": "~30s",
+  "uses_prebuilt": false,
+  "sort_order": 10,
+  "extensions": [
+    {"id": "ms-vscode.cpptools-extension-pack", "name": "C/C++ Extension Pack",    "version": "1.5.1",   "publisher": "Microsoft",    "status": "vendored", "description": "Complete C/C++ IDE support \u2014 IntelliSense, debug, code navigation"},
+    {"id": "ms-vscode.cpptools",                "name": "C/C++",                    "version": "1.30.4",  "publisher": "Microsoft",    "status": "vendored", "description": "C/C++ language support, IntelliSense, debugging (platform-specific)"},
+    {"id": "matepek.vscode-catch2-test-adapter","name": "C++ TestMate",             "version": "4.22.3",  "publisher": "Mate Pek",     "status": "vendored", "description": "Catch2 / GTest / doctest test explorer and runner"},
+    {"id": "ms-python.python",                  "name": "Python",                   "version": "2026.5",  "publisher": "Microsoft",    "status": "vendored", "description": "Python language support, IntelliSense, Jupyter (platform-specific)"},
+    {"id": "ms-vscode.cmake-tools",             "name": "CMake Tools",              "version": "latest",  "publisher": "Microsoft",    "status": "planned",  "description": "Full CMake integration \u2014 configure, build, debug from VS Code"},
+    {"id": "twxs.cmake",                        "name": "CMake",                    "version": "latest",  "publisher": "twxs",         "status": "planned",  "description": "CMakeLists.txt syntax highlighting and IntelliSense"},
+    {"id": "cschlosser.doxdocgen",              "name": "Doxygen Doc Generator",    "version": "latest",  "publisher": "C. Schlosser", "status": "planned",  "description": "Auto-generate Doxygen comment blocks from function signatures"},
+    {"id": "ms-vscode.live-server",             "name": "Live Preview",             "version": "latest",  "publisher": "Microsoft",    "status": "planned",  "description": "Local HTTP server for in-editor browser preview"}
+  ]
+}

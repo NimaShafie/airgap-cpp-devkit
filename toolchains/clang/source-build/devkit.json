@@ -1,0 +1,13 @@
+{
+  "id": "toolchains/clang",
+  "name": "clang-format + clang-tidy",
+  "version": "22.1.2",
+  "category": "Toolchains",
+  "platform": "both",
+  "description": "LLVM C++ formatter and static analyzer",
+  "setup": "toolchains/clang/source-build/setup.sh",
+  "receipt_name": "toolchains/clang",
+  "estimate": "~2min",
+  "uses_prebuilt": true,
+  "sort_order": 1
+}

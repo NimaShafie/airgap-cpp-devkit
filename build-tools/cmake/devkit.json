@@ -1,0 +1,13 @@
+{
+  "id": "cmake",
+  "name": "CMake",
+  "version": "4.3.1",
+  "category": "Build Tools",
+  "platform": "both",
+  "description": "Cross-platform build system generator",
+  "setup": "build-tools/cmake/setup.sh",
+  "receipt_name": "cmake",
+  "estimate": "~30s",
+  "uses_prebuilt": true,
+  "sort_order": 2
+}

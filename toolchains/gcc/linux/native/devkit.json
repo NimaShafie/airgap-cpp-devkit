@@ -1,0 +1,13 @@
+{
+  "id": "gcc-linux",
+  "name": "GCC Toolset 15",
+  "version": "15",
+  "category": "Toolchains",
+  "platform": "linux",
+  "description": "gcc-toolset-15 for RHEL 8 \u2014 GCC, G++, GDB via RPMs",
+  "setup": "toolchains/gcc/linux/native/setup.sh",
+  "receipt_name": "gcc-linux",
+  "estimate": "~2min",
+  "uses_prebuilt": true,
+  "sort_order": 16
+}

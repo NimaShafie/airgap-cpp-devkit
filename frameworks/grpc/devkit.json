@@ -1,0 +1,13 @@
+{
+  "id": "grpc",
+  "name": "gRPC",
+  "version": "1.78.1",
+  "category": "Frameworks",
+  "platform": "windows",
+  "description": "gRPC C++ framework \u2014 prebuilt install or full source build",
+  "setup": "frameworks/grpc/setup_grpc.sh",
+  "receipt_name": "grpc-1.78.1",
+  "estimate": "~20min",
+  "uses_prebuilt": true,
+  "sort_order": 15
+}

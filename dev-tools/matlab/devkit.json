@@ -1,0 +1,13 @@
+{
+  "id": "matlab",
+  "name": "MATLAB Verification",
+  "version": "-",
+  "category": "Developer Tools",
+  "platform": "both",
+  "description": "Verifies MATLAB toolboxes (Database + Compiler)",
+  "setup": "dev-tools/matlab/setup.sh",
+  "receipt_name": "matlab",
+  "estimate": "~2s",
+  "uses_prebuilt": false,
+  "sort_order": 13
+}

@@ -1,0 +1,13 @@
+{
+  "id": "style-formatter",
+  "name": "Style Formatter",
+  "version": "22.1.2",
+  "category": "Toolchains",
+  "platform": "both",
+  "description": "Pre-commit hook enforcing LLVM C++ style",
+  "setup": "toolchains/clang/style-formatter/bootstrap.sh",
+  "receipt_name": "style-formatter",
+  "estimate": "~5s",
+  "uses_prebuilt": false,
+  "sort_order": 5
+}

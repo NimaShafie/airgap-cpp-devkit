@@ -1,0 +1,13 @@
+{
+  "id": "winlibs-gcc-ucrt",
+  "name": "WinLibs GCC",
+  "version": "15.2.0",
+  "category": "Toolchains",
+  "platform": "windows",
+  "description": "GCC 15.2.0 + MinGW-w64 for Windows",
+  "setup": "toolchains/gcc/windows/setup.sh",
+  "receipt_name": "winlibs-gcc-ucrt",
+  "estimate": "~8min",
+  "uses_prebuilt": true,
+  "sort_order": 12
+}

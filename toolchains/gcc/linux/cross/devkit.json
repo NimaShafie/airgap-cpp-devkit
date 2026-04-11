@@ -1,0 +1,13 @@
+{
+  "id": "gcc-linux-cross",
+  "name": "GCC Cross (x86_64-bionic)",
+  "version": "15",
+  "category": "Toolchains",
+  "platform": "linux",
+  "description": "GCC 15 cross-compiler targeting x86_64-bionic-linux-gnu",
+  "setup": "toolchains/gcc/linux/cross/setup.sh",
+  "receipt_name": "gcc-linux-cross",
+  "estimate": "~2min",
+  "uses_prebuilt": true,
+  "sort_order": 17
+}

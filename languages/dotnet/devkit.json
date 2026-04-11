@@ -1,0 +1,13 @@
+{
+  "id": "dotnet",
+  "name": ".NET SDK",
+  "version": "10.0.201",
+  "category": "Languages",
+  "platform": "both",
+  "description": "Portable .NET 10 SDK \u2014 C# 14, MSBuild, NuGet, dotnet CLI",
+  "setup": "languages/dotnet/setup.sh",
+  "receipt_name": "dotnet",
+  "estimate": "~1min",
+  "uses_prebuilt": true,
+  "sort_order": 14
+}

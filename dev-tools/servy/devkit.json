@@ -1,0 +1,13 @@
+{
+  "id": "servy",
+  "name": "Servy",
+  "version": "7.8",
+  "category": "Developer Tools",
+  "platform": "windows",
+  "description": "Windows service manager (portable)",
+  "setup": "dev-tools/servy/setup.sh",
+  "receipt_name": "servy",
+  "estimate": "~3s",
+  "uses_prebuilt": true,
+  "sort_order": 9
+}

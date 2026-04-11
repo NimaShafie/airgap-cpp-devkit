@@ -114,252 +114,61 @@ def _get_system_info() -> dict:
     }
 
 # ---------------------------------------------------------------------------
-# Tool definitions
+# Tool discovery — scans for devkit.json manifests in tool directories.
+#
+# To add a new tool, create a devkit.json in its directory (see packages/
+# for an example). No Python edits required.
+#
+# Search order (first match by id wins):
+#   dev-tools/*/          dev-tools/*/*/
+#   build-tools/*/
+#   languages/*/
+#   toolchains/*/         toolchains/*/*/     toolchains/*/*/*/
+#   frameworks/*/
+#   packages/*/           ← user-contributed or custom tools
 # ---------------------------------------------------------------------------
-# uses_prebuilt: True  = installs from prebuilt-binaries submodule (fast path)
-#                False = installs from vendored source/scripts only (no submodule needed)
-TOOLS = [
-    {
-        "id": "toolchains/clang",
-        "name": "clang-format + clang-tidy",
-        "version": "22.1.2",
-        "category": "Toolchains",
-        "platform": "both",
-        "description": "LLVM C++ formatter and static analyzer",
-        "setup": "toolchains/clang/source-build/setup.sh",
-        "receipt_name": "toolchains/clang",
-        "estimate": "~2min",
-        "uses_prebuilt": True,
-    },
-    {
-        "id": "cmake",
-        "name": "CMake",
-        "version": "4.3.1",
-        "category": "Build Tools",
-        "platform": "both",
-        "description": "Cross-platform build system generator",
-        "setup": "build-tools/cmake/setup.sh",
-        "receipt_name": "cmake",
-        "estimate": "~30s",
-        "uses_prebuilt": True,
-    },
-    {
-        "id": "python",
-        "name": "Python",
-        "version": "3.14.4",
-        "category": "Languages",
-        "platform": "both",
-        "description": "Portable Python 3.14.4 interpreter (embeddable zip on Windows, standalone tar.gz on Linux). Install pip packages separately via the Plugins section.",
-        "setup": "languages/python/setup.sh",
-        "setup_args": ["--skip-pip"],
-        "receipt_name": "python",
-        "estimate": "~45s",
-        "uses_prebuilt": True,
-    },
-    {
-        "id": "lcov",
-        "name": "lcov",
-        "version": "2.4",
-        "category": "Build Tools",
-        "platform": "linux",
-        "description": "Code coverage reporting tool",
-        "setup": "build-tools/lcov/setup.sh",
-        "receipt_name": "lcov",
-        "estimate": "~10s",
-        "uses_prebuilt": False,
-    },
-    {
-        "id": "style-formatter",
-        "name": "Style Formatter",
-        "version": "22.1.2",
-        "category": "Toolchains",
-        "platform": "both",
-        "description": "Pre-commit hook enforcing LLVM C++ style",
-        "setup": "toolchains/clang/style-formatter/bootstrap.sh",
-        "receipt_name": "style-formatter",
-        "estimate": "~5s",
-        "uses_prebuilt": False,
-    },
-    {
-        "id": "conan",
-        "name": "Conan",
-        "version": "2.27.0",
-        "category": "Developer Tools",
-        "platform": "both",
-        "description": "C/C++ package manager (self-contained, no Python required)",
-        "setup": "dev-tools/conan/setup.sh",
-        "receipt_name": "conan",
-        "estimate": "~5s",
-        "uses_prebuilt": True,
-    },
-    {
-        "id": "sqlite",
-        "name": "SQLite CLI",
-        "version": "3.53.0",
-        "category": "Developer Tools",
-        "platform": "both",
-        "description": "SQLite database inspection CLI",
-        "setup": "dev-tools/sqlite/setup.sh",
-        "receipt_name": "sqlite",
-        "estimate": "~3s",
-        "uses_prebuilt": True,
-    },
-    {
-        "id": "7zip",
-        "name": "7-Zip",
-        "version": "26.00",
-        "category": "Developer Tools",
-        "platform": "both",
-        "description": "Archive tool for Windows and Linux",
-        "setup": "dev-tools/7zip/setup.sh",
-        "receipt_name": "7zip",
-        "estimate": "~2s",
-        "uses_prebuilt": True,
-    },
-    {
-        "id": "servy",
-        "name": "Servy",
-        "version": "7.8",
-        "category": "Developer Tools",
-        "platform": "windows",
-        "description": "Windows service manager (portable)",
-        "setup": "dev-tools/servy/setup.sh",
-        "receipt_name": "servy",
-        "estimate": "~3s",
-        "uses_prebuilt": True,
-    },
-    {
-        "id": "vscode-extensions",
-        "name": "VS Code Extensions",
-        "version_label": "8 extensions",
-        "version": "Various",
-        "category": "Plugins",
-        "platform": "both",
-        "description": "Offline VS Code extension pack for C++ development — C/C++, TestMate, Python, and more. VS Code must be installed with 'code' on PATH.",
-        "setup": "dev-tools/vscode-extensions/setup.sh",
-        "receipt_name": "dev-tools/vscode-extensions",
-        "estimate": "~30s",
-        "uses_prebuilt": False,
-        "extensions": [
-            {"id": "ms-vscode.cpptools-extension-pack", "name": "C/C++ Extension Pack", "version": "1.5.1",   "publisher": "Microsoft",   "status": "vendored",  "description": "Complete C/C++ IDE support — IntelliSense, debug, code navigation"},
-            {"id": "ms-vscode.cpptools",                "name": "C/C++",                "version": "1.30.4",  "publisher": "Microsoft",   "status": "vendored",  "description": "C/C++ language support, IntelliSense, debugging (platform-specific)"},
-            {"id": "matepek.vscode-catch2-test-adapter","name": "C++ TestMate",         "version": "4.22.3",  "publisher": "Mate Pek",    "status": "vendored",  "description": "Catch2 / GTest / doctest test explorer and runner"},
-            {"id": "ms-python.python",                  "name": "Python",               "version": "2026.5",  "publisher": "Microsoft",   "status": "vendored",  "description": "Python language support, IntelliSense, Jupyter (platform-specific)"},
-            {"id": "ms-vscode.cmake-tools",             "name": "CMake Tools",          "version": "latest",  "publisher": "Microsoft",   "status": "planned",   "description": "Full CMake integration — configure, build, debug from VS Code"},
-            {"id": "twxs.cmake",                        "name": "CMake",                "version": "latest",  "publisher": "twxs",        "status": "planned",   "description": "CMakeLists.txt syntax highlighting and IntelliSense"},
-            {"id": "cschlosser.doxdocgen",              "name": "Doxygen Doc Generator","version": "latest",  "publisher": "C. Schlosser","status": "planned",   "description": "Auto-generate Doxygen comment blocks from function signatures"},
-            {"id": "ms-vscode.live-server",             "name": "Live Preview",         "version": "latest",  "publisher": "Microsoft",   "status": "planned",   "description": "Local HTTP server for in-editor browser preview"},
-        ],
-    },
-    {
-        "id": "pip-packages",
-        "name": "Python Pip Packages",
-        "version_label": "20 packages",
-        "version": "Various",
-        "category": "Plugins",
-        "platform": "both",
-        "description": "20 vendored pip wheels for data science, web, CLI, and testing. Requires Python (from the Languages section) to be installed first.",
-        "setup": "languages/python/setup.sh",
-        "setup_args": ["--pip-only"],
-        "receipt_name": "pip-packages",
-        "estimate": "~30s",
-        "uses_prebuilt": False,
-        "packages": [
-            {"name": "numpy",          "version": "2.4.4",           "category": "Data Science", "description": "N-dimensional array and numerical computing library"},
-            {"name": "pandas",         "version": "3.0.2",           "category": "Data Science", "description": "Data analysis and manipulation with DataFrames"},
-            {"name": "scipy",          "version": "1.17.1 / 1.16.3", "category": "Data Science", "description": "Scientific computing — optimization, stats, signal processing"},
-            {"name": "scikit-learn",   "version": "1.8.0",           "category": "Data Science", "description": "Machine learning — classification, regression, clustering"},
-            {"name": "matplotlib",     "version": "3.10.8",          "category": "Data Science", "description": "2D/3D plotting and data visualization"},
-            {"name": "plotly",         "version": "6.7.0",           "category": "Visualization","description": "Interactive charts and dashboards"},
-            {"name": "pillow",         "version": "12.2.0",          "category": "Visualization","description": "Image processing — read, write, transform image files"},
-            {"name": "streamlit",      "version": "1.56.0",          "category": "Web",          "description": "Rapid data app and dashboard builder"},
-            {"name": "sqlalchemy",     "version": "2.0.49",          "category": "Database",     "description": "SQL toolkit and ORM for Python"},
-            {"name": "requests",       "version": "2.33.1",          "category": "HTTP",         "description": "Human-friendly HTTP client library"},
-            {"name": "PyYAML",         "version": "6.0.3",           "category": "Formats",      "description": "YAML parsing and serialization"},
-            {"name": "pydantic",       "version": "2.12.5",          "category": "Formats",      "description": "Data validation using Python type annotations"},
-            {"name": "openpyxl",       "version": "3.1.5",           "category": "Formats",      "description": "Read/write Excel (.xlsx) files"},
-            {"name": "Jinja2",         "version": "3.1.6",           "category": "Templating",   "description": "Fast, flexible template engine for Python"},
-            {"name": "python-dotenv",  "version": "1.2.2",           "category": "Templating",   "description": "Load environment variables from .env files"},
-            {"name": "click",          "version": "8.3.2",           "category": "CLI",          "description": "Composable command-line interface toolkit"},
-            {"name": "rich",           "version": "14.3.3",          "category": "CLI",          "description": "Rich text and beautiful formatting in the terminal"},
-            {"name": "loguru",         "version": "0.7.3",           "category": "CLI",          "description": "Simplified logging with rotation, color, and structured output"},
-            {"name": "win32-setctime", "version": "1.2.0",           "category": "Windows",      "description": "Set file creation time on Windows (loguru dependency)"},
-            {"name": "pytest",         "version": "9.0.3",           "category": "Testing",      "description": "Feature-rich testing framework for Python"},
-        ],
-    },
-    {
-        "id": "winlibs-gcc-ucrt",
-        "name": "WinLibs GCC",
-        "version": "15.2.0",
-        "category": "Toolchains",
-        "platform": "windows",
-        "description": "GCC 15.2.0 + MinGW-w64 for Windows",
-        "setup": "toolchains/gcc/windows/setup.sh",
-        "receipt_name": "winlibs-gcc-ucrt",
-        "estimate": "~8min",
-        "uses_prebuilt": True,
-    },
-    {
-        "id": "matlab",
-        "name": "MATLAB Verification",
-        "version": "-",
-        "category": "Developer Tools",
-        "platform": "both",
-        "description": "Verifies MATLAB toolboxes (Database + Compiler)",
-        "setup": "dev-tools/matlab/setup.sh",
-        "receipt_name": "matlab",
-        "estimate": "~2s",
-        "uses_prebuilt": False,
-    },
-    {
-        "id": "dotnet",
-        "name": ".NET SDK",
-        "version": "10.0.201",
-        "category": "Languages",
-        "platform": "both",
-        "description": "Portable .NET 10 SDK — C# 14, MSBuild, NuGet, dotnet CLI",
-        "setup": "languages/dotnet/setup.sh",
-        "receipt_name": "dotnet",
-        "estimate": "~1min",
-        "uses_prebuilt": True,
-    },
-    {
-        "id": "grpc",
-        "name": "gRPC",
-        "version": "1.78.1",
-        "category": "Frameworks",
-        "platform": "windows",
-        "description": "gRPC C++ framework — prebuilt install or full source build",
-        "setup": "frameworks/grpc/setup_grpc.sh",
-        "receipt_name": "grpc-1.78.1",
-        "estimate": "~20min",
-        "uses_prebuilt": True,
-    },
-    {
-        "id": "gcc-linux",
-        "name": "GCC Toolset 15",
-        "version": "15",
-        "category": "Toolchains",
-        "platform": "linux",
-        "description": "gcc-toolset-15 for RHEL 8 — GCC, G++, GDB via RPMs",
-        "setup": "toolchains/gcc/linux/native/setup.sh",
-        "receipt_name": "gcc-linux",
-        "estimate": "~2min",
-        "uses_prebuilt": True,
-    },
-    {
-        "id": "gcc-linux-cross",
-        "name": "GCC Cross (x86_64-bionic)",
-        "version": "15",
-        "category": "Toolchains",
-        "platform": "linux",
-        "description": "GCC 15 cross-compiler targeting x86_64-bionic-linux-gnu",
-        "setup": "toolchains/gcc/linux/cross/setup.sh",
-        "receipt_name": "gcc-linux-cross",
-        "estimate": "~2min",
-        "uses_prebuilt": True,
-    },
+_TOOL_SCAN_PATTERNS = [
+    "dev-tools/*/devkit.json",
+    "dev-tools/*/*/devkit.json",
+    "build-tools/*/devkit.json",
+    "languages/*/devkit.json",
+    "toolchains/*/devkit.json",
+    "toolchains/*/*/devkit.json",
+    "toolchains/*/*/*/devkit.json",
+    "frameworks/*/devkit.json",
+    "packages/*/devkit.json",
 ]
+
+
+def _load_tools() -> list:
+    import glob as _glob
+    tools: list = []
+    seen_ids: set = set()
+    for pattern in _TOOL_SCAN_PATTERNS:
+        for manifest_path in sorted(_glob.glob(str(REPO_ROOT / pattern))):
+            try:
+                data = json.loads(Path(manifest_path).read_text(encoding="utf-8"))
+            except Exception as exc:
+                print(f"[devkit] Warning: cannot load {manifest_path}: {exc}", file=sys.stderr)
+                continue
+            tool_id = data.get("id", "").strip()
+            if not tool_id or tool_id in seen_ids:
+                continue
+            seen_ids.add(tool_id)
+            # Apply defaults so templates never see missing keys
+            data.setdefault("platform", "both")
+            data.setdefault("category", "Developer Tools")
+            data.setdefault("estimate", "~1min")
+            data.setdefault("uses_prebuilt", False)
+            data.setdefault("setup_args", [])
+            data.setdefault("version", "")
+            data.setdefault("version_label", None)
+            tools.append(data)
+    tools.sort(key=lambda t: (t.get("sort_order", 99), t.get("category", ""), t.get("name", "")))
+    return tools
+
+
+TOOLS = _load_tools()
 
 PROFILES = {
     "cpp-dev": {

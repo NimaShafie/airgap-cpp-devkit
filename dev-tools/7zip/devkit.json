@@ -1,0 +1,13 @@
+{
+  "id": "7zip",
+  "name": "7-Zip",
+  "version": "26.00",
+  "category": "Developer Tools",
+  "platform": "both",
+  "description": "Archive tool for Windows and Linux",
+  "setup": "dev-tools/7zip/setup.sh",
+  "receipt_name": "7zip",
+  "estimate": "~2s",
+  "uses_prebuilt": true,
+  "sort_order": 8
+}

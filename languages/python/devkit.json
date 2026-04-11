@@ -1,0 +1,14 @@
+{
+  "id": "python",
+  "name": "Python",
+  "version": "3.14.4",
+  "category": "Languages",
+  "platform": "both",
+  "description": "Portable Python 3.14.4 interpreter (embeddable zip on Windows, standalone tar.gz on Linux). Install pip packages separately via the Plugins section.",
+  "setup": "languages/python/setup.sh",
+  "setup_args": ["--skip-pip"],
+  "receipt_name": "python",
+  "estimate": "~45s",
+  "uses_prebuilt": true,
+  "sort_order": 3
+}

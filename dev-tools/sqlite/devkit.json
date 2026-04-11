@@ -1,0 +1,13 @@
+{
+  "id": "sqlite",
+  "name": "SQLite CLI",
+  "version": "3.53.0",
+  "category": "Developer Tools",
+  "platform": "both",
+  "description": "SQLite database inspection CLI",
+  "setup": "dev-tools/sqlite/setup.sh",
+  "receipt_name": "sqlite",
+  "estimate": "~3s",
+  "uses_prebuilt": true,
+  "sort_order": 7
+}
