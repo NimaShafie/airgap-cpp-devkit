@@ -23,11 +23,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 VERBOSE=false
 PREFIX_OVERRIDE=""
+OS_OVERRIDE=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --prefix)  PREFIX_OVERRIDE="$2"; shift 2 ;;
     --verbose) VERBOSE=true; shift ;;
+    --os)      OS_OVERRIDE="$2"; shift 2 ;;
     *) echo "ERROR: Unknown argument: $1" >&2; exit 1 ;;
   esac
 done
@@ -35,11 +37,15 @@ done
 # ---------------------------------------------------------------------------
 # Detect platform and prefix
 # ---------------------------------------------------------------------------
-case "$(uname -s)" in
-  MINGW*|MSYS*|CYGWIN*) OS="windows" ;;
-  Linux*)                OS="linux"   ;;
-  *) echo "ERROR: Unsupported platform." >&2; exit 1 ;;
-esac
+if [[ -n "${OS_OVERRIDE}" ]]; then
+  OS="${OS_OVERRIDE}"
+else
+  case "$(uname -s)" in
+    MINGW*|MSYS*|CYGWIN*) OS="windows" ;;
+    Linux*)                OS="linux"   ;;
+    *) echo "ERROR: Unsupported platform." >&2; exit 1 ;;
+  esac
+fi
 
 if [[ -n "${PREFIX_OVERRIDE}" ]]; then
   PREFIX="${PREFIX_OVERRIDE}"
