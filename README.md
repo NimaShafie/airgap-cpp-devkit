@@ -11,33 +11,47 @@ Tools install to system-wide or per-user paths depending on available privileges
 
 ## Quick Start
 
-**Windows — double-click `Launch DevKit Manager.bat`** in the repo folder.
+### Step 1 — Clone the repo (first time only)
 
-**Terminal (Windows Git Bash or Linux):**
 ```bash
 git clone <this-repo-url>
 cd airgap-cpp-devkit
 git submodule update --init --recursive
+```
+
+### Step 2 — Start the DevKit Manager
+
+**Windows (Git Bash):**
+> Open **Git Bash**, `cd` to the repo folder, then run:
+```bash
 bash launch.sh
 ```
 
-Either way, the **DevKit Manager** web UI opens at `http://127.0.0.1:8080`.
-It finds Python on your machine, starts the local server, and opens the browser automatically.
+**Linux:**
+> Open a terminal, `cd` to the repo folder, then run:
+```bash
+bash launch.sh
+```
 
-Once the browser opens:
+The script finds Python, starts a local web server, and opens
+**`http://127.0.0.1:8080`** in your browser automatically.
+
+> Keep the terminal open while you use the DevKit Manager — it is the server.
+> Press **Ctrl+C** to stop it when you are done.
+
+### Step 3 — Install tools
 
 1. Pick a **profile** to install a curated set in one click (recommended):
    - **C++ Developer** — clang, cmake, python, conan, VS Code extensions, sqlite, 7zip
    - **DevOps** — cmake, python, conan, sqlite, 7zip
    - **Minimal** — required tools only (clang, cmake, python, style-formatter)
    - **Full** — everything
-2. Or click **Install** next to individual tools to install them one at a time.
-3. Live output streams directly in the terminal panel on the right.
-4. To remove a tool, click the **✕** button on any installed tool card.
+2. Or click **Install** next to any individual tool.
+3. To remove a tool later, click the **✕** button on its card.
 
-> **No Python 3.8+?** `launch.sh` automatically falls back to the CLI wizard.
-> You can also run it directly: `bash install-cli.sh`
-> Use `install-cli.sh` for headless/CI installs (`--yes --profile cpp-dev`) or when no browser is available.
+> **No Python 3.8+?** `launch.sh` falls back to the interactive CLI wizard automatically.
+> You can also invoke it directly: `bash install-cli.sh`
+> Use `install-cli.sh` for headless/CI installs: `bash install-cli.sh --yes --profile cpp-dev`
 
 ---
 
