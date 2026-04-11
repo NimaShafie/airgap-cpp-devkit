@@ -18,32 +18,23 @@ git submodule update --init --recursive
 bash launch.sh
 ```
 
-`launch.sh` is the single entry point. It finds Python on your machine,
-launches the **DevKit Manager** web UI at `http://127.0.0.1:8080`, and opens
-it in your default browser automatically.
+`launch.sh` starts the **DevKit Manager** — a local web UI for installing and
+managing all devkit tools. It finds Python on your machine, starts the server,
+and opens `http://127.0.0.1:8080` in your browser automatically.
 
-### What to do once the browser opens
+Once the browser opens:
 
-1. Review the **dashboard** — each tool shows installed / not-installed status.
-2. Pick a **profile** to install a curated set in one click:
+1. Pick a **profile** to install a curated set in one click (recommended):
    - **C++ Developer** — clang, cmake, python, conan, VS Code extensions, sqlite, 7zip
    - **DevOps** — cmake, python, conan, sqlite, 7zip
    - **Minimal** — required tools only (clang, cmake, python, style-formatter)
    - **Full** — everything
-3. Or click **Install** on individual tools as needed.
-4. Watch the live output stream in the terminal panel on the right.
+2. Or click **Install** next to individual tools to install them one at a time.
+3. Live output streams directly in the terminal panel on the right.
 
-### No Python? Use the CLI fallback
-
-`launch.sh` detects missing Python automatically and offers to fall back.
-You can also force it directly:
-
-```bash
-bash install.sh
-```
-
-`install.sh` is a fully interactive wizard — same tools, same profiles,
-no browser required. See [CLI Installer](#cli-installer) below.
+> **No Python 3.8+?** `launch.sh` automatically falls back to the CLI wizard.
+> You can also run it directly: `bash install.sh`
+> Use `install.sh` for headless/CI installs (`--yes --profile cpp-dev`) or when no browser is available.
 
 ---
 
