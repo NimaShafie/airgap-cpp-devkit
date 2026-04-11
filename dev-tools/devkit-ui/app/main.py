@@ -606,7 +606,7 @@ async def run_tests(verbose: bool = False):
     """Stream output of tests/run-tests.sh."""
     async def stream():
         yield "data: Running smoke tests...\n\n"
-        cmd = ["bash", "tests/run-tests.sh", "--os", OS]
+        cmd = ["bash", "tests/run-tests.sh", "--os", OS, "--prefix", _to_bash_path(_current_prefix())]
         if verbose:
             cmd.append("--verbose")
         try:
