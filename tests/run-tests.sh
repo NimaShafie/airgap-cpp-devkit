@@ -64,11 +64,13 @@ ENV_FILE="${PREFIX}/env.sh"
 PASS=0
 FAIL=0
 SKIP=0
+NA=0
 
 _sep() { printf '%s\n' "--------------------------------------------------------------------------------"; }
 _ok()   { printf "  %-50s [OK]\n"   "$1"; (( PASS++ )) || true; }
 _fail() { printf "  %-50s [FAIL]\n" "$1" >&2; (( FAIL++ )) || true; }
 _skip() { printf "  %-50s [SKIP]\n" "$1"; (( SKIP++ )) || true; }
+_na()   { printf "  %-50s [N/A]\n"  "$1"; (( NA++   )) || true; }
 
 _check_bin() {
   local label="$1" cmd="$2"
@@ -147,7 +149,7 @@ echo "==========================================================================
 echo "  airgap-cpp-devkit -- Smoke Tests"
 echo "================================================================================"
 echo ""
-echo "  Platform : ${OS}"
+echo "  Platform : ${OS}  (only ${OS} tests will be run; others are marked N/A)"
 echo "  Prefix   : ${PREFIX}"
 echo "  Date     : $(date '+%Y-%m-%d %H:%M:%S')"
 echo ""
@@ -172,8 +174,8 @@ if [[ "${OS}" == "linux" ]]; then
   _check_bin_receipt "lcov 2.4" "lcov" lcov    --version
   _check_bin_receipt "genhtml"  "lcov" genhtml --version
 else
-  _skip "lcov (Linux only)"
-  _skip "genhtml (Linux only)"
+  _na "lcov (Linux only)"
+  _na "genhtml (Linux only)"
 fi
 
 # ---------------------------------------------------------------------------
@@ -250,7 +252,7 @@ if [[ "${OS}" == "windows" ]]; then
   SERVY_BIN="${PREFIX}/servy/servy-cli.exe"
   [[ -f "${SERVY_BIN}" ]] && _ok "servy-cli.exe" || _skip "servy (not installed)"
 else
-  _skip "servy (Windows only)"
+  _na "servy (Windows only)"
 fi
 
 # ---------------------------------------------------------------------------
@@ -301,9 +303,12 @@ echo "==========================================================================
 echo "  Results"
 echo "================================================================================"
 echo ""
-printf "  Passed : %d\n" "${PASS}"
-printf "  Failed : %d\n" "${FAIL}"
-printf "  Skipped: %d\n" "${SKIP}"
+printf "  Platform : %s\n" "${OS}"
+echo ""
+printf "  Passed   : %d\n"  "${PASS}"
+printf "  Failed   : %d\n"  "${FAIL}"
+printf "  Skipped  : %-4d  (not installed -- run the installer first)\n" "${SKIP}"
+printf "  N/A      : %-4d  (not applicable on %s)\n" "${NA}" "${OS}"
 echo ""
 
 if [[ "${FAIL}" -gt 0 ]]; then
