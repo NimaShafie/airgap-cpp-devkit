@@ -12,6 +12,9 @@ import shutil
 import subprocess
 import sys
 import zipfile
+import hashlib
+import time
+import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -30,6 +33,7 @@ REPO_ROOT = APP_DIR.parent.parent.parent  # app/ -> devkit-ui/ -> dev-tools/ -> 
 TEMPLATES_DIR = APP_DIR / "templates"
 STATIC_DIR = APP_DIR / "static"
 USER_PACKAGES_DIR = REPO_ROOT / "user-packages"
+STAGING_DIR = REPO_ROOT / "user-packages" / ".staging"
 
 
 def _detect_os() -> str:
@@ -266,6 +270,30 @@ def get_submodule_status() -> dict:
 # ---------------------------------------------------------------------------
 # Receipt reader
 # ---------------------------------------------------------------------------
+def _normalise_date(raw: str) -> str:
+    """Convert various date formats to MM/DD/YYYY HH:mm for display."""
+    if not raw:
+        return raw
+    for fmt in (
+        "%m/%d/%Y %H:%M",             # already in target format
+        "%Y%m%d%H%M",                 # receipt file: date +%Y%m%d%H%M
+        "%a %b %d %H:%M:%S %Z %Y",   # Sat Apr 12 18:07:00 UTC 2025
+        "%a %b %d %H:%M:%S %Y",       # Sat Apr 12 18:07:00 2025
+        "%a %b  %d %H:%M:%S %Y",      # single-digit day: Sat Apr  5 18:07:00 2025
+        "%Y-%m-%dT%H:%M:%SZ",         # ISO with Z
+        "%Y-%m-%dT%H:%M:%S",          # ISO no Z
+        "%Y-%m-%d %H:%M:%S",
+        "%Y-%m-%d %H:%M",
+        "%Y-%m-%d",
+    ):
+        try:
+            dt = datetime.strptime(raw.strip(), fmt)
+            return dt.strftime("%m/%d/%Y %H:%M")
+        except ValueError:
+            pass
+    return raw   # unknown format — return as-is
+
+
 def _parse_receipt(path: Path) -> dict:
     data = {"status": "not_installed", "version": None, "date": None,
             "install_path": None, "user": None, "hostname": None, "log_file": None,
@@ -282,7 +310,7 @@ def _parse_receipt(path: Path) -> dict:
             elif line.startswith("Status"):
                 data["status"] = line.split(":", 1)[-1].strip()
             elif line.startswith("Date"):
-                data["date"] = line.split(":", 1)[-1].strip()
+                data["date"] = _normalise_date(line.split(":", 1)[-1].strip())
             elif line.startswith("Install path"):
                 data["install_path"] = line.split(":", 1)[-1].strip()
             elif line.startswith("User"):
@@ -296,10 +324,59 @@ def _parse_receipt(path: Path) -> dict:
     return data
 
 
+def _load_manifest(tool: dict) -> dict | None:
+    """Return a normalised manifest dict for display, or None if nothing useful found.
+
+    User packages have wizard-generated manifests with ``zip_sha256`` and ``files[]``.
+    Built-in tools have bespoke manifests; we extract any sha256 values we can find
+    and return them as a flat ``checksums`` list so the UI has a uniform structure.
+    """
+    setup = tool.get("setup", "")
+    if not setup:
+        return None
+    manifest_path = REPO_ROOT / Path(setup).parent / "manifest.json"
+    if not manifest_path.exists():
+        return None
+    try:
+        raw = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+
+    # Wizard-generated user-package manifest — already in the right shape
+    if raw.get("zip_sha256") or raw.get("files"):
+        return raw
+
+    # Built-in manifest — walk the object tree and collect all sha256 leaf values
+    checksums: list[dict] = []
+
+    def _walk(obj: object, path: str) -> None:
+        if isinstance(obj, dict):
+            for k, v in obj.items():
+                _walk(v, f"{path}.{k}" if path else k)
+        elif isinstance(obj, str) and len(obj) == 64 and all(c in "0123456789abcdef" for c in obj):
+            # Looks like a SHA256 hex string
+            label = path.split(".")[-2] if "." in path else path
+            checksums.append({"path": path, "label": label, "sha256": obj})
+
+    _walk(raw, "")
+    if not checksums:
+        return None
+    return {"files": [{"path": c["label"], "sha256": c["sha256"]} for c in checksums]}
+
+
+_RECEIPT_FILENAME        = "INSTALL_LOG.txt"
+_RECEIPT_FILENAME_LEGACY = "INSTALL_RECEIPT.txt"
+
+
 def _get_receipt_path(receipt_name: str) -> Path:
-    # Handle nested names like "toolchains/clang"
+    """Return the receipt path, preferring the new name but falling back to the legacy name."""
     clean = receipt_name.replace("/", os.sep)
-    return _current_prefix() / clean / "INSTALL_RECEIPT.txt"
+    tool_dir = _current_prefix() / clean
+    new_path = tool_dir / _RECEIPT_FILENAME
+    if new_path.exists():
+        return new_path
+    # Fall back to legacy name (existing installations)
+    return tool_dir / _RECEIPT_FILENAME_LEGACY
 
 
 def get_tool_status(tool: dict) -> dict:
@@ -308,12 +385,17 @@ def get_tool_status(tool: dict) -> dict:
     installed = receipt["status"] == "success"
     # Platform check
     available = tool["platform"] == "both" or tool["platform"] == OS
+    setup_rel = tool.get("setup", "")
+    uploaded_at_raw = tool.get("uploaded_at", "")
     return {
         **tool,
         "installed": installed,
         "available": available,
         "receipt": receipt,
         "receipt_path": str(receipt_path),
+        "setup_abs": str(REPO_ROOT / setup_rel) if setup_rel else "",
+        "manifest": _load_manifest(tool),
+        "uploaded_at_display": _normalise_date(uploaded_at_raw) if uploaded_at_raw else "",
     }
 
 
@@ -476,7 +558,7 @@ async def api_tool(tool_id: str):
     return get_tool_status(tool)
 
 
-@app.post("/install/{tool_id:path}")
+@app.get("/install/{tool_id:path}")
 async def install_tool(tool_id: str, rebuild: bool = False):
     tool = next((t for t in TOOLS if t["id"] == tool_id), None)
     if not tool:
@@ -514,7 +596,7 @@ async def install_tool(tool_id: str, rebuild: bool = False):
     return StreamingResponse(stream(), media_type="text/event-stream")
 
 
-@app.post("/install-profile/{profile_id}")
+@app.get("/install-profile/{profile_id}")
 async def install_profile(profile_id: str, rebuild: bool = False):
     profile = PROFILES.get(profile_id)
     if not profile:
@@ -626,90 +708,307 @@ async def uninstall_tool(tool_id: str):
     return StreamingResponse(stream(), media_type="text/event-stream")
 
 
-@app.post("/packages/upload")
-async def upload_package(file: UploadFile = File(...)):
-    """Accept a .zip bundle (devkit.json + setup.sh) and install it to user-packages/."""
+# ---------------------------------------------------------------------------
+# Package upload helpers
+# ---------------------------------------------------------------------------
+
+def _sha256_bytes(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
+def _sha256_file(path: Path) -> str:
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(65536), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def _cleanup_staging() -> None:
+    """Remove staging dirs older than 1 hour."""
+    if not STAGING_DIR.exists():
+        return
+    cutoff = time.time() - 3600
+    for d in STAGING_DIR.iterdir():
+        if d.is_dir():
+            try:
+                if d.stat().st_mtime < cutoff:
+                    shutil.rmtree(str(d), ignore_errors=True)
+            except Exception:
+                pass
+
+
+def _detect_package_type(dest: Path) -> str:
+    """Detect the primary content type of an extracted package directory."""
+    exes = [f for f in dest.rglob("*.exe") if f.is_file()]
+    if exes:
+        return "installer_exe" if len(exes) == 1 else "portable_exe"
+    return "files"
+
+
+def _generate_setup_sh(dest: Path, tool_id: str, name: str, version: str) -> None:
+    """Write a template setup.sh appropriate for the package content."""
+    pkg_type = _detect_package_type(dest)
+
+    receipt_block = [
+        "{",
+        '  echo "Status: success"',
+        f'  echo "Version: {version}"',
+        '  echo "Date: $(date +%Y%m%d%H%M)"',
+        f'  echo "Install path: $TOOL_DIR"',
+        f'}} > "$TOOL_DIR/{_RECEIPT_FILENAME}"',
+    ]
+
+    header = [
+        "#!/usr/bin/env bash",
+        f"# setup.sh — generated by airgap DevKit Manager for {name}",
+        "# Edit this script to customise how the tool is installed.",
+        "set -euo pipefail",
+        "",
+        'SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"',
+        'REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"',
+        "",
+        'source "$REPO_ROOT/scripts/install-mode.sh"',
+        "",
+        'PREFIX="$DEFAULT_PREFIX"',
+        "REBUILD=false",
+        "",
+        "while [[ $# -gt 0 ]]; do",
+        "  case $1 in",
+        '    --prefix) PREFIX="$2"; shift 2 ;;',
+        "    --rebuild) REBUILD=true; shift ;;",
+        "    *) shift ;;",
+        "  esac",
+        "done",
+        "",
+        f'TOOL_DIR="$PREFIX/{tool_id}"',
+        'mkdir -p "$TOOL_DIR"',
+        "",
+    ]
+
+    if pkg_type == "installer_exe":
+        # Single .exe — find it and run it silently, then write receipt
+        exes = sorted(f for f in dest.rglob("*.exe") if f.is_file())
+        exe_name = exes[0].name if exes else "*.exe"
+        body = [
+            f'# This package contains a Windows installer: {exe_name}',
+            "# The installer is run silently below.",
+            "# Adjust flags if your installer uses a different silent-install switch.",
+            "# Common switches:  /S  /silent  /quiet  /norestart  /sp-  /verysilent",
+            "#",
+            "# To install to a custom location add something like:",
+            f'#   /D="$(cygpath -w "$TOOL_DIR")"',
+            "",
+            f'INSTALLER="$SCRIPT_DIR/{exe_name}"',
+            'if [[ ! -f "$INSTALLER" ]]; then',
+            f'  echo "✗ Installer not found: $INSTALLER" >&2; exit 1',
+            "fi",
+            "",
+            f'echo "Running {exe_name} silently…"',
+            '# Run via cmd.exe so Windows UAC / installer APIs work correctly',
+            'cmd.exe /c "$(cygpath -w "$INSTALLER")" /S',
+            "",
+            "# If the installer places files in a known directory, copy or symlink them",
+            "# into TOOL_DIR so this devkit can track them.",
+            "# Example:",
+            f'#   cp -r "/c/Program Files/{name}/"* "$TOOL_DIR/"',
+        ]
+    else:
+        body = [
+            "# TODO: customise the installation steps below.",
+            "# By default all package files are copied to the install directory.",
+            'cp -r "$SCRIPT_DIR/"* "$TOOL_DIR/"',
+        ]
+
+    lines = header + body + [""] + receipt_block + ["", f'echo "✓ {name} installed to $TOOL_DIR"']
+    setup_path = dest / "setup.sh"
+    setup_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    try:
+        setup_path.chmod(0o755)
+    except Exception:
+        pass  # chmod is a no-op on Windows; Git Bash will still run it
+
+
+# ---------------------------------------------------------------------------
+# Package upload endpoints — 2-step guided wizard
+# ---------------------------------------------------------------------------
+
+@app.post("/packages/preflight")
+async def packages_preflight(file: UploadFile = File(...)):
+    """Step 1: Upload zip, analyse contents, return pre-fill hints for the metadata form."""
     if not (file.filename or "").lower().endswith(".zip"):
         return JSONResponse({"error": "Only .zip files are accepted"}, status_code=400)
 
     content = await file.read()
+    if len(content) > 200 * 1024 * 1024:
+        return JSONResponse({"error": "Zip must be under 200 MB"}, status_code=400)
 
-    # --- peek at devkit.json without fully extracting ---
     try:
-        zf_peek = zipfile.ZipFile(io.BytesIO(content))
+        with zipfile.ZipFile(io.BytesIO(content)) as zf:
+            names = zf.namelist()
     except zipfile.BadZipFile:
         return JSONResponse({"error": "Invalid or corrupt zip file"}, status_code=400)
 
-    with zf_peek as zf:
-        names = zf.namelist()
-        # Support both flat zips (devkit.json at root) and single-subdirectory zips
-        manifest_name = next(
-            (n for n in names if n == "devkit.json"
-             or (n.endswith("/devkit.json") and n.count("/") == 1)),
-            None,
-        )
-        if not manifest_name:
-            return JSONResponse({"error": "devkit.json not found in zip root"}, status_code=400)
+    for name in names:
+        p = Path(name)
+        if p.is_absolute() or ".." in p.parts:
+            return JSONResponse({"error": f"Unsafe path in zip: {name}"}, status_code=400)
+
+    _cleanup_staging()
+
+    staging_id = str(uuid.uuid4())
+    staging_path = STAGING_DIR / staging_id
+    staging_path.mkdir(parents=True, exist_ok=True)
+
+    zip_sha256 = _sha256_bytes(content)
+    (staging_path / "upload.zip").write_bytes(content)
+
+    # Extract to contents/
+    contents_base = staging_path / "contents"
+    with zipfile.ZipFile(io.BytesIO(content)) as zf:
+        zf.extractall(str(contents_base))
+
+    # Detect single top-level wrapper directory (common zip convention)
+    top = [p for p in contents_base.iterdir()]
+    contents_root = top[0] if len(top) == 1 and top[0].is_dir() else contents_base
+
+    # Record resolved root so finalize can find it
+    (staging_path / "contents_root.txt").write_text(str(contents_root), encoding="utf-8")
+
+    # Build file inventory with SHA256s
+    file_hashes: dict = {}
+    for f in sorted(contents_root.rglob("*")):
+        if f.is_file():
+            rel = str(f.relative_to(contents_root)).replace("\\", "/")
+            file_hashes[rel] = _sha256_file(f)
+
+    # Pre-fill from existing devkit.json if present
+    detected: dict = {}
+    devkit_path = contents_root / "devkit.json"
+    if devkit_path.exists():
         try:
-            manifest_data = json.loads(zf.read(manifest_name).decode("utf-8"))
-        except Exception as exc:
-            return JSONResponse({"error": f"devkit.json is not valid JSON: {exc}"}, status_code=400)
+            existing = json.loads(devkit_path.read_text(encoding="utf-8"))
+            for field in ("id", "name", "version", "description", "category", "platform", "estimate"):
+                if existing.get(field):
+                    detected[field] = existing[field]
+        except Exception:
+            pass
 
-    # --- validate required fields ---
-    missing = [f for f in _REQUIRED_MANIFEST_FIELDS if not str(manifest_data.get(f, "")).strip()]
-    if missing:
-        return JSONResponse({"error": f"devkit.json missing required fields: {', '.join(missing)}"}, status_code=400)
+    return {
+        "staging_id": staging_id,
+        "original_filename": file.filename,
+        "zip_sha256": zip_sha256,
+        "files": sorted(file_hashes.keys()),
+        "file_hashes": file_hashes,
+        "has_setup_sh": (contents_root / "setup.sh").exists(),
+        "detected": detected,
+    }
 
-    tool_id = manifest_data["id"].strip()
 
-    # --- reject id conflicts with built-in tools ---
+@app.post("/packages/finalize")
+async def packages_finalize(request: Request):
+    """Step 2: Generate devkit.json / setup.sh / manifest.json from form data and activate the package."""
+    body = await request.json()
+
+    # Validate staging session
+    raw_sid = re.sub(r"[^\w\-]", "", str(body.get("staging_id", "")))
+    staging_path = STAGING_DIR / raw_sid
+    if not staging_path.exists():
+        return JSONResponse(
+            {"error": "Upload session expired — please re-upload the zip file"},
+            status_code=400,
+        )
+
+    # Validate required form fields
+    for field in ("name", "version", "description", "category", "platform"):
+        if not str(body.get(field, "")).strip():
+            return JSONResponse({"error": f"'{field}' is required"}, status_code=400)
+
+    # Normalise tool ID
+    raw_id = str(body.get("id", body.get("name", ""))).strip()
+    tool_id = re.sub(r"[^a-z0-9\-]", "-", raw_id.lower()).strip("-")
+    tool_id = re.sub(r"-{2,}", "-", tool_id)
+    if not tool_id:
+        return JSONResponse({"error": "Package ID is invalid"}, status_code=400)
+
     builtin_ids = {t["id"] for t in TOOLS if t.get("source") == "builtin"}
     if tool_id in builtin_ids:
         return JSONResponse(
-            {"error": f"id '{tool_id}' conflicts with a built-in tool — choose a different id"},
+            {"error": f"ID '{tool_id}' conflicts with a built-in tool"},
             status_code=409,
         )
 
-    # --- safe destination directory ---
-    safe_id = re.sub(r"[^\w\-]", "-", tool_id)
-    dest_dir = USER_PACKAGES_DIR / safe_id
+    # Resolve staging contents
+    cr_file = staging_path / "contents_root.txt"
+    if not cr_file.exists():
+        return JSONResponse({"error": "Staging data missing — please re-upload"}, status_code=400)
+    contents_root = Path(cr_file.read_text(encoding="utf-8").strip())
 
-    # --- extract, validating paths ---
-    prefix = manifest_name[: -len("devkit.json")]  # "" or "subdir/"
-    with zipfile.ZipFile(io.BytesIO(content)) as zf:
-        for member in zf.namelist():
-            rel = member[len(prefix):] if prefix and member.startswith(prefix) else member
-            if not rel:
-                continue
-            p = Path(rel)
-            if p.is_absolute() or ".." in p.parts:
-                return JSONResponse({"error": f"Unsafe path in zip: {member}"}, status_code=400)
+    # Move contents to final destination
+    dest = USER_PACKAGES_DIR / tool_id
+    if dest.exists():
+        shutil.rmtree(str(dest))
+    shutil.copytree(str(contents_root), str(dest))
+    shutil.rmtree(str(staging_path), ignore_errors=True)
 
-        if dest_dir.exists():
-            shutil.rmtree(str(dest_dir))
-        dest_dir.mkdir(parents=True, exist_ok=True)
+    name = body["name"].strip()
+    version = body["version"].strip()
 
-        for member in zf.namelist():
-            rel = member[len(prefix):] if prefix and member.startswith(prefix) else member
-            if not rel:
-                continue
-            dest_path = dest_dir / rel
-            if member.endswith("/"):
-                dest_path.mkdir(parents=True, exist_ok=True)
-            else:
-                dest_path.parent.mkdir(parents=True, exist_ok=True)
-                dest_path.write_bytes(zf.read(member))
+    import getpass as _getpass
+    try:
+        uploader = _getpass.getuser()
+    except Exception:
+        uploader = os.environ.get("USERNAME") or os.environ.get("USER") or "unknown"
 
-    # --- rewrite setup path to be repo-root-relative ---
-    setup_filename = Path(manifest_data.get("setup", "setup.sh")).name
-    manifest_data["setup"] = f"user-packages/{safe_id}/{setup_filename}"
-    manifest_data["source"] = "user"
-    (dest_dir / "devkit.json").write_text(
-        json.dumps(manifest_data, indent=2, ensure_ascii=False), encoding="utf-8"
+    # Write devkit.json from form data (always authoritative over any existing one)
+    devkit: dict = {
+        "id": tool_id,
+        "name": name,
+        "version": version,
+        "category": body["category"].strip(),
+        "platform": body["platform"].strip(),
+        "description": body["description"].strip(),
+        "setup": f"user-packages/{tool_id}/setup.sh",
+        "receipt_name": tool_id,
+        "uses_prebuilt": False,
+        "uploaded_by": uploader,
+        "uploaded_at": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+    }
+    if body.get("estimate", "").strip():
+        devkit["estimate"] = body["estimate"].strip()
+    (dest / "devkit.json").write_text(
+        json.dumps(devkit, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
+
+    # Generate setup.sh template if the zip didn't include one
+    if not (dest / "setup.sh").exists():
+        _generate_setup_sh(dest, tool_id, name, version)
+
+    # Write manifest.json with file checksums
+    file_hashes: dict = body.get("file_hashes", {})
+    manifest = {
+        "tool": tool_id,
+        "version": version,
+        "zip_sha256": body.get("zip_sha256", ""),
+        "generated_by": "airgap DevKit Manager",
+        "files": [{"path": p, "sha256": h} for p, h in sorted(file_hashes.items())],
+    }
+    (dest / "manifest.json").write_text(
+        json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
     )
 
     _reload_tools()
-    return {"ok": True, "id": tool_id, "name": manifest_data["name"]}
+    return {"ok": True, "id": tool_id, "name": name}
+
+
+@app.delete("/packages/staging/{staging_id}")
+async def cancel_staging(staging_id: str):
+    """Clean up a preflight staging directory when the user cancels the wizard."""
+    safe = re.sub(r"[^\w\-]", "", staging_id)
+    staging_path = STAGING_DIR / safe
+    if staging_path.exists():
+        shutil.rmtree(str(staging_path), ignore_errors=True)
+    return {"ok": True}
 
 
 @app.delete("/packages/{tool_id:path}")
@@ -728,6 +1027,171 @@ async def delete_package(tool_id: str):
 
     _reload_tools()
     return {"ok": True, "id": tool_id}
+
+
+# ---------------------------------------------------------------------------
+# Sub-package install / status (pip packages, VS Code extensions)
+# ---------------------------------------------------------------------------
+
+def _find_devkit_python(prefix: Path) -> Optional[str]:
+    for p in [
+        prefix / "python" / "python.exe",
+        prefix / "python" / "bin" / "python3",
+        prefix / "python" / "bin" / "python",
+    ]:
+        if p.exists():
+            return str(p)
+    return None
+
+
+def _pip_vendor_dir() -> Optional[Path]:
+    d = REPO_ROOT / "languages" / "python" / "pip-packages"
+    return d if d.exists() else None
+
+
+@app.get("/api/subpkg-status")
+async def subpkg_status(tool_id: str):
+    """Return per-item install status for a plugin tool (pip packages / VS Code extensions)."""
+    tool = next((t for t in TOOLS if t["id"] == tool_id), None)
+    if not tool:
+        return JSONResponse({"error": "Tool not found"}, status_code=404)
+
+    prefix = _current_prefix()
+
+    if tool_id == "pip-packages":
+        python = _find_devkit_python(prefix)
+        if not python:
+            return {"available": False, "status": {},
+                    "error": "DevKit Python not installed — install it from the Languages section first"}
+        try:
+            r = subprocess.run(
+                [python, "-m", "pip", "list", "--format=json"],
+                capture_output=True, text=True, timeout=20,
+            )
+            installed = {p["name"].lower() for p in json.loads(r.stdout or "[]")}
+            return {
+                "available": True,
+                "status": {p["name"]: p["name"].lower() in installed
+                           for p in tool.get("packages", [])},
+            }
+        except Exception as exc:
+            return JSONResponse({"error": str(exc)}, status_code=500)
+
+    if tool_id == "vscode-extensions":
+        try:
+            r = subprocess.run(
+                ["code", "--list-extensions"],
+                capture_output=True, text=True, timeout=10,
+            )
+            installed = {x.strip().lower() for x in r.stdout.splitlines() if x.strip()}
+            return {
+                "available": True,
+                "status": {e["id"]: e["id"].lower() in installed
+                           for e in tool.get("extensions", [])},
+            }
+        except FileNotFoundError:
+            return {"available": False, "status": {},
+                    "error": "'code' not found on PATH — is VS Code installed?"}
+        except Exception as exc:
+            return JSONResponse({"error": str(exc)}, status_code=500)
+
+    return {"available": True, "status": {}}
+
+
+@app.get("/subpkg-install")
+async def subpkg_install_stream(tool_id: str, pkg_id: str, uninstall: bool = False):
+    """SSE stream for installing/uninstalling a single sub-package item."""
+    tool = next((t for t in TOOLS if t["id"] == tool_id), None)
+    if not tool:
+        return JSONResponse({"error": "Tool not found"}, status_code=404)
+
+    prefix = _current_prefix()
+    verb = "Uninstalling" if uninstall else "Installing"
+
+    async def stream():
+        # ── pip packages ──────────────────────────────────────────────────────
+        if tool_id == "pip-packages":
+            python = _find_devkit_python(prefix)
+            if not python:
+                yield "data: ✗ DevKit Python not installed — install it from the Languages section first\n\n"
+                yield "data: DONE:failed\n\n"
+                return
+            if uninstall:
+                cmd = [python, "-m", "pip", "uninstall", "-y", pkg_id]
+            else:
+                vendor = _pip_vendor_dir()
+                cmd = [python, "-m", "pip", "install", pkg_id]
+                if vendor:
+                    cmd += ["--no-index", f"--find-links={vendor}"]
+            yield f"data: {verb} {pkg_id}…\n\n"
+
+        # ── VS Code extensions ────────────────────────────────────────────────
+        elif tool_id == "vscode-extensions":
+            ext = next((e for e in tool.get("extensions", []) if e["id"] == pkg_id), None)
+            if not ext:
+                yield f"data: ✗ Extension '{pkg_id}' not found in manifest\n\n"
+                yield "data: DONE:failed\n\n"
+                return
+            if uninstall:
+                cmd = ["code", "--uninstall-extension", pkg_id]
+            else:
+                # Prefer a local .vsix file if available
+                vsix_dir = REPO_ROOT / "dev-tools" / "vscode-extensions"
+                short = pkg_id.split(".")[-1].lower()
+                vsix = next((f for f in vsix_dir.glob("*.vsix")
+                             if short in f.name.lower()), None)
+                cmd = (["code", "--install-extension", str(vsix)]
+                       if vsix else ["code", "--install-extension", pkg_id])
+            yield f"data: {verb} {ext.get('name', pkg_id)}…\n\n"
+
+        else:
+            yield f"data: ✗ Sub-package operations not supported for '{tool_id}'\n\n"
+            yield "data: DONE:failed\n\n"
+            return
+
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT,
+                cwd=_to_bash_path(REPO_ROOT),
+            )
+            async for line in proc.stdout:
+                text = line.decode("utf-8", errors="replace").rstrip()
+                if text:
+                    yield f"data: {text}\n\n"
+            await proc.wait()
+            if proc.returncode == 0:
+                yield f"data: ✓ {pkg_id} {'removed' if uninstall else 'installed'}\n\n"
+                yield "data: DONE:success\n\n"
+            else:
+                yield f"data: ✗ Failed (exit {proc.returncode})\n\n"
+                yield "data: DONE:failed\n\n"
+        except FileNotFoundError as exc:
+            yield f"data: ✗ Command not found: {exc}\n\n"
+            yield "data: DONE:failed\n\n"
+        except Exception as exc:
+            yield f"data: ERROR: {exc}\n\n"
+            yield "data: DONE:failed\n\n"
+
+    return StreamingResponse(stream(), media_type="text/event-stream")
+
+
+@app.get("/open-file")
+async def open_file(path: str):
+    """Open a file in the OS default application (Notepad, gedit, etc.)."""
+    file_path = Path(path)
+    if not file_path.exists():
+        return JSONResponse({"error": f"File not found: {path}"}, status_code=404)
+    try:
+        if OS == "windows":
+            os.startfile(str(file_path))
+        else:
+            subprocess.Popen(["xdg-open", str(file_path)],
+                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return {"ok": True}
+    except Exception as exc:
+        return JSONResponse({"error": str(exc)}, status_code=500)
 
 
 @app.get("/health")

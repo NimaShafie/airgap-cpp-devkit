@@ -171,7 +171,7 @@
     .btn-danger { background: var(--red); border-color: var(--red); color: #fff; }
     .btn-sm { padding: 4px 8px; font-size: 11px; }
 
-    /* Source badges */
+    /* Source badges — repo (built-in) vs custom (user-uploaded) */
     .badge-source-builtin {
       display: inline-flex; align-items: center; gap: 4px;
       font-size: 9px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;
@@ -180,9 +180,39 @@
     }
     .badge-source-user {
       display: inline-flex; align-items: center; gap: 4px;
-      font-size: 9px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;
-      padding: 2px 6px; border-radius: 4px;
-      color: var(--yellow); background: rgba(210,153,34,0.08); border: 1px solid rgba(210,153,34,0.35);
+      font-size: 9px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+      padding: 2px 7px; border-radius: 4px;
+      color: var(--yellow); background: rgba(210,153,34,0.13); border: 1px solid rgba(210,153,34,0.5);
+    }
+
+    /* Add Package wizard steps */
+    .pkg-steps {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 16px; border-bottom: 1px solid var(--border);
+      font-size: 12px; background: var(--bg2);
+    }
+    .pkg-step { display: flex; align-items: center; gap: 6px; color: var(--text2); font-weight: 500; }
+    .pkg-step.active { color: var(--text); }
+    .pkg-step-num {
+      width: 20px; height: 20px; border-radius: 50%;
+      background: var(--bg3); border: 1px solid var(--border);
+      display: inline-flex; align-items: center; justify-content: center; font-size: 10px;
+    }
+    .pkg-step.active .pkg-step-num { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .pkg-step-arrow { color: var(--border); }
+
+    /* Add Package form */
+    .pkg-form-row { margin-bottom: 12px; }
+    .pkg-form-label { display: block; font-size: 11px; color: var(--text2); margin-bottom: 4px; font-weight: 500; }
+    .pkg-form-input {
+      width: 100%; background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 6px; padding: 7px 10px; color: var(--text);
+      font-family: var(--font); font-size: 12px; box-sizing: border-box;
+    }
+    .pkg-form-input:focus { outline: none; border-color: var(--accent); }
+    .pkg-form-note {
+      background: rgba(210,153,34,0.07); border: 1px solid rgba(210,153,34,0.28);
+      border-radius: 6px; padding: 8px 12px; margin-bottom: 12px; font-size: 12px; color: var(--text2);
     }
 
     /* Upload drop zone */
@@ -433,15 +463,18 @@
 
     /* Universal copy-able code block */
     .code-wrap { position: relative; }
-    .code-wrap .terminal { padding-right: 62px; }
-    .code-wrap .copy-btn {
+    .code-wrap .terminal { padding-right: 72px; }   /* room for 1 button */
+    .code-btn-group {
       position: absolute; top: 6px; right: 8px;
+      display: flex; gap: 4px; align-items: flex-start; z-index: 1;
+    }
+    .copy-btn {
       background: rgba(33,38,45,0.95); border: 1px solid var(--border);
       color: var(--text2); cursor: pointer; font-size: 10px;
       padding: 2px 8px; border-radius: 4px; font-family: var(--font);
-      transition: color 0.1s, border-color 0.1s; z-index: 1;
+      transition: color 0.1s, border-color 0.1s; white-space: nowrap;
     }
-    .code-wrap .copy-btn:hover { color: var(--text); border-color: var(--accent); }
+    .copy-btn:hover { color: var(--text); border-color: var(--accent); }
 
     /* Filter bar */
     .filter-bar {
@@ -672,14 +705,6 @@
                 onmouseleave="this.style.borderColor='var(--border)';this.style.color='var(--text2)';this.style.background='var(--bg3)'">
           <span style="color:var(--purple)">▷</span> Full install profile
         </button>
-        <button onclick="openModal('upload-modal')"
-                style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:9px 12px;
-                       color:var(--text2);cursor:pointer;font-family:var(--font);font-size:11px;text-align:left;
-                       transition:all 0.15s;display:flex;align-items:center;gap:8px"
-                onmouseenter="this.style.borderColor='var(--yellow)';this.style.color='var(--text)';this.style.background='rgba(210,153,34,0.06)'"
-                onmouseleave="this.style.borderColor='var(--border)';this.style.color='var(--text2)';this.style.background='var(--bg3)'">
-          <span style="color:var(--yellow)">⬆</span> Add Package
-        </button>
       </div>
     </div>
   </nav>
@@ -712,6 +737,7 @@
       <div class="header-actions" style="flex-shrink:0">
         <button class="btn" onclick="refreshAll()">↺ Refresh</button>
         <button class="btn" onclick="runTests(false)" title="Run smoke tests">Run Tests</button>
+        <button class="btn" onclick="openModal('upload-modal')" title="Upload a custom tool package">⬆ Add Package</button>
         <button class="btn btn-primary" onclick="showProfileModal('cpp-dev')">▷ Install Profile</button>
       </div>
     </div>
@@ -875,16 +901,21 @@
             <span class="badge-category">{{ tool.estimate }}</span>
           {% endif %}
           {% if tool.source == 'user' %}
-            <span class="badge-source-user" title="Uploaded via Add Package">⬆ custom</span>
+            <span class="badge-source-user" title="User-uploaded package">⬆ custom</span>
           {% else %}
-            <span class="badge-source-builtin" title="Shipped with airgap-cpp-devkit">built-in</span>
+            <span class="badge-source-builtin" title="Shipped with the repo">◈ repo</span>
           {% endif %}
         </div>
 
         <div class="tool-footer">
           <div class="tool-date">
             {% if tool.installed and tool.receipt.date %}
-              {{ tool.receipt.date[:10] }}
+              {{ tool.receipt.date }}
+            {% elif tool.source == 'user' and tool.uploaded_at is defined and tool.uploaded_at %}
+              <span title="Upload date">⬆ {{ tool.uploaded_at_display or tool.uploaded_at[:10] }}</span>
+              {% if tool.uploaded_by is defined and tool.uploaded_by %}
+                <span style="color:var(--text2);margin-left:2px">by {{ tool.uploaded_by }}</span>
+              {% endif %}
             {% elif tool.installed %}
               Installed
             {% else %}
@@ -971,6 +1002,8 @@
       <div class="terminal">Loading...</div>
     </div>
     <div class="modal-footer">
+      <button class="btn" id="receipt-delete-btn"    style="display:none;margin-right:auto;color:var(--red);border-color:rgba(248,81,73,0.4)">🗑 Remove Package</button>
+      <button class="btn btn-danger" id="receipt-uninstall-btn" style="display:none">✕ Uninstall</button>
       <button class="btn" onclick="closeModal('receipt-modal')">Close</button>
     </div>
   </div>
@@ -1046,36 +1079,119 @@
   </div>
 </div>
 
-<!-- Upload Package Modal -->
+<!-- Add Package Modal (2-step wizard) -->
 <div class="modal-overlay" id="upload-modal">
-  <div class="modal" style="max-width:480px">
+  <div class="modal" style="max-width:520px">
     <div class="modal-header">
       <span class="modal-title">Add Package</span>
-      <button class="modal-close" onclick="closeModal('upload-modal')">✕</button>
+      <button class="modal-close" onclick="_cancelUploadModal()">✕</button>
     </div>
-    <div class="modal-body">
-      <p style="color:var(--text2);font-size:13px;margin:0 0 16px">
-        Upload a <code style="color:var(--accent)">.zip</code> containing
-        <code style="color:var(--accent)">devkit.json</code> and
-        <code style="color:var(--accent)">setup.sh</code>.
-        The package will appear in the tool list immediately.
-      </p>
-      <div class="upload-zone" id="upload-zone" onclick="document.getElementById('pkg-file').click()"
-           ondragover="event.preventDefault();this.classList.add('dragover')"
-           ondragleave="this.classList.remove('dragover')"
-           ondrop="event.preventDefault();this.classList.remove('dragover');handlePackageDrop(event)">
-        <input type="file" id="pkg-file" accept=".zip" onchange="handlePackageSelect(event)">
-        <div id="upload-zone-label">
-          <div style="font-size:28px;margin-bottom:8px">📦</div>
-          <div style="font-size:13px;font-weight:600;color:var(--text)">Drop .zip here or click to browse</div>
-          <div style="font-size:11px;margin-top:4px">devkit.json + setup.sh</div>
-        </div>
+
+    <!-- Step indicator -->
+    <div class="pkg-steps">
+      <div class="pkg-step active" id="pkg-step-ind-1">
+        <span class="pkg-step-num">1</span> Upload
       </div>
-      <div id="upload-status" style="margin-top:12px;font-size:12px;display:none"></div>
+      <div class="pkg-step-arrow">→</div>
+      <div class="pkg-step" id="pkg-step-ind-2">
+        <span class="pkg-step-num">2</span> Details
+      </div>
     </div>
+
+    <div class="modal-body">
+
+      <!-- Step 1: file drop -->
+      <div id="pkg-step1">
+        <p style="color:var(--text2);font-size:13px;margin:0 0 14px">
+          Drop any <code style="color:var(--accent)">.zip</code> of your tool files.
+          The wizard generates <code style="color:var(--accent)">devkit.json</code>,
+          <code style="color:var(--accent)">setup.sh</code>, and a checksum manifest automatically.
+        </p>
+        <div class="upload-zone" id="upload-zone"
+             onclick="document.getElementById('pkg-file').click()"
+             ondragover="event.preventDefault();this.classList.add('dragover')"
+             ondragleave="this.classList.remove('dragover')"
+             ondrop="event.preventDefault();this.classList.remove('dragover');_handlePkgDrop(event)">
+          <input type="file" id="pkg-file" accept=".zip" onchange="_handlePkgSelect(event)">
+          <div id="upload-zone-label">
+            <div style="font-size:28px;margin-bottom:8px">📦</div>
+            <div style="font-size:13px;font-weight:600;color:var(--text)">Drop .zip here or click to browse</div>
+            <div style="font-size:11px;margin-top:4px;color:var(--text2)">Any zip — no special structure required</div>
+          </div>
+        </div>
+        <div id="upload-preflight-status" style="margin-top:10px;font-size:12px;display:none"></div>
+      </div>
+
+      <!-- Step 2: metadata form -->
+      <div id="pkg-step2" style="display:none">
+        <div class="pkg-form-note" id="pkg-setup-note" style="display:none">
+          <span style="color:var(--yellow)">ℹ</span>
+          No <code>setup.sh</code> found — a template will be auto-generated.
+          You can customise it afterwards at
+          <code>user-packages/&lt;id&gt;/setup.sh</code>.
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px" class="pkg-form-row">
+          <div>
+            <label class="pkg-form-label">Name *</label>
+            <input class="pkg-form-input" id="pkg-name" type="text" placeholder="My Tool" oninput="_pkgAutoId()">
+          </div>
+          <div>
+            <label class="pkg-form-label">Version *</label>
+            <input class="pkg-form-input" id="pkg-version" type="text" placeholder="1.0.0">
+          </div>
+        </div>
+        <div class="pkg-form-row">
+          <label class="pkg-form-label">Package ID *
+            <span style="font-weight:400"> — unique slug, lowercase, hyphens only</span>
+          </label>
+          <input class="pkg-form-input" id="pkg-id" type="text" placeholder="my-tool">
+        </div>
+        <div class="pkg-form-row">
+          <label class="pkg-form-label">Description *</label>
+          <input class="pkg-form-input" id="pkg-desc" type="text" placeholder="One-sentence description of what this tool does">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px" class="pkg-form-row">
+          <div>
+            <label class="pkg-form-label">Category *</label>
+            <select class="pkg-form-input" id="pkg-category">
+              <option>Developer Tools</option>
+              <option>Toolchains</option>
+              <option>Build Tools</option>
+              <option>Languages</option>
+              <option>Frameworks</option>
+              <option>Plugins</option>
+            </select>
+          </div>
+          <div>
+            <label class="pkg-form-label">Platform *</label>
+            <select class="pkg-form-input" id="pkg-platform">
+              <option value="both">Both (Windows + Linux)</option>
+              <option value="windows">Windows only</option>
+              <option value="linux">Linux only</option>
+            </select>
+          </div>
+        </div>
+        <div class="pkg-form-row">
+          <label class="pkg-form-label">Est. install time
+            <span style="font-weight:400"> — e.g. ~30s, ~5min (optional)</span>
+          </label>
+          <input class="pkg-form-input" id="pkg-estimate" type="text" placeholder="~30s">
+        </div>
+        <div id="pkg-finalize-status" style="margin-top:8px;font-size:12px;display:none"></div>
+      </div>
+
+    </div><!-- modal-body -->
+
     <div class="modal-footer">
-      <button class="btn" onclick="closeModal('upload-modal')">Cancel</button>
-      <button class="btn btn-primary" id="upload-submit-btn" onclick="uploadPackage()" disabled>Upload</button>
+      <div id="pkg-footer-1" style="display:flex;gap:8px;width:100%;justify-content:flex-end">
+        <button class="btn" onclick="_cancelUploadModal()">Cancel</button>
+        <button class="btn btn-primary" id="pkg-next-btn" onclick="_showPkgStep2()" disabled>Next →</button>
+      </div>
+      <div id="pkg-footer-2" style="display:none;gap:8px;width:100%;justify-content:flex-end">
+        <button class="btn" onclick="_showPkgStep1Back()">← Back</button>
+        <button class="btn" onclick="_cancelUploadModal()">Cancel</button>
+        <button class="btn btn-primary" id="pkg-create-btn" onclick="_finalizePkg()">Create Package</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1282,16 +1398,22 @@ bash launch.sh</div>
       ? '<span style="color:var(--green)">⚡ prebuilt binary</span>'
       : '<span style="color:var(--yellow)">⚙ source build</span>';
 
-    body.innerHTML = `
-      <div style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:14px">${data.description}</div>
+    // ── Source badge HTML ──────────────────────────────────────────────────────
+    const isUser = data.source === 'user';
+    const sourceBadge = isUser
+      ? `<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:2px 7px;border-radius:4px;background:rgba(210,153,34,0.12);border:1px solid rgba(210,153,34,0.35);color:var(--yellow)">⬆ custom package</span>`
+      : `<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:2px 7px;border-radius:4px;background:rgba(88,166,255,0.08);border:1px solid rgba(88,166,255,0.25);color:var(--text2)">◈ built-in</span>`;
 
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">
+    body.innerHTML = `
+      <div style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:12px">${data.description}</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">
         <div class="info-card">
           <div class="info-label">Status</div>
-          <div class="info-value ${r.status === 'success' ? 'green' : ''}" style="${!r.receipt_exists && r.status !== 'success' ? 'color:var(--text2)' : ''}">
+          <div class="info-value ${r.status === 'success' ? 'green' : ''}" style="${!r.receipt_exists ? 'color:var(--text2)' : ''}">
             ${r.status === 'success' ? '✓ Installed' : r.receipt_exists ? '— Not installed' : '— Unknown'}
           </div>
-          ${!r.receipt_exists && r.status !== 'success' ? `<div style="font-size:10px;color:var(--text2);margin-top:4px">No receipt found — may be installed outside this tool</div>` : ''}
+          ${!r.receipt_exists ? `<div style="font-size:10px;color:var(--text2);margin-top:4px">No receipt found</div>` : ''}
         </div>
         <div class="info-card">
           <div class="info-label">Version</div>
@@ -1303,7 +1425,7 @@ bash launch.sh</div>
         </div>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
         <div class="info-card">
           <div class="info-label">Category</div>
           <div style="font-size:12px;margin-top:4px">${data.category}</div>
@@ -1314,91 +1436,211 @@ bash launch.sh</div>
         </div>
       </div>
 
-      <div style="margin-bottom:10px">
+      <div style="margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
         <span style="color:var(--text2);font-size:11px">Install type:</span>
-        <span style="font-size:11px;margin-left:6px">${prebuiltLabel}</span>
+        <span style="font-size:11px">${prebuiltLabel}</span>
+        <span style="color:var(--text2);font-size:11px;margin-left:4px">Source:</span>
+        ${sourceBadge}
       </div>
 
-      ${r.status === 'success' ? `
-      <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:12px">
-        <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Install Receipt</div>
-        ${r.date ? `<div style="margin-bottom:6px;font-size:11px"><span style="color:var(--text2)">Date:</span> <span>${r.date}</span></div>` : ''}
-        ${r.install_path ? `<div style="margin-bottom:6px;font-size:11px"><span style="color:var(--text2)">Install path:</span><br><span style="word-break:break-all;color:var(--accent)">${r.install_path}</span></div>` : ''}
-        ${r.user ? `<div style="margin-bottom:6px;font-size:11px"><span style="color:var(--text2)">Installed by:</span> <span>${r.user}@${r.hostname}</span></div>` : ''}
-        ${r.log_file ? `<div style="margin-bottom:6px;font-size:11px"><span style="color:var(--text2)">Log file:</span><br><span style="word-break:break-all">${r.log_file}</span></div>` : ''}
+      ${isUser ? `
+      <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:10px">
+        <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Package Origin</div>
+        ${data.uploaded_by ? `<div style="font-size:11px;margin-bottom:4px"><span style="color:var(--text2)">Uploaded by:</span> <span style="color:var(--text)">${data.uploaded_by}</span></div>` : ''}
+        ${data.uploaded_at ? `<div style="font-size:11px;margin-bottom:4px"><span style="color:var(--text2)">Upload date:</span> <span style="color:var(--text)">${_fmtDate(data.uploaded_at)}</span></div>` : ''}
       </div>` : ''}
 
-      <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:12px">
+      ${r.status === 'success' ? `
+      <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:10px">
+        <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Installation Details</div>
+        ${r.date ? `<div style="margin-bottom:5px;font-size:11px"><span style="color:var(--text2)">Date:</span> <span>${r.date}</span></div>` : ''}
+        ${r.install_path ? `<div style="margin-bottom:5px;font-size:11px"><span style="color:var(--text2)">Install path:</span><br><span style="word-break:break-all;color:var(--accent)">${r.install_path}</span></div>` : ''}
+        ${r.user ? `<div style="margin-bottom:5px;font-size:11px"><span style="color:var(--text2)">Installed by:</span> <span>${r.user}@${r.hostname}</span></div>` : ''}
+        ${r.log_file ? `<div style="margin-bottom:5px;font-size:11px"><span style="color:var(--text2)">Log file:</span><br><span style="word-break:break-all">${r.log_file}</span></div>` : ''}
+      </div>` : ''}
+
+      <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:10px">
         <div style="color:var(--text2);font-size:11px;margin-bottom:4px">Setup script:</div>
-        <div class="terminal" style="min-height:52px">${data.setup}</div>
-        <div style="color:var(--text2);font-size:11px;margin-top:8px;margin-bottom:4px">Receipt file:</div>
-        <div class="terminal" style="min-height:52px;word-break:break-all">${data.receipt_path}</div>
+        <div class="code-wrap">
+          <div class="terminal" style="min-height:auto;padding:8px 12px;padding-right:132px;word-break:break-all">${data.setup_abs || data.setup}</div>
+          <div class="code-btn-group">
+            <button class="copy-btn" style="color:var(--green);border-color:rgba(63,185,80,0.35)"
+                    data-action="run-tool" data-tool-id="${data.id}" data-tool-name="${data.name.replace(/"/g,'&quot;')}">▶ Run</button>
+            <button class="copy-btn" data-action="copy-sibling">⎘ Copy</button>
+          </div>
+        </div>
+        <div style="color:var(--text2);font-size:11px;margin-top:10px;margin-bottom:4px">Install log:</div>
+        <div class="code-wrap">
+          <div class="terminal" style="min-height:auto;padding:8px 12px;padding-right:132px;word-break:break-all">${data.receipt_path}</div>
+          <div class="code-btn-group">
+            <button class="copy-btn" style="color:var(--accent);border-color:rgba(88,166,255,0.3)"
+                    data-action="open-file" data-file-path="${data.receipt_path.replace(/"/g,'&quot;')}">⊞ Open</button>
+            <button class="copy-btn" data-action="copy-sibling">⎘ Copy</button>
+          </div>
+        </div>
       </div>
     `;
 
-    // Append sub-items table (extensions or packages) if present
-    const tS = `width:100%;border-collapse:collapse;font-size:12px`;
-    const thS = `text-align:left;padding:7px 10px;font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border);background:var(--bg3)`;
-    const tdS = `padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top`;
-    const tdRS = `padding:8px 10px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap;vertical-align:middle`;
+    // Checksums section — only render when there is actual content
+    if (data.manifest) {
+      const m = data.manifest;
+      const hasZip   = !!m.zip_sha256;
+      const hasFiles = m.files && m.files.length > 0;
+      if (hasZip || hasFiles) {
+        let mHtml = `<div style="border-top:1px solid var(--border);padding-top:10px;margin-top:10px">
+          <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px">Checksums</div>`;
+        if (hasZip) {
+          mHtml += `<div style="margin-bottom:10px">
+            <div style="color:var(--text2);font-size:11px;margin-bottom:4px">Package zip SHA256:</div>
+            <div class="terminal" style="min-height:auto;padding:8px 12px;word-break:break-all;font-size:10px">${m.zip_sha256}</div>
+          </div>`;
+        }
+        if (hasFiles) {
+          mHtml += m.files.map(f => `<div style="margin-bottom:10px">
+            <div style="color:var(--text2);font-size:11px;margin-bottom:4px">${f.path}</div>
+            <div class="terminal" style="min-height:auto;padding:8px 12px;word-break:break-all;font-size:10px">${f.sha256}</div>
+          </div>`).join('');
+        }
+        mHtml += `</div>`;
+        body.innerHTML += mHtml;
+      }
+    }
 
-    if (data.extensions && data.extensions.length) {
-      const vendored = data.extensions.filter(e => e.status === 'vendored');
-      const planned  = data.extensions.filter(e => e.status === 'planned');
-      let tHtml = `<div style="border-top:1px solid var(--border);padding-top:14px;margin-top:14px">
-        <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px">
-          Extensions (${vendored.length} vendored · ${planned.length} planned)
-        </div>
-        <table style="${tS}">
-          <thead><tr>
+    // Footer buttons — Uninstall (all installed tools) + Remove (user packages only)
+    const uninstallBtn = document.getElementById('receipt-uninstall-btn');
+    const deleteBtn    = document.getElementById('receipt-delete-btn');
+
+    if (data.installed) {
+      uninstallBtn.style.display = '';
+      uninstallBtn.onclick = () => { closeModal('receipt-modal'); confirmUninstall(data.id, data.name); };
+    } else {
+      uninstallBtn.style.display = 'none';
+    }
+
+    if (isUser) {
+      deleteBtn.style.display = '';
+      deleteBtn.onclick = () => { closeModal('receipt-modal'); confirmRemovePackage(data.id, data.name); };
+    } else {
+      deleteBtn.style.display = 'none';
+    }
+
+    // Append interactive sub-items table (extensions or packages) if present
+    if ((data.extensions && data.extensions.length) || (data.packages && data.packages.length)) {
+      // Fetch per-item install status
+      let stMap = {}, stAvail = true;
+      try {
+        const stResp = await fetch(`/api/subpkg-status?tool_id=${encodeURIComponent(data.id)}`);
+        const stData = await stResp.json();
+        stMap   = stData.status   || {};
+        stAvail = stData.available !== false;
+      } catch { /* show buttons anyway */ }
+
+      const tS   = `width:100%;border-collapse:collapse;font-size:12px`;
+      const thS  = `text-align:left;padding:7px 10px;font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border);background:var(--bg3)`;
+      const tdS  = `padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top`;
+      const tdRS = `padding:8px 10px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap;vertical-align:middle`;
+      const esc  = s => s.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+
+      function spActionBtn(id, displayName, installed) {
+        if (installed) {
+          return `<button class="btn btn-sm" style="color:var(--red);border-color:rgba(248,81,73,0.35);font-size:10px;padding:3px 8px"
+            onclick="_subpkgAction('${esc(data.id)}','${esc(id)}','${esc(displayName)}',true)">✕ Uninstall</button>`;
+        }
+        return `<button class="btn btn-sm btn-success" style="font-size:10px;padding:3px 8px"
+          onclick="_subpkgAction('${esc(data.id)}','${esc(id)}','${esc(displayName)}',false)">↓ Install</button>`;
+      }
+      if (data.extensions && data.extensions.length) {
+        const vendored = data.extensions.filter(e => e.status === 'vendored');
+        const planned  = data.extensions.filter(e => e.status === 'planned');
+        let tHtml = `<div style="border-top:1px solid var(--border);padding-top:14px;margin-top:14px">
+          <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px">
+            Extensions (${vendored.length} vendored · ${planned.length} planned)
+          </div>
+          <table style="${tS}"><thead><tr>
             <th style="${thS}">Extension</th>
-            <th style="${thS}">Publisher</th>
-            <th style="${thS};text-align:right">Version</th>
+            <th style="${thS};text-align:right">Status / Action</th>
           </tr></thead><tbody>`;
-      data.extensions.forEach(e => {
-        const vBadge = e.status === 'vendored'
-          ? `<span class="badge-category" style="color:var(--green);border-color:rgba(63,185,80,0.3)">v${e.version}</span>`
-          : `<span class="badge-category" style="color:var(--yellow);border-color:rgba(210,153,34,0.4)">⏳ planned</span>`;
-        tHtml += `<tr style="${e.status==='planned'?'opacity:0.7':''}">
-          <td style="${tdS}">
-            <div style="font-weight:600">${e.name}</div>
-            <div style="font-size:10px;color:var(--text2);margin-top:2px">${e.description}</div>
-          </td>
-          <td style="${tdS};color:var(--text2);font-size:11px">${e.publisher}</td>
-          <td style="${tdRS}">${vBadge}</td>
-        </tr>`;
-      });
-      tHtml += `</tbody></table></div>`;
-      body.innerHTML += tHtml;
-    }
+        data.extensions.forEach(e => {
+          const inst = stMap[e.id] === true;
+          const vLabel = e.status === 'vendored'
+            ? `<span class="badge-category" style="color:var(--green);border-color:rgba(63,185,80,0.3)">v${e.version}</span>`
+            : `<span class="badge-category" style="color:var(--text2)">marketplace</span>`;
+          tHtml += `<tr>
+            <td style="${tdS}">
+              <div style="font-weight:600">${e.name}</div>
+              <div style="font-size:10px;color:var(--text2);margin-top:2px">${e.description}</div>
+              <div style="font-size:10px;color:var(--text2);margin-top:2px;opacity:0.6">${e.publisher} &nbsp;·&nbsp; ${vLabel}</div>
+            </td>
+            <td style="${tdRS}">
+              ${spActionBtn(e.id, e.name, inst)}
+            </td>
+          </tr>`;
+        });
+        tHtml += `</tbody></table></div>`;
+        body.innerHTML += tHtml;
+      }
 
-    if (data.packages && data.packages.length) {
-      let tHtml = `<div style="border-top:1px solid var(--border);padding-top:14px;margin-top:14px">
-        <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px">
-          Pip Packages (${data.packages.length})
-        </div>
-        <table style="${tS}">
-          <thead><tr>
+      if (data.packages && data.packages.length) {
+        let tHtml = `<div style="border-top:1px solid var(--border);padding-top:14px;margin-top:14px">
+          <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px">
+            Pip Packages (${data.packages.length})
+          </div>
+          <table style="${tS}"><thead><tr>
             <th style="${thS}">Package</th>
-            <th style="${thS}">Category</th>
-            <th style="${thS};text-align:right">Version</th>
+            <th style="${thS};text-align:right">Status / Action</th>
           </tr></thead><tbody>`;
-      data.packages.forEach(p => {
-        tHtml += `<tr>
-          <td style="${tdS}">
-            <div style="font-weight:600">${p.name}</div>
-            <div style="font-size:10px;color:var(--text2);margin-top:2px">${p.description}</div>
-          </td>
-          <td style="${tdS};color:var(--text2);font-size:11px">${p.category}</td>
-          <td style="${tdRS}"><span class="badge-category">${p.version}</span></td>
-        </tr>`;
-      });
-      tHtml += `</tbody></table></div>`;
-      body.innerHTML += tHtml;
+        data.packages.forEach(p => {
+          const inst = stMap[p.name] === true;
+          tHtml += `<tr>
+            <td style="${tdS}">
+              <div style="font-weight:600">${p.name}</div>
+              <div style="font-size:10px;color:var(--text2);margin-top:2px">${p.description}</div>
+              <div style="font-size:10px;color:var(--text2);margin-top:2px;opacity:0.6">${p.category} &nbsp;·&nbsp; <span class="badge-category">${p.version}</span></div>
+            </td>
+            <td style="${tdRS}">
+              ${spActionBtn(p.name, p.name, inst)}
+            </td>
+          </tr>`;
+        });
+        tHtml += `</tbody></table></div>`;
+        body.innerHTML += tHtml;
+      }
     }
 
-    // Attach copy buttons to any .terminal blocks rendered in the modal
+    // Attach copy buttons to .terminal blocks that don't already have them
     initCopyButtons(body);
+
+    // Wire up data-action buttons in the hand-built code-wrap blocks
+    body.querySelectorAll('[data-action]').forEach(btn => {
+      const action = btn.dataset.action;
+      if (action === 'copy-sibling') {
+        const terminal = btn.closest('.code-wrap').querySelector('.terminal');
+        btn.addEventListener('click', () => {
+          navigator.clipboard.writeText(terminal.textContent).then(() => {
+            btn.textContent = '✓ Copied';
+            btn.style.color = 'var(--green)';
+            setTimeout(() => { btn.textContent = '⎘ Copy'; btn.style.color = ''; }, 2000);
+          });
+        });
+      } else if (action === 'run-tool') {
+        btn.addEventListener('click', () => {
+          closeModal('receipt-modal');
+          installTool(btn.dataset.toolId, btn.dataset.toolName, false);
+        });
+      } else if (action === 'open-file') {
+        btn.addEventListener('click', () => _openFile(btn.dataset.filePath));
+      }
+    });
+  }
+
+  async function _openFile(path) {
+    try {
+      const r = await fetch('/open-file?path=' + encodeURIComponent(path));
+      const d = await r.json();
+      if (!r.ok) showToast(d.error || 'Cannot open file', 'error');
+    } catch (e) {
+      showToast(String(e), 'error');
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -1593,82 +1835,212 @@ bash launch.sh</div>
   }
 
   // ---------------------------------------------------------------------------
-  // Add Package (upload)
+  // Add Package — 2-step wizard (upload → metadata form → create)
   // ---------------------------------------------------------------------------
-  let _pendingPackageFile = null;
+  let _pkgState = { file: null, stagingId: null, fileHashes: {}, zipSha256: '', hasSetupSh: false };
 
-  function handlePackageSelect(evt) {
-    _pendingPackageFile = evt.target.files[0] || null;
+  function _handlePkgSelect(evt) {
+    _pkgState.file = evt.target.files[0] || null;
     _updateUploadZone();
+    if (_pkgState.file) _runPreflight();
   }
 
-  function handlePackageDrop(evt) {
-    _pendingPackageFile = evt.dataTransfer.files[0] || null;
+  function _handlePkgDrop(evt) {
+    _pkgState.file = evt.dataTransfer.files[0] || null;
     _updateUploadZone();
+    if (_pkgState.file) _runPreflight();
   }
 
   function _updateUploadZone() {
-    const btn = document.getElementById('upload-submit-btn');
     const label = document.getElementById('upload-zone-label');
-    const status = document.getElementById('upload-status');
+    const status = document.getElementById('upload-preflight-status');
     status.style.display = 'none';
-    if (_pendingPackageFile) {
+    document.getElementById('pkg-next-btn').disabled = true;
+    if (_pkgState.file) {
       label.innerHTML = `<div style="font-size:20px;margin-bottom:6px">📦</div>
-        <div style="font-size:13px;font-weight:600;color:var(--text)">${_pendingPackageFile.name}</div>
-        <div style="font-size:11px;margin-top:2px">${(_pendingPackageFile.size/1024).toFixed(1)} KB — click to change</div>`;
-      btn.disabled = false;
+        <div style="font-size:13px;font-weight:600;color:var(--text)">${_pkgState.file.name}</div>
+        <div style="font-size:11px;margin-top:2px;color:var(--text2)">${(_pkgState.file.size/1024).toFixed(1)} KB — click to change</div>`;
     } else {
       label.innerHTML = `<div style="font-size:28px;margin-bottom:8px">📦</div>
         <div style="font-size:13px;font-weight:600;color:var(--text)">Drop .zip here or click to browse</div>
-        <div style="font-size:11px;margin-top:4px">devkit.json + setup.sh</div>`;
-      btn.disabled = true;
+        <div style="font-size:11px;margin-top:4px;color:var(--text2)">Any zip — no special structure required</div>`;
     }
   }
 
-  function uploadPackage() {
-    if (!_pendingPackageFile) return;
-    const status = document.getElementById('upload-status');
-    const btn = document.getElementById('upload-submit-btn');
-    btn.disabled = true;
-    btn.textContent = 'Uploading…';
+  async function _runPreflight() {
+    const status = document.getElementById('upload-preflight-status');
     status.style.display = 'block';
     status.style.color = 'var(--text2)';
-    status.textContent = 'Uploading…';
+    status.textContent = 'Analysing zip…';
 
     const fd = new FormData();
-    fd.append('file', _pendingPackageFile);
-
-    fetch('/packages/upload', { method: 'POST', body: fd })
-      .then(r => r.json())
-      .then(data => {
-        if (data.ok) {
-          status.style.color = 'var(--green)';
-          status.textContent = `✓ "${data.name}" added successfully.`;
-          showToast(`✓ ${data.name} added`, 'success');
-          setTimeout(() => { closeModal('upload-modal'); window.location.reload(); }, 800);
-        } else {
-          status.style.color = 'var(--red)';
-          status.textContent = `✗ ${data.error || 'Upload failed'}`;
-          btn.disabled = false;
-          btn.textContent = 'Upload';
-        }
-      })
-      .catch(err => {
+    fd.append('file', _pkgState.file);
+    try {
+      const r = await fetch('/packages/preflight', { method: 'POST', body: fd });
+      const data = await r.json();
+      if (!r.ok) {
         status.style.color = 'var(--red)';
-        status.textContent = `✗ ${err}`;
-        btn.disabled = false;
-        btn.textContent = 'Upload';
-      });
+        status.textContent = `✗ ${data.detail || data.error || 'Upload failed'}`;
+        return;
+      }
+      _pkgState.stagingId  = data.staging_id;
+      _pkgState.fileHashes = data.file_hashes || {};
+      _pkgState.zipSha256  = data.zip_sha256 || '';
+      _pkgState.hasSetupSh = data.has_setup_sh || false;
+
+      // Pre-fill form from detected fields
+      const d = data.detected || {};
+      if (d.name)        document.getElementById('pkg-name').value    = d.name;
+      if (d.version)     document.getElementById('pkg-version').value = d.version;
+      if (d.description) document.getElementById('pkg-desc').value    = d.description;
+      if (d.estimate)    document.getElementById('pkg-estimate').value = d.estimate;
+      if (d.category) {
+        const sel = document.getElementById('pkg-category');
+        for (const opt of sel.options) { if (opt.text === d.category) { sel.value = opt.value; break; } }
+      }
+      if (d.platform) document.getElementById('pkg-platform').value = d.platform;
+      if (d.id) {
+        document.getElementById('pkg-id').value = d.id;
+        document.getElementById('pkg-id').dataset.manualEdit = '1';
+      } else if (d.name) {
+        document.getElementById('pkg-id').value = _nameToSlug(d.name);
+      }
+
+      const n = (data.files || []).length;
+      status.style.color = 'var(--green)';
+      status.textContent = `✓ ${n} file${n !== 1 ? 's' : ''} found — click Next to fill in the details`;
+      document.getElementById('pkg-next-btn').disabled = false;
+
+    } catch (err) {
+      status.style.color = 'var(--red)';
+      status.textContent = `✗ ${err}`;
+    }
   }
 
-  // Reset upload state when modal closes
+  function _nameToSlug(name) {
+    return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  }
+
+  function _pkgAutoId() {
+    const idEl = document.getElementById('pkg-id');
+    if (!idEl.dataset.manualEdit) {
+      idEl.value = _nameToSlug(document.getElementById('pkg-name').value);
+    }
+  }
+
+  // Track manual edits to pkg-id so auto-fill stops
+  document.getElementById('pkg-id').addEventListener('input', function() {
+    this.dataset.manualEdit = '1';
+  });
+
+  function _showPkgStep2() {
+    document.getElementById('pkg-step1').style.display = 'none';
+    document.getElementById('pkg-step2').style.display = '';
+    document.getElementById('pkg-footer-1').style.display = 'none';
+    document.getElementById('pkg-footer-2').style.display = 'flex';
+    document.getElementById('pkg-step-ind-1').classList.remove('active');
+    document.getElementById('pkg-step-ind-2').classList.add('active');
+    document.getElementById('pkg-setup-note').style.display = _pkgState.hasSetupSh ? 'none' : '';
+  }
+
+  function _showPkgStep1Back() {
+    document.getElementById('pkg-step1').style.display = '';
+    document.getElementById('pkg-step2').style.display = 'none';
+    document.getElementById('pkg-footer-1').style.display = 'flex';
+    document.getElementById('pkg-footer-2').style.display = 'none';
+    document.getElementById('pkg-step-ind-1').classList.add('active');
+    document.getElementById('pkg-step-ind-2').classList.remove('active');
+    // Keep Next enabled — staging is still valid
+    document.getElementById('pkg-next-btn').disabled = !_pkgState.stagingId;
+  }
+
+  async function _finalizePkg() {
+    const name     = document.getElementById('pkg-name').value.trim();
+    const id       = document.getElementById('pkg-id').value.trim();
+    const version  = document.getElementById('pkg-version').value.trim();
+    const desc     = document.getElementById('pkg-desc').value.trim();
+    const category = document.getElementById('pkg-category').value;
+    const platform = document.getElementById('pkg-platform').value;
+    const estimate = document.getElementById('pkg-estimate').value.trim();
+
+    const fStatus  = document.getElementById('pkg-finalize-status');
+    const createBtn = document.getElementById('pkg-create-btn');
+
+    if (!name || !id || !version || !desc) {
+      fStatus.style.display = 'block';
+      fStatus.style.color = 'var(--red)';
+      fStatus.textContent = '✗ Name, ID, Version, and Description are required';
+      return;
+    }
+
+    createBtn.disabled = true;
+    createBtn.textContent = 'Creating…';
+    fStatus.style.display = 'block';
+    fStatus.style.color = 'var(--text2)';
+    fStatus.textContent = 'Creating package…';
+
+    try {
+      const r = await fetch('/packages/finalize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          staging_id: _pkgState.stagingId,
+          id, name, version, description: desc, category, platform,
+          estimate: estimate || '',
+          file_hashes: _pkgState.fileHashes,
+          zip_sha256: _pkgState.zipSha256,
+        }),
+      });
+      const data = await r.json();
+      if (r.ok && data.ok) {
+        showToast(`✓ "${data.name}" added`, 'success');
+        // staging already cleaned up by finalize; just reset + close
+        _pkgState.stagingId = null;
+        closeModal('upload-modal');
+        setTimeout(() => window.location.reload(), 300);
+      } else {
+        fStatus.style.color = 'var(--red)';
+        fStatus.textContent = `✗ ${data.detail || data.error || 'Failed'}`;
+        createBtn.disabled = false;
+        createBtn.textContent = 'Create Package';
+      }
+    } catch (err) {
+      fStatus.style.color = 'var(--red)';
+      fStatus.textContent = `✗ ${err}`;
+      createBtn.disabled = false;
+      createBtn.textContent = 'Create Package';
+    }
+  }
+
+  function _cancelUploadModal() {
+    if (_pkgState.stagingId) {
+      fetch(`/packages/staging/${_pkgState.stagingId}`, { method: 'DELETE' }).catch(() => {});
+    }
+    closeModal('upload-modal');
+  }
+
+  // Reset wizard state whenever the modal closes (Cancel, ✕, Escape, or after success)
   const _origClose = window.closeModal;
   window.closeModal = function(id) {
     if (id === 'upload-modal') {
-      _pendingPackageFile = null;
+      _pkgState = { file: null, stagingId: null, fileHashes: {}, zipSha256: '', hasSetupSh: false };
       document.getElementById('pkg-file').value = '';
+      ['pkg-name','pkg-version','pkg-desc','pkg-estimate'].forEach(i => document.getElementById(i).value = '');
+      delete document.getElementById('pkg-id').dataset.manualEdit;
+      document.getElementById('pkg-id').value = '';
+      document.getElementById('pkg-finalize-status').style.display = 'none';
+      document.getElementById('upload-preflight-status').style.display = 'none';
+      document.getElementById('pkg-next-btn').disabled = true;
+      document.getElementById('pkg-create-btn').disabled = false;
+      document.getElementById('pkg-create-btn').textContent = 'Create Package';
+      // Reset to step 1 layout
+      document.getElementById('pkg-step1').style.display = '';
+      document.getElementById('pkg-step2').style.display = 'none';
+      document.getElementById('pkg-footer-1').style.display = 'flex';
+      document.getElementById('pkg-footer-2').style.display = 'none';
+      document.getElementById('pkg-step-ind-1').classList.add('active');
+      document.getElementById('pkg-step-ind-2').classList.remove('active');
       _updateUploadZone();
-      document.getElementById('upload-submit-btn').textContent = 'Upload';
     }
     _origClose(id);
   };
@@ -1753,6 +2125,8 @@ bash launch.sh</div>
       wrap.className = 'code-wrap';
       el.parentNode.insertBefore(wrap, el);
       wrap.appendChild(el);
+      const group = document.createElement('div');
+      group.className = 'code-btn-group';
       const btn = document.createElement('button');
       btn.className = 'copy-btn';
       btn.textContent = '⎘ Copy';
@@ -1763,13 +2137,14 @@ bash launch.sh</div>
           setTimeout(() => { btn.textContent = '⎘ Copy'; btn.style.color = ''; }, 2000);
         });
       });
-      wrap.appendChild(btn);
+      group.appendChild(btn);
+      wrap.appendChild(group);
     });
   }
   document.addEventListener('DOMContentLoaded', () => initCopyButtons());
 
   // ---------------------------------------------------------------------------
-  // Sub-items (extensions / packages)
+  // Sub-items (extensions / packages) — with per-item Install / Uninstall
   // ---------------------------------------------------------------------------
   async function showSubItems(toolId, toolName) {
     document.getElementById('subitems-modal-title').textContent = toolName;
@@ -1777,93 +2152,173 @@ bash launch.sh</div>
     body.innerHTML = '<div style="color:var(--text2);font-size:12px">Loading...</div>';
     openModal('subitems-modal');
 
-    const resp = await fetch(`/api/tool/${toolId}`);
-    const data = await resp.json();
+    // Fetch tool data + sub-pkg status in parallel
+    const [toolResp, stResp] = await Promise.all([
+      fetch(`/api/tool/${encodeURIComponent(toolId)}`),
+      fetch(`/api/subpkg-status?tool_id=${encodeURIComponent(toolId)}`),
+    ]);
+    const data   = await toolResp.json();
+    const stData = await stResp.json();
+    const stMap    = stData.status  || {};
+    const stAvail  = stData.available !== false;
+    const stErr    = stData.error   || null;
 
-    const tableStyle = `width:100%;border-collapse:collapse;font-size:12px`;
-    const thStyle = `text-align:left;padding:6px 10px;font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border)`;
-    const tdStyle = `padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top`;
-    const tdRStyle = `padding:8px 10px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap;vertical-align:top`;
+    const tS   = `width:100%;border-collapse:collapse;font-size:12px`;
+    const thS  = `text-align:left;padding:6px 10px;font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border);background:var(--bg3)`;
+    const tdS  = `padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top`;
+    const tdRS = `padding:8px 10px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap;vertical-align:middle`;
+
+    // Escape single-quotes for inline onclick attrs
+    const esc = s => s.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+
+    // Render Install / Uninstall button — single button only, no badge
+    function actionBtn(id, displayName, installed) {
+      if (installed) {
+        return `<button class="btn btn-sm" style="color:var(--red);border-color:rgba(248,81,73,0.35);font-size:10px;padding:3px 8px"
+          onclick="_subpkgAction('${esc(toolId)}','${esc(id)}','${esc(displayName)}',true)">✕ Uninstall</button>`;
+      }
+      return `<button class="btn btn-sm btn-success" style="font-size:10px;padding:3px 8px"
+        onclick="_subpkgAction('${esc(toolId)}','${esc(id)}','${esc(displayName)}',false)">↓ Install</button>`;
+    }
+
+    let html = '';
+
+    if (!stAvail && stErr) {
+      html += `<div style="color:var(--yellow);font-size:12px;margin-bottom:14px;padding:9px 12px;
+        background:rgba(210,153,34,0.07);border:1px solid rgba(210,153,34,0.28);border-radius:6px">⚠ ${stErr}</div>`;
+    }
 
     if (data.extensions) {
       const vendored = data.extensions.filter(e => e.status === 'vendored');
       const planned  = data.extensions.filter(e => e.status === 'planned');
-      let html = '';
 
       if (vendored.length) {
-        html += `<div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Vendored — ${vendored.length} ready to install</div>`;
-        html += `<table style="${tableStyle}">
-          <thead><tr>
-            <th style="${thStyle}">Extension</th>
-            <th style="${thStyle}">Publisher</th>
-            <th style="${thStyle};text-align:right">Version</th>
-          </tr></thead><tbody>`;
-        html += vendored.map(e => `
-          <tr>
-            <td style="${tdStyle}">
+        html += `<div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">
+          Vendored — ${vendored.length} ready to install</div>`;
+        html += `<table style="${tS}"><thead><tr>
+          <th style="${thS}">Extension</th>
+          <th style="${thS};text-align:right">Status / Action</th>
+        </tr></thead><tbody>`;
+        html += vendored.map(e => {
+          const inst = stMap[e.id] === true;
+          return `<tr>
+            <td style="${tdS}">
               <div style="font-weight:600">${e.name}</div>
               <div style="font-size:10px;color:var(--text2);margin-top:2px">${e.description}</div>
-              <div style="font-size:10px;color:var(--text2);margin-top:2px;opacity:0.6">${e.id}</div>
+              <div style="font-size:10px;color:var(--text2);margin-top:2px;opacity:0.6">${e.id} &nbsp;·&nbsp; v${e.version} &nbsp;·&nbsp; ${e.publisher}</div>
             </td>
-            <td style="${tdStyle};color:var(--text2)">${e.publisher}</td>
-            <td style="${tdRStyle}"><span class="badge-category" style="color:var(--green);border-color:rgba(63,185,80,0.3)">v${e.version}</span></td>
-          </tr>`).join('');
+            <td style="${tdRS}">
+              ${actionBtn(e.id, e.name, inst)}
+            </td>
+          </tr>`;
+        }).join('');
         html += `</tbody></table>`;
       }
 
       if (planned.length) {
-        html += `<div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin:18px 0 8px">Planned — ${planned.length} vsix not yet vendored</div>`;
-        html += `<table style="${tableStyle}">
-          <thead><tr>
-            <th style="${thStyle}">Extension</th>
-            <th style="${thStyle}">Publisher</th>
-            <th style="${thStyle};text-align:right">Status</th>
-          </tr></thead><tbody>`;
-        html += planned.map(e => `
-          <tr style="opacity:0.75">
-            <td style="${tdStyle}">
+        html += `<div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin:18px 0 8px">
+          Planned — ${planned.length} (no local .vsix · installs from marketplace)</div>`;
+        html += `<table style="${tS}"><thead><tr>
+          <th style="${thS}">Extension</th>
+          <th style="${thS};text-align:right">Status / Action</th>
+        </tr></thead><tbody>`;
+        html += planned.map(e => {
+          const inst = stMap[e.id] === true;
+          return `<tr>
+            <td style="${tdS}">
               <div style="font-weight:600">${e.name}</div>
               <div style="font-size:10px;color:var(--text2);margin-top:2px">${e.description}</div>
-              <div style="font-size:10px;color:var(--text2);margin-top:2px;opacity:0.6">${e.id}</div>
+              <div style="font-size:10px;color:var(--text2);margin-top:2px;opacity:0.6">${e.id} &nbsp;·&nbsp; ${e.publisher}</div>
             </td>
-            <td style="${tdStyle};color:var(--text2)">${e.publisher}</td>
-            <td style="${tdRStyle}"><span class="badge-category" style="color:var(--yellow);border-color:rgba(210,153,34,0.4)">⏳ planned</span></td>
-          </tr>`).join('');
+            <td style="${tdRS}">
+              ${actionBtn(e.id, e.name, inst)}
+            </td>
+          </tr>`;
+        }).join('');
         html += `</tbody></table>`;
       }
 
-      body.innerHTML = html;
-
     } else if (data.packages) {
-      const groups = {};
-      data.packages.forEach(p => {
-        if (!groups[p.category]) groups[p.category] = [];
-        groups[p.category].push(p);
-      });
-      let html = `<table style="${tableStyle}">
-        <thead><tr>
-          <th style="${thStyle}">Package</th>
-          <th style="${thStyle}">Category</th>
-          <th style="${thStyle};text-align:right">Version</th>
-        </tr></thead><tbody>`;
-      for (const [cat, pkgs] of Object.entries(groups)) {
-        html += pkgs.map(p => `
-          <tr>
-            <td style="${tdStyle}">
-              <div style="font-weight:600">${p.name}</div>
-              <div style="font-size:10px;color:var(--text2);margin-top:2px">${p.description}</div>
-            </td>
-            <td style="${tdStyle};color:var(--text2)">${p.category}</td>
-            <td style="${tdRStyle}"><span class="badge-category">${p.version}</span></td>
-          </tr>`).join('');
-      }
+      html += `<table style="${tS}"><thead><tr>
+        <th style="${thS}">Package</th>
+        <th style="${thS};text-align:right">Status / Action</th>
+      </tr></thead><tbody>`;
+      html += data.packages.map(p => {
+        const inst = stMap[p.name] === true;
+        return `<tr>
+          <td style="${tdS}">
+            <div style="font-weight:600">${p.name}</div>
+            <div style="font-size:10px;color:var(--text2);margin-top:2px">${p.description}</div>
+            <div style="font-size:10px;color:var(--text2);margin-top:2px;opacity:0.6">${p.category} &nbsp;·&nbsp; <span class="badge-category">${p.version}</span></div>
+          </td>
+          <td style="${tdRS}">
+            ${actionBtn(p.name, p.name, inst)}
+          </td>
+        </tr>`;
+      }).join('');
       html += `</tbody></table>`;
-      body.innerHTML = html;
 
     } else {
-      body.innerHTML = '<div style="color:var(--text2);font-size:12px">No sub-item data available.</div>';
+      html = '<div style="color:var(--text2);font-size:12px">No sub-item data available.</div>';
     }
+
+    body.innerHTML = html;
     initCopyButtons(body);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Date formatting helper — any parseable date → YYYYMMDDHHmm
+  // ---------------------------------------------------------------------------
+  function _fmtDate(s) {
+    if (!s) return '';
+    // Already in target format MM/DD/YYYY HH:mm
+    if (/^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}$/.test(s)) return s;
+    try {
+      const d = new Date(s);
+      if (isNaN(d)) return s;
+      const M = String(d.getUTCMonth() + 1).padStart(2, '0');
+      const D = String(d.getUTCDate()).padStart(2, '0');
+      const Y = d.getUTCFullYear();
+      const h = String(d.getUTCHours()).padStart(2, '0');
+      const m = String(d.getUTCMinutes()).padStart(2, '0');
+      return `${M}/${D}/${Y} ${h}:${m}`;
+    } catch { return s; }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Sub-package action — SSE stream for install / uninstall of one item
+  // ---------------------------------------------------------------------------
+  function _subpkgAction(toolId, pkgId, displayName, uninstall) {
+    closeModal('subitems-modal');
+    document.getElementById('install-modal-title').textContent =
+      (uninstall ? 'Uninstalling: ' : 'Installing: ') + displayName;
+    const output = document.getElementById('install-output');
+    output.textContent = '';
+    openModal('install-modal');
+
+    const url = `/subpkg-install?tool_id=${encodeURIComponent(toolId)}&pkg_id=${encodeURIComponent(pkgId)}${uninstall ? '&uninstall=true' : ''}`;
+    const es = new EventSource(url);
+    es.onmessage = function(e) {
+      const line = e.data;
+      if (line.startsWith('DONE:')) {
+        es.close();
+        const ok = line === 'DONE:success';
+        showToast(
+          ok ? `✓ ${displayName} ${uninstall ? 'removed' : 'installed'}` : `✗ ${displayName} failed`,
+          ok ? 'success' : 'error'
+        );
+        return;
+      }
+      const span = document.createElement('span');
+      span.className = 'terminal-line';
+      if (line.startsWith('✓') || line.includes('[OK]')) span.classList.add('ok');
+      else if (line.startsWith('✗') || line.includes('ERROR') || line.includes('FAIL')) span.classList.add('err');
+      span.textContent = line;
+      output.appendChild(span);
+      output.appendChild(document.createTextNode('\n'));
+      output.scrollTop = output.scrollHeight;
+    };
+    es.onerror = () => es.close();
   }
 
   // ---------------------------------------------------------------------------
