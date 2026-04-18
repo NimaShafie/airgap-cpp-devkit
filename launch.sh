@@ -99,12 +99,19 @@ if PYTHON_BIN="$(_find_python 2>/dev/null)"; then
     echo ""
     _sep2
     echo ""
-    # 'python -m' always prepends cwd to sys.path, so cd into manager/src
-    # before exec — no PYTHONPATH env-var manipulation needed, which avoids
-    # MSYS2 path-conversion issues when spawning a native Windows python.exe.
+    # Standalone Python ships with a ._pth file that overrides sys.path entirely,
+    # ignoring both PYTHONPATH env var and cwd. The only reliable path injection
+    # is via -c code: sys.path.insert runs before any import, always wins.
+    # Use forward slashes in the Windows path — Python accepts them and it avoids
+    # backslash-escaping inside the shell double-quoted -c string.
     TOOLS_DIR="${SCRIPT_DIR}/tools"
-    cd "${SCRIPT_DIR}/manager/src"
-    exec "${PYTHON_BIN}" -m airgap_devkit.launcher \
+    PY_SRC="${SCRIPT_DIR}/manager/src"
+    if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "${OS:-}" == "Windows_NT" ]]; then
+        PY_SRC="$(cygpath -w "${PY_SRC}")"
+        PY_SRC="${PY_SRC//\\/\/}"
+    fi
+    exec "${PYTHON_BIN}" -c \
+        "import sys; sys.path.insert(0, '${PY_SRC}'); from airgap_devkit.launcher import main; main()" \
         --tools "${TOOLS_DIR}" \
         "${UI_ARGS[@]+"${UI_ARGS[@]}"}"
 else
