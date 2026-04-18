@@ -99,19 +99,13 @@ if PYTHON_BIN="$(_find_python 2>/dev/null)"; then
     echo ""
     _sep2
     echo ""
-    # Windows Python (python.exe) ignores POSIX-style PYTHONPATH entries set
-    # inside Git Bash, because MINGW64 converts path *arguments* but not env vars.
-    # Convert to a Windows path + semicolon separator when running on MSYS/Git Bash.
-    PY_SRC="${SCRIPT_DIR}/manager/src"
-    if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "${OS:-}" == "Windows_NT" ]]; then
-        PY_SRC="$(cygpath -w "${PY_SRC}")"
-        PYTHONPATH="${PY_SRC}${PYTHONPATH:+;${PYTHONPATH}}"
-    else
-        PYTHONPATH="${PY_SRC}${PYTHONPATH:+:${PYTHONPATH}}"
-    fi
-    PYTHONPATH="${PYTHONPATH}" \
+    # 'python -m' always prepends cwd to sys.path, so cd into manager/src
+    # before exec — no PYTHONPATH env-var manipulation needed, which avoids
+    # MSYS2 path-conversion issues when spawning a native Windows python.exe.
+    TOOLS_DIR="${SCRIPT_DIR}/tools"
+    cd "${SCRIPT_DIR}/manager/src"
     exec "${PYTHON_BIN}" -m airgap_devkit.launcher \
-        --tools "${SCRIPT_DIR}/tools" \
+        --tools "${TOOLS_DIR}" \
         "${UI_ARGS[@]+"${UI_ARGS[@]}"}"
 else
     echo "  [!!]  Python 3.8+ not found on PATH."
