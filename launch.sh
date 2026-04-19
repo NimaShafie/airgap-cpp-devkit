@@ -81,6 +81,32 @@ _find_python() {
     return 1
 }
 
+# ---------------------------------------------------------------------------
+# Free the target port if anything is already bound to it
+# ---------------------------------------------------------------------------
+_free_port() {
+    local port="$1"
+    local pids
+    # netstat -ano works on Windows (MINGW/MSYS) and Linux
+    # || true prevents grep's exit-1-on-no-match from killing the script under set -e
+    pids="$(netstat -ano 2>/dev/null \
+        | grep -E "[:.]${port}[[:space:]].*LISTEN" \
+        | awk '{print $NF}' \
+        | sort -u)" || true
+    if [[ -z "$pids" ]]; then
+        return 0
+    fi
+    echo "  [!!]  Port ${port} is in use — killing existing process(es): ${pids}"
+    for pid in $pids; do
+        if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "${OS:-}" == "Windows_NT" ]]; then
+            taskkill.exe //PID "$pid" //F 2>/dev/null || true
+        else
+            kill -9 "$pid" 2>/dev/null || true
+        fi
+    done
+    sleep 1
+}
+
 echo ""
 _sep2
 echo "  airgap-cpp-devkit -- Launcher"
@@ -93,6 +119,7 @@ if PYTHON_BIN="$(_find_python 2>/dev/null)"; then
     PY_VER="$(${PYTHON_BIN} --version 2>&1 | awk '{print $2}')"
     echo "  [OK]  Python ${PY_VER} found  (${PYTHON_BIN})"
     echo ""
+    _free_port "${UI_PORT}"
     echo "  Starting DevKit Manager..."
     echo "  Open your browser at  http://${UI_HOST}:${UI_PORT}  if it does not open automatically."
     echo "  Press Ctrl+C to stop the server."
@@ -110,7 +137,10 @@ if PYTHON_BIN="$(_find_python 2>/dev/null)"; then
         PY_SRC="$(cygpath -w "${PY_SRC}")"
         PY_SRC="${PY_SRC//\\/\/}"
     fi
-    exec "${PYTHON_BIN}" -c \
+    # Do NOT use exec here — exec replaces bash with Python, causing MINGW64 to
+    # show a shell prompt while the server is still running, which leads users to
+    # close the terminal and kill the server unexpectedly.
+    "${PYTHON_BIN}" -c \
         "import sys; sys.path.insert(0, '${PY_SRC}'); from airgap_devkit.launcher import main; main()" \
         --tools "${TOOLS_DIR}" \
         "${UI_ARGS[@]+"${UI_ARGS[@]}"}"
