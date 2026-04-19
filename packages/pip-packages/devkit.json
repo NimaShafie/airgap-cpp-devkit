@@ -2,7 +2,7 @@
   "id": "pip-packages",
   "name": "Python Pip Packages",
   "version": "Various",
-  "version_label": "20 packages",
+  "version_label": "27 packages",
   "category": "Plugins",
   "platform": "both",
   "description": "Vendored pip wheels covering data science, web, CLI, and testing. Requires Python to be installed first.",
@@ -32,6 +32,13 @@
     {"name": "rich",          "version": "14.3.3",          "category": "CLI",          "description": "Rich text and beautiful formatting in the terminal"},
     {"name": "loguru",        "version": "0.7.3",           "category": "CLI",          "description": "Simplified logging with rotation, color, and structured output"},
     {"name": "win32-setctime","version": "1.2.0",           "category": "Windows",      "description": "Set file creation time on Windows (loguru dependency)"},
-    {"name": "pytest",        "version": "9.0.3",           "category": "Testing",      "description": "Feature-rich testing framework for Python"}
+    {"name": "pytest",        "version": "9.0.3",           "category": "Testing",      "description": "Feature-rich testing framework for Python"},
+    {"name": "certifi",       "version": "2026.2.25",        "category": "HTTP",         "description": "Mozilla's CA certificate bundle for verifying TLS connections"},
+    {"name": "charset-normalizer", "version": "3.4.7",       "category": "HTTP",         "description": "Character encoding detection library; requests dependency"},
+    {"name": "colorama",      "version": "0.4.6",            "category": "CLI",          "description": "Cross-platform colored terminal output for Windows and Linux"},
+    {"name": "idna",          "version": "3.10",             "category": "HTTP",         "description": "Internationalized Domain Names in Applications (IDNA) support"},
+    {"name": "PySimpleSOAP",  "version": "1.16.2",           "category": "Web",          "description": "Lightweight SOAP client and server library for Python"},
+    {"name": "pywin32",       "version": "308",              "category": "Windows",      "description": "Python extensions for Windows APIs (COM, shell, registry, services)"},
+    {"name": "urllib3",       "version": "2.4.0",            "category": "HTTP",         "description": "Powerful HTTP client with connection pooling; requests dependency"}
   ]
 }

@@ -63,6 +63,11 @@ gRPC prebuilt includes: `bin/` (protoc, grpc_cpp_plugin, all plugins), `include/
 | Tool | Version | Platform | Prebuilt? | Location |
 |------|---------|----------|-----------|----------|
 | **7-Zip** | 26.00 | Windows + Linux | Yes | `tools/dev-tools/7zip/` |
+| **FileZilla** | 3.70.4 | Windows + Linux | Yes | `tools/dev-tools/filezilla/` |
+| **GDB** | 17.1 | Linux | No (source build ~25 min) | `tools/dev-tools/gdb/` |
+| **Notepad++** | 8.9.3 | Windows | Yes (portable zip + installer) | `tools/dev-tools/notepadpp/` |
+| **PuTTY** | 0.83 | Windows + Linux | Yes (Win MSI) / source build (Linux) | `tools/dev-tools/putty/` |
+| **SourceTree** | 3.4.30 | Windows | Yes | `tools/dev-tools/sourcetree/` |
 | **Servy** | 7.9 | Windows | Yes (single file ~80 MB) | `tools/dev-tools/servy/` |
 | **Conan** | 2.27.1 | Windows + Linux | Yes (self-contained) | `tools/dev-tools/conan/` |
 | **VS Code extensions** | Various | Windows + Linux | Yes (.vsix) | `tools/dev-tools/vscode-extensions/` |
@@ -137,16 +142,22 @@ Platform-specific wheels are provided for both Windows (win_amd64) and Linux (ma
 | **loguru** | 0.7.3 | MIT | Logging -- drop-in replacement for stdlib logging |
 | **win32-setctime** | 1.2.0 | MIT | Windows file creation time (loguru dep, Windows only) |
 | **pytest** | 9.0.3 | MIT | Test runner -- for Python scripts in the devkit |
+| **certifi** | 2026.2.25 | MPL-2.0 | Mozilla CA bundle -- TLS certificate verification |
+| **charset-normalizer** | 3.4.7 | MIT | Character encoding detection (requests dependency) |
+| **colorama** | 0.4.6 | BSD-3-Clause | Cross-platform ANSI color codes in the terminal |
+| **idna** | 3.10 | BSD-3-Clause | Internationalized domain name support (requests dependency) |
+| **urllib3** | 2.4.0 | MIT | HTTP connection pooling (requests dependency) |
+| **PySimpleSOAP** | 1.16.2 | LGPL-2.1 | Lightweight SOAP client and server |
+| **pywin32** | 308 | PSF | Python bindings for Windows APIs (Windows only) |
 
 ### Transitive dependencies (auto-installed)
 
-altair, annotated-types, attrs, blinker, cachetools, certifi, charset-normalizer,
-colorama, contourpy, cycler, et-xmlfile, fonttools, gitdb, gitpython, greenlet,
-idna, iniconfig, joblib, jsonschema, jsonschema-specifications, kiwisolver,
-markdown-it-py, markupsafe, mdurl, narwhals, packaging, pluggy, protobuf, pyarrow,
-pydantic-core, pydeck, pygments, pyparsing, python-dateutil, referencing, rpds-py,
-six, smmap, tenacity, threadpoolctl, toml, tornado, typing-extensions,
-typing-inspection, tzdata, urllib3, watchdog
+altair, annotated-types, attrs, blinker, cachetools, contourpy, cycler,
+et-xmlfile, fonttools, gitdb, gitpython, greenlet, iniconfig, joblib, jsonschema,
+jsonschema-specifications, kiwisolver, markdown-it-py, markupsafe, mdurl, narwhals,
+packaging, pluggy, protobuf, pyarrow, pydantic-core, pydeck, pygments, pyparsing,
+python-dateutil, referencing, rpds-py, six, smmap, tenacity, threadpoolctl, toml,
+tornado, typing-extensions, typing-inspection, tzdata, watchdog
 
 ---
 
@@ -216,6 +227,11 @@ All .zip archives use deflate level 9 compression.
 | Python 3.14.4 | Yes | Yes | Different packages per platform |
 | .NET SDK 10.0.201 | Yes | Yes | Portable, no installer |
 | 7-Zip 26.00 | Yes | Yes | Admin + user install |
+| FileZilla 3.70.4 | Yes | Yes | Prebuilt installer (Win) + binary tarball (Linux) |
+| GDB 17.1 | - | Yes | Linux source build; requires gcc, make, readline-devel |
+| Notepad++ 8.9.3 | Yes | - | Windows only; portable zip (no admin) + installer available |
+| PuTTY 0.83 | Yes (MSI) | Yes (source) | Linux builds CLI tools only; requires cmake + gcc |
+| SourceTree 3.4.30 | Yes | - | Windows only; Squirrel installer targets %LocalAppData%\SourceTree |
 | Servy 7.9 | Yes | - | Windows only, graceful no-op on Linux |
 | Conan 2.27.1 | Yes | Yes | Self-contained, no Python required |
 | VS Code extensions | Yes | Yes | Per-platform .vsix files |
