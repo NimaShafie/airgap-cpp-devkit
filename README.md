@@ -122,13 +122,18 @@ To install system-wide on Windows, right-click Git Bash and select
 | [`tools/dev-tools/devkit-ui/`](tools/dev-tools/devkit-ui/README.md) | Web-based package manager GUI for installing and managing devkit tools (FastAPI + HTMX) | No |
 | [`tools/build-tools/lcov/`](tools/build-tools/lcov/README.md) | Code coverage reporting via lcov 2.4 + gcov, vendored Perl deps included | No |
 | [`tools/languages/python/`](tools/languages/python/README.md) | Portable Python 3.14.4 interpreter -- Windows embeddable + Linux standalone | No |
-| [`tools/languages/dotnet/`](tools/languages/dotnet/README.md) | Portable .NET 10 SDK 10.0.201 -- Windows + Linux, no installer required | No |
+| [`tools/languages/dotnet/`](tools/languages/dotnet/README.md) | Portable .NET 10 SDK 10.0.202 -- Windows + Linux, no installer required | No |
 | [`tools/dev-tools/vscode-extensions/`](tools/dev-tools/vscode-extensions/README.md) | Offline VS Code extensions: C/C++, C++ TestMate, Python (win32-x64 + linux-x64) | No |
 | [`tools/toolchains/gcc/windows/`](tools/toolchains/gcc/windows/README.md) | GCC 15.2.0 + MinGW-w64 13.0.0 UCRT toolchain for Windows | No -- standalone |
 | [`tools/dev-tools/7zip/`](tools/dev-tools/7zip/README.md) | 7-Zip 26.00 -- admin + user install for Windows and Linux | No -- standalone |
 | [`tools/dev-tools/servy/`](tools/dev-tools/servy/README.md) | Servy 7.9 -- Windows service manager (Windows only, graceful no-op on Linux) | No -- standalone |
 | [`tools/dev-tools/conan/`](tools/dev-tools/conan/README.md) | Conan 2.27.1 -- C/C++ package manager, Windows + Linux, no Python required | No -- standalone |
 | [`tools/frameworks/grpc/`](tools/frameworks/grpc/README.md) | gRPC v1.80.0 for Windows -- prebuilt install (instant) or full source build (~40 min) | No -- standalone |
+| [`tools/dev-tools/filezilla/`](tools/dev-tools/filezilla/README.md) | FileZilla 3.70.4 -- FTP/SFTP client; Windows installer + Linux binary tarball | No -- standalone |
+| [`tools/dev-tools/gdb/`](tools/dev-tools/gdb/README.md) | GDB 17.1 -- GNU debugger; Linux source build (~25 min), requires gcc, make, readline-devel | No -- standalone |
+| [`tools/dev-tools/notepadpp/`](tools/dev-tools/notepadpp/README.md) | Notepad++ 8.9.3 -- text/code editor; Windows only; portable zip (no admin) + installer | No -- standalone |
+| [`tools/dev-tools/putty/`](tools/dev-tools/putty/README.md) | PuTTY 0.83 -- SSH/SCP client; Windows MSI install + Linux source build (cmake + gcc required) | No -- standalone |
+| [`tools/dev-tools/sourcetree/`](tools/dev-tools/sourcetree/README.md) | SourceTree 3.4.30 -- Git GUI client; Windows only; Squirrel installer targets %LocalAppData%\SourceTree | No -- standalone |
 
 ---
 
@@ -141,9 +146,9 @@ fully independent and optional. You can use any subset without affecting the oth
 existing system Python. It does not modify your PATH until you explicitly
 run `source tools/languages/python/scripts/env-setup.sh`. Other devkit tools that require
 Python will prefer this interpreter if active, and fall back to the system
-Python if not. Includes 10 vendored pip packages installed offline.
+Python if not. Includes 27 vendored pip packages installed offline.
 
-**`tools/languages/dotnet/`** installs a portable .NET 10 SDK 10.0.201 that lives alongside
+**`tools/languages/dotnet/`** installs a portable .NET 10 SDK 10.0.202 that lives alongside
 any existing system .NET installation. No installer, no registry changes, no elevation
 required for user install. Includes the C# 14 compiler, .NET Runtime, ASP.NET Core
 Runtime, MSBuild, NuGet client, and the full `dotnet` CLI. Supports building and
@@ -203,6 +208,30 @@ bash launch.sh --cli               # skip UI, use install-cli.sh instead
 **`tools/build-tools/lcov/`** provides code coverage reporting for C++ projects
 compiled with GCC's `-fprofile-arcs -ftest-coverage` flags. Vendors lcov
 2.4 and all required Perl dependencies -- no CPAN, no EPEL required.
+
+**`tools/dev-tools/filezilla/`** provides FileZilla 3.70.4, an FTP/SFTP client.
+Windows: silent NSIS installer install. Linux: prebuilt binary tarball extracted to
+the devkit path. Useful for transferring files to/from remote systems in restricted
+network environments.
+
+**`tools/dev-tools/gdb/`** provides GDB 17.1, the GNU debugger, for Linux environments.
+Built from the vendored source archive (~25 min). Requires gcc, g++, make,
+readline-devel, ncurses-devel, and expat-devel. Supports `--jobs N` for parallel builds.
+Windows is not supported (use the debugger built into your IDE or toolchain instead).
+
+**`tools/dev-tools/notepadpp/`** provides Notepad++ 8.9.3 for Windows. Two install
+modes: portable zip (no admin, extracted to devkit prefix) or NSIS installer (system
+install, printed as a tip). Windows only.
+
+**`tools/dev-tools/putty/`** provides PuTTY 0.83. Windows: MSI silent install to the
+devkit prefix. Linux: built from the vendored source archive using CMake with
+`-DPUTTY_GTK_VERSION=NONE` for CLI-only tools (plink, pscp, psftp, puttygen).
+Requires cmake and gcc on Linux.
+
+**`tools/dev-tools/sourcetree/`** provides SourceTree 3.4.30, a Git GUI client.
+Windows only. The Squirrel installer does not support custom prefixes; the actual
+install always goes to `%LocalAppData%\SourceTree`. An `INSTALL_RECEIPT.txt` is
+written to the devkit prefix to track the install.
 
 If you only need the formatter and git transfer tool, ignore everything else.
 
@@ -391,10 +420,10 @@ source tools/languages/python/scripts/env-setup.sh
 ```
 Installs a self-contained Python 3.14.4 alongside any existing system Python.
 Does not affect system Python until `env-setup.sh` is sourced.
-Also installs 10 vendored pip packages offline (numpy, pandas, plotly, streamlit,
+Also installs 27 vendored pip packages offline (numpy, pandas, plotly, streamlit,
 requests, PyYAML, Jinja2, click, rich, pytest).
 
-**Method 7 -- Portable .NET 10 SDK 10.0.201**
+**Method 7 -- Portable .NET 10 SDK 10.0.202**
 ```bash
 # Windows (Developer PowerShell):
 cd languages\dotnet
@@ -403,7 +432,7 @@ cd languages\dotnet
 # Linux:
 bash tools/languages/dotnet/setup.sh
 ```
-Installs .NET 10 SDK 10.0.201 from prebuilt archives. No installer, no registry
+Installs .NET 10 SDK 10.0.202 from prebuilt archives. No installer, no registry
 changes, no elevation required for user install. Includes C# 14 compiler,
 .NET Runtime, ASP.NET Core Runtime, MSBuild, NuGet client, and dotnet CLI.
 Supported until November 2028.
@@ -521,12 +550,16 @@ airgap-cpp-devkit/
 +-- prebuilt/                              <- SUBMODULE (separate repo, optional)
 |   +-- build-tools/cmake/                 <- CMake 4.3.1 (Windows .zip, Linux .tar.gz, source .tar.gz)
 |   +-- dev-tools/7zip/                    <- 7-Zip 26.00
-|   +-- dev-tools/servy/                   <- Servy 7.9 (single file ~80MB)
 |   +-- dev-tools/conan/                   <- Conan 2.27.1 (Windows .zip, Linux .tgz)
+|   +-- dev-tools/filezilla/               <- FileZilla 3.70.4 (Windows installer, Linux tarball)
+|   +-- dev-tools/notepadpp/               <- Notepad++ 8.9.3 (Windows portable zip + installer)
+|   +-- dev-tools/putty/                   <- PuTTY 0.83 (Windows MSI)
+|   +-- dev-tools/servy/                   <- Servy 7.9 (single file ~80MB)
+|   +-- dev-tools/sourcetree/              <- SourceTree 3.4.30 (Windows installer)
 |   +-- frameworks/grpc/windows/1.80.0/    <- gRPC prebuilt (.7z 69MB + .zip 162MB)
-|   +-- languages/dotnet/10.0.201/         <- .NET 10 SDK (.7z 148MB + .zip 290MB, Linux .tar.gz 231MB)
+|   +-- languages/dotnet/10.0.202/         <- .NET 10 SDK (.7z 148MB + .zip 290MB, Linux .tar.gz 231MB)
 |   +-- languages/python/                  <- Python 3.14.4 (Windows .zip, Linux .tar.gz 2 parts)
-|   +-- toolchains/clang/mingw/            <- llvm-mingw 20260324
+|   +-- toolchains/clang/mingw/            <- llvm-mingw 20260407
 |   +-- toolchains/clang/rhel8/            <- Clang 20.1.8 RHEL8 RPMs
 |   +-- toolchains/clang/source-build/     <- clang-format, clang-tidy, Ninja binaries
 |   +-- toolchains/gcc/linux/              <- gcc-toolset-15 RHEL8 RPMs
@@ -539,17 +572,22 @@ airgap-cpp-devkit/
 |   |
 |   +-- dev-tools/
 |   |   +-- 7zip/                          <- 7-Zip 26.00 scripts + manifests
-|   |   +-- servy/                         <- Servy 7.9 scripts + manifests
 |   |   +-- conan/                         <- Conan 2.27.1 scripts + manifests
-|   |   +-- vscode-extensions/             <- offline VS Code extensions
 |   |   +-- devkit-ui/                     <- web-based package manager (FastAPI + HTMX)
+|   |   +-- filezilla/                     <- FileZilla 3.70.4 scripts + manifests
+|   |   +-- gdb/                           <- GDB 17.1 source build scripts + sources/
+|   |   +-- notepadpp/                     <- Notepad++ 8.9.3 scripts + manifests
+|   |   +-- putty/                         <- PuTTY 0.83 scripts + sources/
+|   |   +-- servy/                         <- Servy 7.9 scripts + manifests
+|   |   +-- sourcetree/                    <- SourceTree 3.4.30 scripts + manifests
+|   |   +-- vscode-extensions/             <- offline VS Code extensions
 |   |
 |   +-- frameworks/
 |   |   +-- grpc/                          <- gRPC v1.80.0 (Windows)
 |   |
 |   +-- languages/
 |   |   +-- python/                        <- Python 3.14.4 (Windows + Linux) + pip packages
-|   |   +-- dotnet/                        <- .NET 10 SDK 10.0.201 (Windows + Linux)
+|   |   +-- dotnet/                        <- .NET 10 SDK 10.0.202 (Windows + Linux)
 |   |
 |   +-- toolchains/
 |       +-- clang/

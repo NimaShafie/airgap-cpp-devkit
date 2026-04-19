@@ -2,7 +2,7 @@
   "SPDXID": "SPDXRef-DOCUMENT",
   "spdxVersion": "SPDX-2.3",
   "creationInfo": {
-    "created": "2026-04-17T18:26:34Z",
+    "created": "2026-04-19T00:00:00Z",
     "creators": [
       "Organization: airgap-cpp-devkit",
       "Tool: airgap-cpp-devkit/scripts/generate-sbom.sh"
@@ -155,6 +155,46 @@
     {
       "externalDocumentId": "DocumentRef-python-pip-packages",
       "spdxDocument": "https://airgap-cpp-devkit.internal/tools/languages/python/pip-packages/sbom.spdx.json",
+      "checksum": {
+        "algorithm": "SHA1",
+        "checksumValue": "0000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "externalDocumentId": "DocumentRef-dev-tools-filezilla",
+      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/dev-tools/filezilla/sbom.spdx.json",
+      "checksum": {
+        "algorithm": "SHA1",
+        "checksumValue": "0000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "externalDocumentId": "DocumentRef-dev-tools-gdb",
+      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/dev-tools/gdb/sbom.spdx.json",
+      "checksum": {
+        "algorithm": "SHA1",
+        "checksumValue": "0000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "externalDocumentId": "DocumentRef-dev-tools-notepadpp",
+      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/dev-tools/notepadpp/sbom.spdx.json",
+      "checksum": {
+        "algorithm": "SHA1",
+        "checksumValue": "0000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "externalDocumentId": "DocumentRef-dev-tools-putty",
+      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/dev-tools/putty/sbom.spdx.json",
+      "checksum": {
+        "algorithm": "SHA1",
+        "checksumValue": "0000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "externalDocumentId": "DocumentRef-dev-tools-sourcetree",
+      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/dev-tools/sourcetree/sbom.spdx.json",
       "checksum": {
         "algorithm": "SHA1",
         "checksumValue": "0000000000000000000000000000000000000000"
@@ -394,7 +434,72 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "Vendored pip packages for offline Python use."
+      "comment": "Vendored pip wheel files for offline Python use. 27 packages including numpy, pandas, scipy, scikit-learn, matplotlib, plotly, requests, PyYAML, pydantic, streamlit, and more."
+    },
+    {
+      "SPDXID": "SPDXRef-dev-tools-filezilla",
+      "name": "dev-tools/filezilla",
+      "versionInfo": "3.70.4",
+      "supplier": "Organization: airgap-cpp-devkit",
+      "downloadLocation": "https://airgap-cpp-devkit.internal",
+      "filesAnalyzed": false,
+      "licenseConcluded": "GPL-2.0-or-later",
+      "licenseDeclared": "GPL-2.0-or-later",
+      "copyrightText": "Copyright (C) 2004-2025 Tim Kosse",
+      "primaryPackagePurpose": "APPLICATION",
+      "comment": "FileZilla 3.70.4 FTP/SFTP client. Windows: prebuilt NSIS installer. Linux: prebuilt binary tarball."
+    },
+    {
+      "SPDXID": "SPDXRef-dev-tools-gdb",
+      "name": "dev-tools/gdb",
+      "versionInfo": "17.1",
+      "supplier": "Organization: airgap-cpp-devkit",
+      "downloadLocation": "https://airgap-cpp-devkit.internal",
+      "filesAnalyzed": false,
+      "licenseConcluded": "GPL-3.0-or-later",
+      "licenseDeclared": "GPL-3.0-or-later",
+      "copyrightText": "Copyright (C) Free Software Foundation, Inc.",
+      "primaryPackagePurpose": "APPLICATION",
+      "comment": "GDB 17.1 GNU debugger. Linux only. Source build from vendored gdb-17.1.tar.gz (~25 min). Requires gcc, make, readline-devel."
+    },
+    {
+      "SPDXID": "SPDXRef-dev-tools-notepadpp",
+      "name": "dev-tools/notepadpp",
+      "versionInfo": "8.9.3",
+      "supplier": "Organization: airgap-cpp-devkit",
+      "downloadLocation": "https://airgap-cpp-devkit.internal",
+      "filesAnalyzed": false,
+      "licenseConcluded": "GPL-3.0-or-later",
+      "licenseDeclared": "GPL-3.0-or-later",
+      "copyrightText": "Copyright (C) 2003 Don Ho",
+      "primaryPackagePurpose": "APPLICATION",
+      "comment": "Notepad++ 8.9.3 text editor. Windows only. Portable zip (no admin required) + NSIS installer."
+    },
+    {
+      "SPDXID": "SPDXRef-dev-tools-putty",
+      "name": "dev-tools/putty",
+      "versionInfo": "0.83",
+      "supplier": "Organization: airgap-cpp-devkit",
+      "downloadLocation": "https://airgap-cpp-devkit.internal",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "Copyright 1997-2025 Simon Tatham",
+      "primaryPackagePurpose": "APPLICATION",
+      "comment": "PuTTY 0.83 SSH/SCP client. Windows: prebuilt MSI. Linux: source build from vendored putty-0.83.tar.gz using CMake (CLI tools only)."
+    },
+    {
+      "SPDXID": "SPDXRef-dev-tools-sourcetree",
+      "name": "dev-tools/sourcetree",
+      "versionInfo": "3.4.30",
+      "supplier": "Organization: airgap-cpp-devkit",
+      "downloadLocation": "https://airgap-cpp-devkit.internal",
+      "filesAnalyzed": false,
+      "licenseConcluded": "LicenseRef-Atlassian-EULA",
+      "licenseDeclared": "LicenseRef-Atlassian-EULA",
+      "copyrightText": "Copyright (C) Atlassian Pty Ltd",
+      "primaryPackagePurpose": "APPLICATION",
+      "comment": "SourceTree 3.4.30 Git GUI client. Windows only. Squirrel installer installs to %LocalAppData%\\SourceTree."
     }
   ],
   "relationships": [
@@ -487,6 +592,31 @@
       "spdxElementId": "SPDXRef-airgap-cpp-devkit",
       "relationshipType": "CONTAINS",
       "relatedSpdxElement": "SPDXRef-python-pip-packages"
+    },
+    {
+      "spdxElementId": "SPDXRef-airgap-cpp-devkit",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-dev-tools-filezilla"
+    },
+    {
+      "spdxElementId": "SPDXRef-airgap-cpp-devkit",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-dev-tools-gdb"
+    },
+    {
+      "spdxElementId": "SPDXRef-airgap-cpp-devkit",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-dev-tools-notepadpp"
+    },
+    {
+      "spdxElementId": "SPDXRef-airgap-cpp-devkit",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-dev-tools-putty"
+    },
+    {
+      "spdxElementId": "SPDXRef-airgap-cpp-devkit",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-dev-tools-sourcetree"
     }
   ]
 }
