@@ -297,7 +297,10 @@ for candidate_prefix in "$(_get_sys_prefix)" "$(_get_user_prefix)" ${PREFIX_OVER
             if [[ "${DRY_RUN}" == "true" ]]; then
                 echo "  [dry-run] Would remove PATH entry: ${bin_dir} from ${env_file}"
             else
-                grep -v "${bin_dir}" "${env_file}" > "${env_file}.tmp" && mv "${env_file}.tmp" "${env_file}"
+                grep -v "${bin_dir}" "${env_file}" > "${env_file}.tmp" \
+                    && [[ -s "${env_file}.tmp" || $(wc -l < "${env_file}") -le 1 ]] \
+                    && mv "${env_file}.tmp" "${env_file}" \
+                    || { rm -f "${env_file}.tmp"; echo "  [WARN] Skipped env.sh rewrite — output was unexpectedly empty." >&2; }
                 echo "  [OK]  Removed PATH entry: ${bin_dir}"
             fi
         fi
@@ -327,7 +330,10 @@ for candidate_prefix in "$(_get_sys_prefix)" "$(_get_user_prefix)" ${PREFIX_OVER
         if [[ "${DRY_RUN}" == "true" ]]; then
             echo "  [dry-run] Would remove from ~/.bashrc: source \"${env_file}\""
         else
-            grep -v "${env_file}" "${BASHRC}" > "${BASHRC}.tmp" && mv "${BASHRC}.tmp" "${BASHRC}"
+            grep -v "${env_file}" "${BASHRC}" > "${BASHRC}.tmp" \
+                && [[ -s "${BASHRC}.tmp" ]] \
+                && mv "${BASHRC}.tmp" "${BASHRC}" \
+                || { rm -f "${BASHRC}.tmp"; echo "  [WARN] Skipped ~/.bashrc rewrite — output was unexpectedly empty." >&2; }
             echo "  [OK]  Removed env.sh source line from ~/.bashrc"
         fi
     fi
