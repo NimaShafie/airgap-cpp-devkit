@@ -1277,3 +1277,30 @@ input, select, textarea { font-family: inherit; }
   animation: shimmer 1.4s ease infinite;
   border-radius: var(--radius);
 }
+
+/* ── Install history list ── */
+.modal-log-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 6px;
+}
+.log-history-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 8px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  transition: background 0.15s;
+}
+.log-history-row:hover { background: var(--surface-2); }
+.log-history-row-active {
+  background: var(--accent-dim);
+  color: var(--accent);
+  font-weight: 500;
+}
+.log-history-time { flex: 1; font-family: var(--font-mono); font-size: 0.76rem; }
+.log-history-size { font-size: 0.72rem; color: var(--text-muted); }

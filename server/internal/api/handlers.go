@@ -110,6 +110,8 @@ func (s *Server) Routes() http.Handler {
 	r.Get("/install-profile/{id}", s.handleInstallProfile)
 	r.Get("/check/{id}", s.handleCheck)
 	r.Get("/api/tool/{id}/log", s.handleToolLog)
+	r.Get("/api/tool/{id}/logs", s.handleToolLogList)
+	r.Get("/api/tool/{id}/logs/{file}", s.handleToolLogFile)
 	r.Post("/packages/upload", s.handlePackageUpload)
 	r.Delete("/packages/{id}", s.handlePackageDelete)
 	r.Get("/shutdown", s.handleShutdown)
@@ -497,16 +499,32 @@ func (s *Server) handleInstall(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pw := newPipe(sse)
+	// Save full install output to a timestamped log file
+	logDir := filepath.Join(s.RepoRoot, "devkit-logs", strings.ReplaceAll(id, "/", "_"))
+	_ = os.MkdirAll(logDir, 0o755)
+	logFile := filepath.Join(logDir, time.Now().UTC().Format("20060102-150405")+".log")
+	ssePipe := newPipe(sse)
+	var pw io.Writer = ssePipe
+	if f, err := os.Create(logFile); err == nil {
+		pw = io.MultiWriter(ssePipe, f)
+		defer f.Close()
+	}
+
 	env := s.installEnv(t)
 	rc := tools.RunInstall(s.Bash, s.RepoRoot, t, t.SetupArgs, env, pw)
-	if rc == 0 {
-		sse.Send("✓ Installation complete")
-		sse.Done("success")
-	} else {
-		sse.Send(fmt.Sprintf("✗ Installation failed (exit %d)", rc))
-		sse.Done("failed")
+	finalMsg := "✓ Installation complete"
+	doneStatus := "success"
+	if rc != 0 {
+		finalMsg = fmt.Sprintf("✗ Installation failed (exit %d)", rc)
+		doneStatus = "failed"
 	}
+	sse.Send(finalMsg)
+	// Also append final line to log file
+	if f, err := os.OpenFile(logFile, os.O_APPEND|os.O_WRONLY, 0o644); err == nil {
+		fmt.Fprintln(f, finalMsg)
+		f.Close()
+	}
+	sse.Done(doneStatus)
 }
 
 func (s *Server) handleUninstall(w http.ResponseWriter, r *http.Request) {
@@ -677,6 +695,59 @@ func (s *Server) handleToolLog(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	jsonOK(w, map[string]any{"ok": false, "error": "No install log found for this tool."})
+}
+
+func (s *Server) handleToolLogList(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	logDir := filepath.Join(s.RepoRoot, "devkit-logs", strings.ReplaceAll(id, "/", "_"))
+	entries, err := os.ReadDir(logDir)
+	if err != nil {
+		jsonOK(w, map[string]any{"ok": true, "logs": []any{}})
+		return
+	}
+	type logEntry struct {
+		File string `json:"file"`
+		Size int64  `json:"size"`
+		Time string `json:"time"`
+	}
+	var logs []logEntry
+	for i := len(entries) - 1; i >= 0; i-- { // newest first
+		e := entries[i]
+		if e.IsDir() || filepath.Ext(e.Name()) != ".log" {
+			continue
+		}
+		info, _ := e.Info()
+		sz := int64(0)
+		if info != nil {
+			sz = info.Size()
+		}
+		// Parse timestamp from filename 20060102-150405.log
+		ts := strings.TrimSuffix(e.Name(), ".log")
+		if t, err := time.ParseInLocation("20060102-150405", ts, time.UTC); err == nil {
+			ts = t.Format("Jan 02, 2006 15:04:05 UTC")
+		}
+		logs = append(logs, logEntry{File: e.Name(), Size: sz, Time: ts})
+	}
+	jsonOK(w, map[string]any{"ok": true, "logs": logs})
+}
+
+func (s *Server) handleToolLogFile(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	file := chi.URLParam(r, "file")
+	// Sanitise: only allow safe filenames (digits, dash, .log)
+	for _, c := range file {
+		if !((c >= '0' && c <= '9') || c == '-' || c == '.') {
+			jsonErr(w, "invalid filename", 400)
+			return
+		}
+	}
+	logDir := filepath.Join(s.RepoRoot, "devkit-logs", strings.ReplaceAll(id, "/", "_"))
+	b, err := os.ReadFile(filepath.Join(logDir, file))
+	if err != nil {
+		jsonErr(w, "log not found", 404)
+		return
+	}
+	jsonOK(w, map[string]any{"ok": true, "log": string(b), "filename": file})
 }
 
 func (s *Server) handleShutdown(w http.ResponseWriter, r *http.Request) {

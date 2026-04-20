@@ -321,63 +321,98 @@ function openToolLog(id) {
   }, 400);
 }
 
-// ── Modal log viewer ──
+// ── Modal log history viewer ──
 let _logLoaded = false;
 let _logVisible = false;
+
+function _logIconSvg() {
+  return '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>';
+}
+
 function toggleModalLog() {
   const section = document.getElementById('modal-log-section');
   const btn = document.getElementById('modal-log-btn');
   if (!_logLoaded) {
-    loadModalLog(() => {
+    loadModalLogList(() => {
       _logLoaded = true;
       _logVisible = true;
       section.style.display = '';
-      btn.innerHTML = _logIconSvg() + ' Hide Log';
+      btn.innerHTML = _logIconSvg() + ' Hide History';
     });
     return;
   }
   _logVisible = !_logVisible;
   section.style.display = _logVisible ? '' : 'none';
-  btn.innerHTML = _logIconSvg() + (_logVisible ? ' Hide Log' : ' View Log');
+  btn.innerHTML = _logIconSvg() + (_logVisible ? ' Hide History' : ' View History');
 }
-function _logIconSvg() {
-  return '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>';
-}
-function loadModalLog(done) {
+
+function loadModalLogList(done) {
   if (!_modalToolId) return;
-  const contentEl = document.getElementById('modal-log-content');
-  const filenameEl = document.getElementById('modal-log-filename');
-  contentEl.textContent = 'Loading…';
-  fetch('/api/tool/' + encodeURIComponent(_modalToolId) + '/log')
+  const listEl = document.getElementById('modal-log-list');
+  listEl.innerHTML = '<span class="text-muted text-xs">Loading…</span>';
+  fetch('/api/tool/' + encodeURIComponent(_modalToolId) + '/logs')
     .then(r => r.json())
     .then(d => {
-      if (!d.ok) {
-        contentEl.textContent = d.error || 'No log available.';
+      const logs = d.logs || [];
+      if (logs.length === 0) {
+        listEl.innerHTML = '<span class="text-muted text-xs">No install logs recorded yet. Logs are saved when you install a tool through this interface.</span>';
+        if (done) done();
         return;
       }
-      filenameEl.textContent = d.filename + ' · ' + d.path;
-      contentEl.innerHTML = formatLog(d.log);
+      listEl.innerHTML = logs.map((l, i) =>
+        `<div class="log-history-row ${i === 0 ? 'log-history-row-active' : ''}" onclick="loadLogFile('${l.file}', this)">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
+          <span class="log-history-time">${l.time}</span>
+          <span class="log-history-size">${Math.ceil(l.size/1024)}KB</span>
+        </div>`
+      ).join('');
+      // Auto-load newest
+      if (logs.length > 0) loadLogFile(logs[0].file, listEl.firstElementChild);
       if (done) done();
+    })
+    .catch(() => { listEl.innerHTML = '<span class="text-muted text-xs">Failed to load log history.</span>'; });
+}
+
+function loadLogFile(file, rowEl) {
+  // Highlight selected row
+  document.querySelectorAll('.log-history-row').forEach(r => r.classList.remove('log-history-row-active'));
+  if (rowEl) rowEl.classList.add('log-history-row-active');
+
+  const detail = document.getElementById('modal-log-detail');
+  const contentEl = document.getElementById('modal-log-content');
+  const filenameEl = document.getElementById('modal-log-filename');
+  const copyBtn = document.getElementById('modal-copy-log-btn');
+  detail.style.display = '';
+  contentEl.textContent = 'Loading…';
+  fetch('/api/tool/' + encodeURIComponent(_modalToolId) + '/logs/' + encodeURIComponent(file))
+    .then(r => r.json())
+    .then(d => {
+      filenameEl.textContent = d.filename || file;
+      contentEl.innerHTML = formatLog(d.log || '');
+      if (copyBtn) copyBtn.style.display = '';
     })
     .catch(() => { contentEl.textContent = 'Failed to load log.'; });
 }
+
 function formatLog(raw) {
-  // Color-code log lines — escape HTML first
   return raw.split('\n').map(line => {
     const e = line.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     if (/✓|success|installed|complete|done/i.test(line)) return '<span class="log-success">' + e + '</span>';
     if (/✗|error|fail|missing|not found/i.test(line)) return '<span class="log-error">' + e + '</span>';
-    if (/^==?>|^==>/.test(line)) return '<span class="log-step">' + e + '</span>';
-    if (/^#|^tool=|^version=|^status=|^platform=|^install/.test(line)) return '<span class="log-meta">' + e + '</span>';
+    if (/^==>/.test(line)) return '<span class="log-step">' + e + '</span>';
+    if (/^#|^tool=|^version=|^status=|^platform=|^install/i.test(line)) return '<span class="log-meta">' + e + '</span>';
+    // Filter out Windows cmd.exe banner lines
+    if (/^Microsoft Windows \[|^\(c\) Microsoft Corporation|^[A-Z]:\\.*>/.test(line)) return '<span class="log-meta">' + e + '</span>';
     return e;
   }).join('\n');
 }
+
 function copyModalLog() {
   const el = document.getElementById('modal-log-content');
   navigator.clipboard.writeText(el ? el.innerText : '').then(() => {
     const btn = document.getElementById('modal-copy-log-btn');
     const orig = btn.innerHTML;
-    btn.innerHTML = '✓ Copied';
+    btn.innerHTML = 'Copied!';
     setTimeout(() => { btn.innerHTML = orig; }, 1800);
   });
 }
@@ -1130,19 +1165,22 @@ function deletePackage(id, name, btn) {
         </div>
       </div>
 
-      <!-- Install log viewer -->
+      <!-- Install log history -->
       <div class="modal-section" id="modal-log-section" style="display:none;">
         <div class="modal-section-title" style="display:flex;align-items:center;justify-content:space-between;">
-          <span>Install Log</span>
-          <div style="display:flex;gap:6px;">
-            <button class="btn btn-ghost btn-sm" id="modal-copy-log-btn" onclick="copyModalLog()" style="font-size:0.75rem;padding:2px 8px;">
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-              Copy
-            </button>
-          </div>
+          <span>Install History</span>
+          <button class="btn btn-ghost btn-sm" id="modal-copy-log-btn" onclick="copyModalLog()" style="font-size:0.72rem;padding:2px 7px;display:none;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+            Copy
+          </button>
         </div>
-        <div id="modal-log-filename" style="font-size:0.72rem;color:var(--text-muted);font-family:var(--font-mono);margin-bottom:6px;"></div>
-        <pre id="modal-log-content" class="modal-log-pre"></pre>
+        <!-- History list -->
+        <div id="modal-log-list" class="modal-log-list"></div>
+        <!-- Selected log content -->
+        <div id="modal-log-detail" style="display:none;margin-top:8px;">
+          <div id="modal-log-filename" style="font-size:0.7rem;color:var(--text-muted);font-family:var(--font-mono);margin-bottom:5px;"></div>
+          <pre id="modal-log-content" class="modal-log-pre"></pre>
+        </div>
       </div>
 
       <!-- Package metadata (always shown) -->
@@ -1211,23 +1249,23 @@ function friendlyCheckOutput(raw) {
   if (!raw) return raw;
   const patterns = [
     { re: /exit status 255/i,
-      tip: '🔍 Exit code 255 usually means the binary was not found or could not start. Verify the tool is installed and its folder is in your system PATH.' },
+      tip: 'Exit code 255: the binary was not found or could not start. Verify the tool is installed and its folder is in your system PATH.' },
     { re: /executable file not found in %PATH%|executable file not found in \$PATH/i,
-      tip: '📂 The executable was not found in any PATH directory. Install the tool first, or add its installation folder to the system PATH environment variable.' },
+      tip: 'Executable not found in PATH. Install the tool first, or add its installation folder to the system PATH environment variable.' },
     { re: /command not found/i,
-      tip: '📂 Command not found. The tool may not be installed, or the shell does not know where to find it. Check your PATH.' },
+      tip: 'Command not found. The tool may not be installed, or the shell does not know where to find it. Check your PATH.' },
     { re: /exit status 1(?!\d)/,
-      tip: '⚠️ Exit code 1 means the command ran but reported failure. The tool may be misconfigured or missing a dependency.' },
+      tip: 'Exit code 1: the command ran but reported failure. The tool may be misconfigured or missing a dependency.' },
     { re: /exit status 2(?!\d)/,
-      tip: '⚠️ Exit code 2 typically means incorrect usage or a missing argument. This is usually harmless — the tool is installed.' },
+      tip: 'Exit code 2: incorrect usage or a missing argument. This is usually harmless — the tool is likely installed.' },
     { re: /exit status 127/i,
-      tip: '📂 Exit 127: command not found by the shell. The tool is likely not on the PATH.' },
+      tip: 'Exit 127: command not found by the shell. The tool is likely not on the PATH.' },
     { re: /access is denied/i,
-      tip: '🔒 Permission denied. Try running the DevKit server as Administrator (right-click → Run as administrator).' },
+      tip: 'Permission denied. Try running the DevKit server as Administrator (right-click → Run as administrator).' },
     { re: /no such file or directory/i,
-      tip: '📂 File or directory does not exist. The tool may not have been installed yet.' },
+      tip: 'File or directory does not exist. The tool may not have been installed yet.' },
     { re: /is not recognized as an internal or external command/i,
-      tip: '📂 Windows could not find this command. The tool is either not installed or its folder is not in the system PATH.' },
+      tip: 'Windows could not find this command. The tool is either not installed or its folder is not in the system PATH.' },
   ];
   for (const p of patterns) {
     if (p.re.test(raw)) {
