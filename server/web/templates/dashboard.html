@@ -52,6 +52,7 @@ function filterCategory(cat) {
 // ── Progress drawer ──
 const drawer = {
   el: null, log: null, title: null,
+  _tickerTimer: null, _tickerStart: null, _tickerLabel: '',
   init() {
     this.el = document.getElementById('progress-drawer');
     this.log = document.getElementById('progress-log');
@@ -61,11 +62,31 @@ const drawer = {
     this.title.textContent = 'Installing ' + toolName + '…';
     this.log.innerHTML = '';
     this.resetIcon();
+    this.startTicker(toolName);
     // Always start expanded
     if (_drawerCollapsed) toggleDrawerCollapse();
     this.el.classList.add('open');
   },
   close() { this.el.classList.remove('open'); },
+  startTicker(label) {
+    this.stopTicker();
+    this._tickerStart = Date.now();
+    this._tickerLabel = label || 'Running';
+    const el = document.getElementById('progress-ticker');
+    if (!el) return;
+    el.style.display = '';
+    const update = () => {
+      const sec = Math.floor((Date.now() - this._tickerStart) / 1000);
+      el.textContent = '⏳  ' + this._tickerLabel + '… ' + sec + 's elapsed';
+    };
+    update();
+    this._tickerTimer = setInterval(update, 1000);
+  },
+  stopTicker() {
+    if (this._tickerTimer) { clearInterval(this._tickerTimer); this._tickerTimer = null; }
+    const el = document.getElementById('progress-ticker');
+    if (el) el.style.display = 'none';
+  },
   append(line) {
     const div = document.createElement('div');
     if (line.includes('✓') || line.includes('complete')) div.className = 'log-success';
@@ -76,6 +97,7 @@ const drawer = {
     this.log.scrollTop = this.log.scrollHeight;
   },
   setStatus(success) {
+    this.stopTicker();
     const el = document.getElementById('progress-status-text');
     const dot = document.getElementById('progress-status-dot');
     const icon = document.getElementById('progress-spinner');
@@ -268,7 +290,12 @@ function installTool(id, name, btn) {
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span> Installing…';
 
-  const _sseLines = []; // buffer lines for console
+  // Create a live console entry immediately so the modal shows output as it streams
+  if (!_toolConsole[id]) _toolConsole[id] = [];
+  const _liveLines = [];
+  const _liveEntry = { time: _consoleTs(), source: 'install', html: '' };
+  _toolConsole[id].push(_liveEntry);
+  if (_modalToolId === id) _renderModalConsole();
 
   const es = new EventSource('/install/' + encodeURIComponent(id));
   es.onmessage = e => {
@@ -279,31 +306,28 @@ function installTool(id, name, btn) {
       drawer.setStatus(success);
       btn.disabled = false;
       btn.innerHTML = success ? '✓ Installed' : '⟳ Retry';
-      // Flush buffered lines into the persistent console
-      if (_sseLines.length > 0) {
-        _appendConsoleEntry(id, 'install', _sseLines.join('\n'));
-      }
-      // Delay slightly so the OS flushes the receipt file before we read it
+      // Finalise the live entry
+      _liveEntry.html = formatLog(_liveLines.join('\n'));
+      if (_modalToolId === id) _renderModalConsole();
       if (success) {
         setTimeout(() => {
           refreshCard(id);
-          // If first refresh still shows not-installed, retry once after 1s
           setTimeout(() => refreshCard(id), 1200);
         }, 300);
       }
-      // Drawer stays open — user closes it with the ↓ button
       return;
     }
-    _sseLines.push(line);
+    _liveLines.push(line);
+    _liveEntry.html = formatLog(_liveLines.join('\n'));
     drawer.append(line);
+    if (_modalToolId === id) _renderModalConsole();
   };
   es.onerror = () => {
     es.close();
-    drawer.append('ERROR: connection lost');
     drawer.setStatus(false);
-    if (_sseLines.length > 0) {
-      _appendConsoleEntry(id, 'install', _sseLines.join('\n'));
-    }
+    drawer.append('ERROR: connection lost');
+    _liveEntry.html = formatLog(_liveLines.join('\n'));
+    if (_modalToolId === id) _renderModalConsole();
     btn.disabled = false;
     btn.textContent = '⟳ Retry';
   };
@@ -1269,6 +1293,7 @@ function deletePackage(id, name, btn) {
   </div>
   <div class="progress-body" id="progress-body">
     <div class="progress-log" id="progress-log"></div>
+    <div id="progress-ticker" style="display:none;font-size:0.72rem;color:var(--text-muted);padding:4px 12px;border-top:1px solid var(--border);font-family:monospace;background:var(--surface);"></div>
     <div class="progress-status">
       <span class="badge badge-gray badge-dot" id="progress-status-dot">Running</span>
       <span id="progress-status-text" class="text-sm text-muted">In progress…</span>
