@@ -1304,3 +1304,29 @@ input, select, textarea { font-family: inherit; }
 }
 .log-history-time { flex: 1; font-family: var(--font-mono); font-size: 0.76rem; }
 .log-history-size { font-size: 0.72rem; color: var(--text-muted); }
+
+/* ── Progress drawer terminal icon (spinner → checkmark/X) ── */
+.progress-icon-done {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  color: var(--success);
+  animation: icon-pop 0.3s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.progress-icon-failed {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  color: var(--danger);
+  animation: icon-pop 0.3s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+@keyframes icon-pop {
+  0%   { transform: scale(0.4); opacity: 0; }
+  100% { transform: scale(1);   opacity: 1; }
+}
