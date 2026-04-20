@@ -318,8 +318,8 @@ function runModalCheck() {
       if (labelEl && d.check_cmd) {
         labelEl.textContent = 'Check command: ' + d.check_cmd;
       }
-      const text = d.output || (d.error ? d.error : '(no output)');
-      outputEl.textContent = text;
+      const rawText = d.output || (d.error ? d.error : '(no output)');
+      outputEl.textContent = friendlyCheckOutput(rawText);
       resultEl.style.display = '';
       resultEl.className = 'modal-check-result ' + (d.ok ? 'check-ok' : 'check-fail');
     })
@@ -479,9 +479,7 @@ function deletePackage(id, name, btn) {
     .then(r => r.json())
     .then(d => { if (d.ok) { loadPackageList(); setTimeout(() => location.reload(), 600); } });
 }
-// Load package list when packages tab is shown
-const _origShowTab = showTab;
-showTab = function(id) { _origShowTab(id); if (id === 'packages') loadPackageList(); };
+// Tab side-effects handled in the bottom script block via _origShowTab2
 </script>
 </head>
 <body>
@@ -624,6 +622,10 @@ showTab = function(id) { _origShowTab(id); if (id === 'packages') loadPackageLis
       <button class="tab-btn active" data-tab="tools"    onclick="showTab('tools')">Tools</button>
       <button class="tab-btn"        data-tab="profiles" onclick="showTab('profiles')">Quick Profiles</button>
       <button class="tab-btn"        data-tab="packages" onclick="showTab('packages')">Packages</button>
+      <button class="tab-btn"        data-tab="teams"    onclick="showTab('teams')">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="margin-right:4px;vertical-align:middle"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/></svg>
+        Teams
+      </button>
       <button class="tab-btn"        data-tab="settings" onclick="showTab('settings')">Settings</button>
     </div>
 
@@ -769,6 +771,82 @@ showTab = function(id) { _origShowTab(id); if (id === 'packages') loadPackageLis
       </div>
     </div>
 
+    <!-- ── Tab: Teams ── -->
+    <div id="panel-teams" class="tab-panel">
+
+      <!-- Identity -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z"/></svg>
+          <span class="card-title">Team Identity</span>
+        </div>
+        <div class="card-body">
+          <p class="text-muted text-sm mb-4">These details appear in exported configs and help your teammates identify which DevKit instance this is.</p>
+          <div class="settings-grid">
+            <div class="setting-row">
+              <label class="setting-label" for="team-name-input">Team Name</label>
+              <input class="input" id="team-name-input" type="text" value="{{.Config.TeamName}}" placeholder="e.g. Platform Engineering">
+            </div>
+            <div class="setting-row">
+              <label class="setting-label" for="org-name-input">Organization</label>
+              <input class="input" id="org-name-input" type="text" value="{{.Config.OrgName}}" placeholder="e.g. Acme Corp">
+            </div>
+            <div class="setting-row">
+              <label class="setting-label" for="devkit-name-input">DevKit Name</label>
+              <input class="input" id="devkit-name-input" type="text" value="{{.Config.DevkitName}}" placeholder="e.g. AirGap DevKit">
+            </div>
+          </div>
+          <div class="mt-4" style="display:flex;gap:10px;align-items:center;">
+            <button class="btn btn-primary" onclick="saveTeamIdentity()">Save Identity</button>
+            <span id="identity-status" class="text-sm text-muted" style="display:none;"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Profiles -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <span class="card-title">Install Profiles</span>
+          <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="openProfileEditor(null)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+            New Profile
+          </button>
+        </div>
+        <div class="card-body">
+          <p class="text-muted text-sm mb-4">Profiles let you install a curated set of tools in one click. Create custom ones for different developer roles on your team.</p>
+          <div id="profiles-list" class="profiles-list-editor"></div>
+        </div>
+      </div>
+
+      <!-- Share & Export -->
+      <div class="card">
+        <div class="card-header">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z"/></svg>
+          <span class="card-title">Share with Your Team</span>
+        </div>
+        <div class="card-body">
+          <div class="export-explain-box">
+            <div class="export-explain-icon">📤</div>
+            <div>
+              <div class="export-explain-title">Export Team Config</div>
+              <p class="export-explain-desc">Downloads a <code>team-config.json</code> file containing your team name, all custom profiles, currently installed tool IDs, and install prefix. Share this file with teammates so they can replicate your exact setup by importing it on the <strong>Quick Profiles</strong> tab.</p>
+              <div class="export-explain-what">
+                <div class="export-explain-item"><span class="badge badge-accent">✓</span> Team name &amp; org</div>
+                <div class="export-explain-item"><span class="badge badge-accent">✓</span> All profiles (including custom)</div>
+                <div class="export-explain-item"><span class="badge badge-accent">✓</span> Installed tool IDs</div>
+                <div class="export-explain-item"><span class="badge badge-accent">✓</span> Install prefix path</div>
+              </div>
+              <button class="btn btn-primary mt-4" onclick="exportConfig()" style="gap:8px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+                Download team-config.json
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div id="panel-settings" class="tab-panel">
       <div class="card">
         <div class="card-header">
@@ -839,6 +917,60 @@ showTab = function(id) { _origShowTab(id); if (id === 'packages') loadPackageLis
     </div>
 
   </main>
+</div>
+
+<!-- ── Profile Editor Modal ── -->
+<div id="profile-modal" class="modal-overlay" onclick="closeProfileEditor()" style="display:none;">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:700px;">
+    <div class="modal-hero" style="background:var(--surface-2);">
+      <div class="modal-hero-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </div>
+      <div class="modal-hero-info">
+        <div class="modal-hero-name" id="peditor-title">New Profile</div>
+        <div class="modal-hero-version text-muted">Configure tools and metadata for this install profile</div>
+      </div>
+      <button class="btn btn-ghost btn-sm btn-icon" onclick="closeProfileEditor()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" style="gap:14px;">
+      <input type="hidden" id="peditor-id">
+      <div class="modal-details-grid">
+        <div class="modal-detail-card" style="grid-column:1/-1;">
+          <div class="modal-detail-label">Profile ID <span class="text-muted" style="font-weight:400;text-transform:none;">(slug, no spaces)</span></div>
+          <input class="input mt-1" id="peditor-id-input" type="text" placeholder="e.g. cpp-senior" style="font-family:var(--font-mono);font-size:0.85rem;">
+        </div>
+        <div class="modal-detail-card">
+          <div class="modal-detail-label">Display Name</div>
+          <input class="input mt-1" id="peditor-name" type="text" placeholder="e.g. C++ Senior Dev">
+        </div>
+        <div class="modal-detail-card">
+          <div class="modal-detail-label">Color</div>
+          <div class="color-picker" id="peditor-color-picker">
+            <label class="color-opt" data-color="blue"><input type="radio" name="peditor-color" value="blue" checked><span class="color-swatch" style="background:#2563eb"></span>Blue</label>
+            <label class="color-opt" data-color="green"><input type="radio" name="peditor-color" value="green"><span class="color-swatch" style="background:#16a34a"></span>Green</label>
+            <label class="color-opt" data-color="purple"><input type="radio" name="peditor-color" value="purple"><span class="color-swatch" style="background:#7c3aed"></span>Purple</label>
+            <label class="color-opt" data-color="gray"><input type="radio" name="peditor-color" value="gray"><span class="color-swatch" style="background:#64748b"></span>Gray</label>
+            <label class="color-opt" data-color="orange"><input type="radio" name="peditor-color" value="orange"><span class="color-swatch" style="background:#ea580c"></span>Orange</label>
+          </div>
+        </div>
+      </div>
+      <div class="modal-detail-card" style="width:100%;">
+        <div class="modal-detail-label">Description</div>
+        <input class="input mt-1" id="peditor-desc" type="text" placeholder="Short description of this profile's purpose">
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">Tools in this profile <span id="peditor-tool-count" class="text-muted" style="font-weight:400;text-transform:none;font-size:0.75rem;"></span></div>
+        <div id="peditor-tools" class="peditor-tools-grid"></div>
+      </div>
+      <div id="peditor-error" class="badge badge-danger" style="display:none;width:100%;justify-content:flex-start;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="saveProfileEditor()">Save Profile</button>
+      <button class="btn btn-ghost btn-sm" onclick="closeProfileEditor()" style="margin-left:auto;">Cancel</button>
+    </div>
+  </div>
 </div>
 
 <!-- ── Tool Detail Modal ── -->
@@ -958,7 +1090,188 @@ showTab = function(id) { _origShowTab(id); if (id === 'packages') loadPackageLis
 </div>
 
 <script>
-// Sync toggle button icon to current theme on load
+// ── Friendly check status messages ──
+function friendlyCheckOutput(raw) {
+  if (!raw) return raw;
+  const patterns = [
+    { re: /exit status 255/i,
+      tip: '🔍 Exit code 255 usually means the binary was not found or could not start. Verify the tool is installed and its folder is in your system PATH.' },
+    { re: /executable file not found in %PATH%|executable file not found in \$PATH/i,
+      tip: '📂 The executable was not found in any PATH directory. Install the tool first, or add its installation folder to the system PATH environment variable.' },
+    { re: /command not found/i,
+      tip: '📂 Command not found. The tool may not be installed, or the shell does not know where to find it. Check your PATH.' },
+    { re: /exit status 1(?!\d)/,
+      tip: '⚠️ Exit code 1 means the command ran but reported failure. The tool may be misconfigured or missing a dependency.' },
+    { re: /exit status 2(?!\d)/,
+      tip: '⚠️ Exit code 2 typically means incorrect usage or a missing argument. This is usually harmless — the tool is installed.' },
+    { re: /exit status 127/i,
+      tip: '📂 Exit 127: command not found by the shell. The tool is likely not on the PATH.' },
+    { re: /access is denied/i,
+      tip: '🔒 Permission denied. Try running the DevKit server as Administrator (right-click → Run as administrator).' },
+    { re: /no such file or directory/i,
+      tip: '📂 File or directory does not exist. The tool may not have been installed yet.' },
+    { re: /is not recognized as an internal or external command/i,
+      tip: '📂 Windows could not find this command. The tool is either not installed or its folder is not in the system PATH.' },
+  ];
+  for (const p of patterns) {
+    if (p.re.test(raw)) {
+      return raw + '\n\n' + p.tip;
+    }
+  }
+  return raw;
+}
+
+// ── Teams tab ─────────────────────────────────────────────────────────────────
+
+function saveTeamIdentity() {
+  const body = {
+    team_name:   document.getElementById('team-name-input').value.trim(),
+    org_name:    document.getElementById('org-name-input').value.trim(),
+    devkit_name: document.getElementById('devkit-name-input').value.trim(),
+  };
+  const statusEl = document.getElementById('identity-status');
+  statusEl.style.display = '';
+  statusEl.textContent = 'Saving…';
+  fetch('/api/config', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)})
+    .then(r => r.json())
+    .then(d => {
+      statusEl.textContent = d.ok ? '✓ Saved' : '✗ ' + (d.error || 'Failed');
+      if (d.ok) setTimeout(() => { statusEl.style.display = 'none'; }, 2000);
+    })
+    .catch(() => { statusEl.textContent = '✗ Connection error'; });
+}
+
+// ── Profile list renderer ─────────────────────────────────────────────────────
+
+const _profileColors = { blue:'#2563eb', green:'#16a34a', purple:'#7c3aed', gray:'#64748b', orange:'#ea580c' };
+
+function loadProfilesList() {
+  fetch('/api/profiles')
+    .then(r => r.json())
+    .then(profiles => {
+      const el = document.getElementById('profiles-list');
+      if (!el) return;
+      if (!profiles || Object.keys(profiles).length === 0) {
+        el.innerHTML = '<p class="text-muted text-sm">No profiles yet. Click "New Profile" to create one.</p>';
+        return;
+      }
+      el.innerHTML = Object.entries(profiles).map(([id, p]) => `
+        <div class="profile-list-row" id="prow-${id}">
+          <div class="profile-list-swatch" style="background:${_profileColors[p.color]||'#64748b'}"></div>
+          <div class="profile-list-info">
+            <div class="profile-list-name">${p.name || id}</div>
+            <div class="profile-list-desc">${p.description || ''} <span class="text-muted">· ${(p.tool_ids||[]).length} tools</span></div>
+          </div>
+          <div class="profile-list-actions">
+            <button class="btn btn-ghost btn-sm" onclick="openProfileEditor(${JSON.stringify(p)})">Edit</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteProfile('${id}','${(p.name||id).replace(/'/g,"\\'")}')">Delete</button>
+          </div>
+        </div>
+      `).join('');
+    });
+}
+
+function deleteProfile(id, name) {
+  if (!confirm('Delete profile "' + name + '"? This cannot be undone.')) return;
+  fetch('/api/profiles/' + encodeURIComponent(id), {method:'DELETE'})
+    .then(r => r.json())
+    .then(d => { if (d.ok) loadProfilesList(); });
+}
+
+// ── Profile editor modal ──────────────────────────────────────────────────────
+
+let _allToolIds = [];
+function _ensureToolIds() {
+  if (_allToolIds.length) return Promise.resolve();
+  return fetch('/api/tools').then(r => r.json()).then(ts => {
+    _allToolIds = ts || [];
+  });
+}
+
+function openProfileEditor(profile) {
+  _ensureToolIds().then(() => {
+    const isNew = !profile;
+    document.getElementById('peditor-title').textContent = isNew ? 'New Profile' : 'Edit Profile';
+    document.getElementById('peditor-id').value = profile ? profile.id : '';
+    document.getElementById('peditor-id-input').value = profile ? profile.id : '';
+    document.getElementById('peditor-id-input').readOnly = !isNew;
+    document.getElementById('peditor-name').value = profile ? (profile.name || '') : '';
+    document.getElementById('peditor-desc').value = profile ? (profile.description || '') : '';
+    document.getElementById('peditor-error').style.display = 'none';
+
+    // Color
+    const color = profile ? (profile.color || 'blue') : 'blue';
+    const radio = document.querySelector(`input[name="peditor-color"][value="${color}"]`);
+    if (radio) radio.checked = true;
+
+    // Tools grid
+    const selectedIds = new Set(profile ? (profile.tool_ids || []) : []);
+    const byCategory = {};
+    _allToolIds.forEach(t => {
+      const cat = t.category || 'Other';
+      (byCategory[cat] = byCategory[cat] || []).push(t);
+    });
+    const grid = document.getElementById('peditor-tools');
+    grid.innerHTML = Object.entries(byCategory).map(([cat, ts]) => `
+      <div class="peditor-cat-group">
+        <div class="peditor-cat-label">${cat}</div>
+        <div class="peditor-cat-tools">
+          ${ts.map(t => `
+            <label class="peditor-tool-check">
+              <input type="checkbox" name="peditor-tool" value="${t.id}" ${selectedIds.has(t.id) ? 'checked' : ''} onchange="_updateToolCount()">
+              <span class="peditor-tool-name">${t.name}</span>
+              <span class="peditor-tool-ver">${t.version||''}</span>
+            </label>
+          `).join('')}
+        </div>
+      </div>
+    `).join('');
+    _updateToolCount();
+
+    document.getElementById('profile-modal').style.display = 'flex';
+  });
+}
+
+function _updateToolCount() {
+  const n = document.querySelectorAll('input[name="peditor-tool"]:checked').length;
+  document.getElementById('peditor-tool-count').textContent = `(${n} selected)`;
+}
+
+function closeProfileEditor() {
+  document.getElementById('profile-modal').style.display = 'none';
+}
+
+function saveProfileEditor() {
+  const id = document.getElementById('peditor-id-input').value.trim()
+    .toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+  const name = document.getElementById('peditor-name').value.trim();
+  const desc = document.getElementById('peditor-desc').value.trim();
+  const color = document.querySelector('input[name="peditor-color"]:checked')?.value || 'blue';
+  const toolIds = Array.from(document.querySelectorAll('input[name="peditor-tool"]:checked')).map(el => el.value);
+  const errEl = document.getElementById('peditor-error');
+
+  if (!id) { errEl.textContent = 'Profile ID is required.'; errEl.style.display = 'flex'; return; }
+  if (!name) { errEl.textContent = 'Display name is required.'; errEl.style.display = 'flex'; return; }
+  errEl.style.display = 'none';
+
+  const p = { id, name, description: desc, color, tool_ids: toolIds };
+  fetch('/api/profiles', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(p)})
+    .then(r => r.json())
+    .then(d => {
+      if (d.ok) { closeProfileEditor(); loadProfilesList(); }
+      else { errEl.textContent = d.error || 'Save failed'; errEl.style.display = 'flex'; }
+    });
+}
+
+// Extend showTab to load profiles list when teams tab opens
+const _origShowTab2 = showTab;
+showTab = function(id) {
+  _origShowTab2(id);
+  if (id === 'packages') loadPackageList();
+  if (id === 'teams') loadProfilesList();
+};
+
+// ── Sync toggle button icon to current theme on load
 (function() {
   var btn = document.getElementById('theme-toggle');
   if (!btn) return;

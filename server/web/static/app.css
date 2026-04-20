@@ -741,6 +741,92 @@ input, select, textarea { font-family: inherit; }
 .tab-panel { display: none; }
 .tab-panel.active { display: block; }
 
+/* ── Teams tab ── */
+.profiles-list-editor { display: flex; flex-direction: column; gap: 8px; }
+.profile-list-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  transition: box-shadow 0.15s;
+}
+.profile-list-row:hover { box-shadow: var(--shadow-sm); }
+.profile-list-swatch {
+  width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0;
+}
+.profile-list-info { flex: 1; min-width: 0; }
+.profile-list-name { font-size: 0.9rem; font-weight: 600; color: var(--text-primary); }
+.profile-list-desc { font-size: 0.78rem; color: var(--text-muted); margin-top: 1px; }
+.profile-list-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+/* Profile editor modal */
+.color-picker { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+.color-opt {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 0.8rem; color: var(--text-body);
+  cursor: pointer; padding: 4px 8px;
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+  transition: border-color 0.12s;
+}
+.color-opt input[type=radio] { display: none; }
+.color-opt:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+.color-swatch {
+  display: inline-block; width: 12px; height: 12px;
+  border-radius: 50%; flex-shrink: 0;
+}
+
+/* Tools grid in profile editor */
+.peditor-tools-grid {
+  display: flex; flex-direction: column; gap: 12px;
+  max-height: 280px; overflow-y: auto;
+  padding: 4px 0;
+}
+.peditor-cat-group {}
+.peditor-cat-label {
+  font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--text-muted);
+  margin-bottom: 6px;
+}
+.peditor-cat-tools { display: flex; flex-wrap: wrap; gap: 6px; }
+.peditor-tool-check {
+  display: flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: 20px;
+  background: var(--surface-2); border: 1px solid var(--border-soft);
+  font-size: 0.78rem; cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+.peditor-tool-check:has(input:checked) {
+  background: var(--accent-dim); border-color: var(--accent);
+  color: var(--accent-text);
+}
+.peditor-tool-check input[type=checkbox] { width: 12px; height: 12px; accent-color: var(--accent); }
+.peditor-tool-name { font-weight: 600; }
+.peditor-tool-ver { color: var(--text-muted); font-family: var(--font-mono); font-size: 0.7rem; }
+
+/* Export explain box */
+.export-explain-box {
+  display: flex; gap: 18px; align-items: flex-start;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+}
+.export-explain-icon { font-size: 2rem; line-height: 1; flex-shrink: 0; }
+.export-explain-title { font-size: 1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; }
+.export-explain-desc { font-size: 0.87rem; color: var(--text-body); line-height: 1.55; }
+.export-explain-what {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin-top: 12px;
+}
+.export-explain-item { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--text-body); }
+
 /* ── Upload zone ── */
 .upload-zone {
   border: 2px dashed var(--border);

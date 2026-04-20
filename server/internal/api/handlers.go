@@ -18,7 +18,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/nimzshafie/airgap-devkit/server/internal/config"
+	devconfig "github.com/nimzshafie/airgap-devkit/server/internal/config"
 	"github.com/nimzshafie/airgap-devkit/server/internal/export"
 	"github.com/nimzshafie/airgap-devkit/server/internal/tools"
 )
@@ -28,7 +28,7 @@ type Server struct {
 	PrebuiltDir string
 	OS         string
 	Bash       string
-	Config     config.Config
+	Config     devconfig.Config
 	webFS      fs.FS
 
 	mu     sync.RWMutex
@@ -46,7 +46,7 @@ type Profile struct {
 	Color       string   `json:"color"`
 }
 
-func New(repoRoot, prebuiltDir, currentOS string, cfg config.Config, webFS fs.FS) (*Server, error) {
+func New(repoRoot, prebuiltDir, currentOS string, cfg devconfig.Config, webFS fs.FS) (*Server, error) {
 	loaded, err := tools.Load(repoRoot)
 	if err != nil {
 		return nil, err
@@ -83,6 +83,9 @@ func New(repoRoot, prebuiltDir, currentOS string, cfg config.Config, webFS fs.FS
 		s.prefix = p
 	}
 
+	// Load persisted profiles (overrides defaults if file exists)
+	s.loadProfiles()
+
 	return s, nil
 }
 
@@ -98,6 +101,10 @@ func (s *Server) Routes() http.Handler {
 	r.Delete("/api/prefix", s.handleResetPrefix)
 	r.Get("/api/export", s.handleExport)
 	r.Post("/api/import", s.handleImport)
+	r.Get("/api/profiles", s.handleGetProfiles)
+	r.Post("/api/profiles", s.handleSaveProfile)
+	r.Delete("/api/profiles/{id}", s.handleDeleteProfile)
+	r.Post("/api/config", s.handleSaveConfig)
 	r.Get("/install/{id}", s.handleInstall)
 	r.Delete("/uninstall/{id}", s.handleUninstall)
 	r.Get("/install-profile/{id}", s.handleInstallProfile)
@@ -106,6 +113,109 @@ func (s *Server) Routes() http.Handler {
 	r.Delete("/packages/{id}", s.handlePackageDelete)
 	r.Get("/shutdown", s.handleShutdown)
 	return r
+}
+
+// ── Profile persistence ──────────────────────────────────────────────────────
+
+func (s *Server) profilesPath() string {
+	return filepath.Join(s.RepoRoot, "profiles.json")
+}
+
+func (s *Server) loadProfiles() {
+	data, err := os.ReadFile(s.profilesPath())
+	if err != nil {
+		return // keep hardcoded defaults
+	}
+	var loaded map[string]Profile
+	if json.Unmarshal(data, &loaded) == nil && len(loaded) > 0 {
+		s.mu.Lock()
+		s.profiles = loaded
+		s.mu.Unlock()
+	}
+}
+
+func (s *Server) saveProfiles() error {
+	s.mu.RLock()
+	data, err := json.MarshalIndent(s.profiles, "", "  ")
+	s.mu.RUnlock()
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(s.profilesPath(), data, 0o644)
+}
+
+// ── Profile CRUD handlers ────────────────────────────────────────────────────
+
+func (s *Server) handleGetProfiles(w http.ResponseWriter, r *http.Request) {
+	s.mu.RLock()
+	p := s.profiles
+	s.mu.RUnlock()
+	jsonOK(w, p)
+}
+
+func (s *Server) handleSaveProfile(w http.ResponseWriter, r *http.Request) {
+	var p Profile
+	if err := json.NewDecoder(r.Body).Decode(&p); err != nil || p.ID == "" {
+		jsonErr(w, "invalid profile: id required", 400)
+		return
+	}
+	s.mu.Lock()
+	s.profiles[p.ID] = p
+	s.mu.Unlock()
+	if err := s.saveProfiles(); err != nil {
+		jsonErr(w, "failed to save profiles: "+err.Error(), 500)
+		return
+	}
+	jsonOK(w, map[string]any{"ok": true, "profile": p})
+}
+
+func (s *Server) handleDeleteProfile(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	s.mu.Lock()
+	_, exists := s.profiles[id]
+	if exists {
+		delete(s.profiles, id)
+	}
+	s.mu.Unlock()
+	if !exists {
+		jsonErr(w, "profile not found", 404)
+		return
+	}
+	if err := s.saveProfiles(); err != nil {
+		jsonErr(w, "failed to save profiles: "+err.Error(), 500)
+		return
+	}
+	jsonOK(w, map[string]any{"ok": true})
+}
+
+// ── Config save handler ──────────────────────────────────────────────────────
+
+func (s *Server) handleSaveConfig(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		TeamName   string `json:"team_name"`
+		OrgName    string `json:"org_name"`
+		DevkitName string `json:"devkit_name"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		jsonErr(w, "invalid body", 400)
+		return
+	}
+	s.mu.Lock()
+	if body.TeamName != "" {
+		s.Config.TeamName = body.TeamName
+	}
+	s.Config.OrgName = body.OrgName
+	if body.DevkitName != "" {
+		s.Config.DevkitName = body.DevkitName
+	}
+	cfg := s.Config
+	s.mu.Unlock()
+
+	if err := devconfig.Save(s.RepoRoot, cfg); err != nil {
+		jsonErr(w, "failed to save config: "+err.Error(), 500)
+		return
+	}
+	jsonOK(w, map[string]any{"ok": true})
 }
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -311,14 +421,31 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 			ids = append(ids, t.ID)
 		}
 	}
-	tc := export.Build(s.Config.DefaultProfile, ids, s.currentPrefix(), s.Config.DevkitName)
+	s.mu.RLock()
+	profs := make(map[string]export.ProfileExport, len(s.profiles))
+	for id, p := range s.profiles {
+		profs[id] = export.ProfileExport{
+			ID: p.ID, Name: p.Name, Description: p.Description,
+			ToolIDs: p.ToolIDs, Color: p.Color,
+		}
+	}
+	s.mu.RUnlock()
+
+	tc := export.Build(
+		s.Config.TeamName, s.Config.OrgName, s.Config.DevkitName,
+		s.Config.DefaultProfile, ids, s.currentPrefix(), profs,
+	)
 	data, err := export.Marshal(tc)
 	if err != nil {
 		jsonErr(w, err.Error(), 500)
 		return
 	}
+	filename := "team-config.json"
+	if s.Config.TeamName != "" {
+		filename = strings.ReplaceAll(strings.ToLower(s.Config.TeamName), " ", "-") + "-config.json"
+	}
 	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Content-Disposition", "attachment; filename=team-config.json")
+	w.Header().Set("Content-Disposition", "attachment; filename="+filename)
 	w.Write(data)
 }
 

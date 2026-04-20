@@ -8,6 +8,7 @@ import (
 
 type Config struct {
 	TeamName       string `json:"team_name"`
+	OrgName        string `json:"org_name"`
 	DevkitName     string `json:"devkit_name"`
 	ThemeColor     string `json:"theme_color"`
 	DashboardTitle string `json:"dashboard_title"`
@@ -19,6 +20,7 @@ type Config struct {
 func Load(repoRoot string) Config {
 	cfg := Config{
 		TeamName:       "My Team",
+		OrgName:        "",
 		DevkitName:     "AirGap DevKit",
 		ThemeColor:     "#2563eb",
 		DashboardTitle: "Tool Dashboard",
@@ -33,4 +35,13 @@ func Load(repoRoot string) Config {
 	}
 	_ = json.Unmarshal(data, &cfg)
 	return cfg
+}
+
+func Save(repoRoot string, cfg Config) error {
+	path := filepath.Join(repoRoot, "devkit.config.json")
+	data, err := json.MarshalIndent(cfg, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, data, 0o644)
 }
