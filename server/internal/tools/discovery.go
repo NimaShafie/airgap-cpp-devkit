@@ -29,6 +29,8 @@ type Tool struct {
 	UploadedAt   string   `json:"uploaded_at,omitempty"`
 	Homepage     string   `json:"homepage,omitempty"`
 	License      string   `json:"license,omitempty"`
+	GithubRepo   string   `json:"github_repo,omitempty"`
+	AssetMatch   string   `json:"asset_match,omitempty"`
 }
 
 var scanPatterns = []struct {

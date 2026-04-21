@@ -49,6 +49,65 @@ function filterCategory(cat) {
   });
 }
 
+// ── Network status & update checker ──
+let _netOnline = null;
+let _availableUpdates = {}; // { toolId: UpdateInfo }
+
+function _pollNetwork() {
+  fetch('/api/network')
+    .then(r => r.json())
+    .then(d => {
+      _netOnline = d.online;
+      const el = document.getElementById('net-status');
+      const lbl = document.getElementById('net-label');
+      if (!el || !lbl) return;
+      el.className = 'net-status ' + (d.online ? 'net-online' : 'net-offline');
+      lbl.textContent = d.online ? 'Online (' + d.latency_ms + 'ms)' : 'Offline';
+      if (d.online) _checkUpdates();
+    })
+    .catch(() => {
+      const el = document.getElementById('net-status');
+      if (el) el.className = 'net-status net-unknown';
+      const lbl = document.getElementById('net-label');
+      if (lbl) lbl.textContent = 'Unknown';
+    });
+}
+
+function _checkUpdates() {
+  fetch('/api/updates')
+    .then(r => r.json())
+    .then(d => {
+      _availableUpdates = {};
+      (d.updates || []).forEach(u => { _availableUpdates[u.tool_id] = u; });
+      // Re-render update badges on visible cards
+      document.querySelectorAll('[data-tool-id]').forEach(card => {
+        const id = card.dataset.toolId;
+        const badge = card.querySelector('.card-update-badge');
+        if (badge) badge.style.display = _availableUpdates[id] && _availableUpdates[id].available ? '' : 'none';
+      });
+    })
+    .catch(() => {});
+}
+
+function checkUpdatesForced() {
+  fetch('/api/updates?force=1')
+    .then(r => r.json())
+    .then(d => {
+      _availableUpdates = {};
+      (d.updates || []).forEach(u => { _availableUpdates[u.tool_id] = u; });
+      document.querySelectorAll('[data-tool-id]').forEach(card => {
+        const id = card.dataset.toolId;
+        const badge = card.querySelector('.card-update-badge');
+        if (badge) badge.style.display = _availableUpdates[id] && _availableUpdates[id].available ? '' : 'none';
+      });
+    })
+    .catch(() => {});
+}
+
+// Poll network every 30 s; initial check after 1 s
+setTimeout(_pollNetwork, 1000);
+setInterval(_pollNetwork, 30000);
+
 // ── Progress drawer ──
 const drawer = {
   el: null, log: null, title: null,
@@ -253,6 +312,17 @@ function showToolDetail(id) {
         }
       }
 
+      // Download-Update button (online update available)
+      const upd = _availableUpdates[id];
+      if (upd && upd.available) {
+        const updBtn = document.createElement('button');
+        updBtn.className = 'btn btn-warning btn-sm';
+        updBtn.innerHTML = '⬆ Download v' + upd.latest_version;
+        updBtn.title = 'Download ' + upd.asset_name + ' from GitHub';
+        updBtn.onclick = () => { closeToolModal(); downloadUpdate(id, upd.latest_version, updBtn); };
+        actions.appendChild(updBtn);
+      }
+
       document.getElementById('tool-modal').style.display = 'flex';
     })
     .catch(() => {});
@@ -342,6 +412,45 @@ function installTool(id, name, btn) {
     if (_modalToolId === id) _renderModalConsole();
     btn.disabled = false;
     btn.textContent = '⟳ Retry';
+  };
+}
+
+// ── Download tool update via SSE ──
+function downloadUpdate(id, ver, btn) {
+  drawer.init();
+  drawer.open('Downloading update…');
+  if (btn) { btn.disabled = true; }
+
+  const _liveLines = [];
+  const _liveEntry = { time: _consoleTs(), source: 'update', html: '' };
+  if (!_toolConsole[id]) _toolConsole[id] = [];
+  _toolConsole[id].push(_liveEntry);
+
+  const es = new EventSource('/download-update/' + encodeURIComponent(id));
+  es.onmessage = e => {
+    const line = e.data;
+    if (line.startsWith('DONE:')) {
+      es.close();
+      drawer.setStatus(line === 'DONE:success');
+      _liveEntry.html = formatLog(_liveLines.join('\n'));
+      if (_modalToolId === id) _renderModalConsole();
+      if (line === 'DONE:success') {
+        // Refresh update badge
+        setTimeout(() => { checkUpdatesForced(); refreshCard(id); }, 500);
+      }
+      return;
+    }
+    _liveLines.push(line);
+    _liveEntry.html = formatLog(_liveLines.join('\n'));
+    drawer.append(line);
+    if (_modalToolId === id) _renderModalConsole();
+  };
+  es.onerror = () => {
+    es.close();
+    drawer.setStatus(false);
+    drawer.append('ERROR: connection lost');
+    _liveEntry.html = formatLog(_liveLines.join('\n'));
+    if (_modalToolId === id) _renderModalConsole();
   };
 }
 
@@ -711,6 +820,10 @@ function deletePackage(id, name, btn) {
     {{end}}
   </div>
   <div class="navbar-actions">
+    <div id="net-status" class="net-status net-unknown" title="Internet connectivity">
+      <span class="net-dot"></span>
+      <span id="net-label">Checking…</span>
+    </div>
     <button id="theme-toggle" class="btn btn-ghost btn-sm btn-icon" onclick="toggleTheme()" title="Switch to dark mode">
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z"/></svg>
     </button>

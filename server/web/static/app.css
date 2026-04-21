@@ -419,6 +419,16 @@ input, select, textarea { font-family: inherit; }
   background: currentColor;
 }
 
+/* ── Network status pill ── */
+.net-status { display:flex;align-items:center;gap:5px;font-size:0.72rem;padding:3px 9px;border-radius:99px;border:1px solid var(--border);background:var(--surface);cursor:default;user-select:none; }
+.net-dot { width:7px;height:7px;border-radius:50%;flex-shrink:0; }
+.net-online .net-dot  { background:#16a34a; }
+.net-offline .net-dot { background:#dc2626; }
+.net-unknown .net-dot { background:#94a3b8; }
+.net-online  { color:#16a34a; }
+.net-offline { color:#dc2626; }
+.net-unknown { color:#64748b; }
+
 /* ── Buttons ── */
 .btn {
   display: inline-flex;
