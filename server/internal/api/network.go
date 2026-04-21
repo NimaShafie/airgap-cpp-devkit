@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -304,8 +305,189 @@ func (s *Server) handleDownloadUpdate(w http.ResponseWriter, r *http.Request) {
 		sse.Send("Tool registry refreshed.")
 	}
 
+	// Persist update history record
+	hostname, _ := os.Hostname()
+	s.appendUpdateHistory(UpdateHistoryEntry{
+		ToolID:      id,
+		ToolName:    t.Name,
+		FromVersion: t.Version,
+		ToVersion:   ver,
+		Asset:       assetName,
+		Host:        hostname,
+		PerformedAt: time.Now().UTC().Format(time.RFC3339),
+	})
+
 	sse.Send(fmt.Sprintf("✓ %s %s ready — click Install to deploy.", t.Name, ver))
 	sse.Done("success")
+}
+
+// ── Update history ─────────────────────────────────────────────────────────
+
+type UpdateHistoryEntry struct {
+	ToolID      string `json:"tool_id"`
+	ToolName    string `json:"tool_name"`
+	FromVersion string `json:"from_version"`
+	ToVersion   string `json:"to_version"`
+	Asset       string `json:"asset"`
+	Host        string `json:"host"`
+	PerformedAt string `json:"performed_at"`
+}
+
+func (s *Server) updateHistoryPath() string {
+	return filepath.Join(s.RepoRoot, "devkit-update-history.json")
+}
+
+func (s *Server) appendUpdateHistory(entry UpdateHistoryEntry) {
+	path := s.updateHistoryPath()
+	var entries []UpdateHistoryEntry
+	if data, err := os.ReadFile(path); err == nil {
+		json.Unmarshal(data, &entries) //nolint:errcheck
+	}
+	entries = append([]UpdateHistoryEntry{entry}, entries...) // newest first
+	if data, err := json.MarshalIndent(entries, "", "  "); err == nil {
+		os.WriteFile(path, append(data, '\n'), 0o644) //nolint:errcheck
+	}
+}
+
+func (s *Server) handleUpdateHistory(w http.ResponseWriter, r *http.Request) {
+	toolFilter := r.URL.Query().Get("tool")
+	var entries []UpdateHistoryEntry
+	if data, err := os.ReadFile(s.updateHistoryPath()); err == nil {
+		json.Unmarshal(data, &entries) //nolint:errcheck
+	}
+	if toolFilter != "" {
+		var filtered []UpdateHistoryEntry
+		for _, e := range entries {
+			if e.ToolID == toolFilter {
+				filtered = append(filtered, e)
+			}
+		}
+		entries = filtered
+	}
+	if entries == nil {
+		entries = []UpdateHistoryEntry{}
+	}
+	jsonOK(w, map[string]any{"entries": entries})
+}
+
+// ── Version management ────────────────────────────────────────────────────
+
+type ToolVersion struct {
+	Version string   `json:"version"`
+	SizeMB  float64  `json:"size_mb"`
+	Current bool     `json:"current"`
+	Files   []string `json:"files"`
+}
+
+func (s *Server) handleToolVersions(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	t, ok := s.findTool(id)
+	if !ok {
+		jsonErr(w, "tool not found", 404)
+		return
+	}
+	baseDir := filepath.Join(s.PrebuiltDir, "dev-tools", id)
+	dirEntries, err := os.ReadDir(baseDir)
+	if err != nil {
+		jsonOK(w, map[string]any{"versions": []any{}})
+		return
+	}
+	var versions []ToolVersion
+	for _, e := range dirEntries {
+		if !e.IsDir() {
+			continue
+		}
+		verDir := filepath.Join(baseDir, e.Name())
+		var totalBytes int64
+		var files []string
+		filepath.Walk(verDir, func(p string, fi os.FileInfo, werr error) error { //nolint:errcheck
+			if werr != nil || fi.IsDir() {
+				return nil
+			}
+			totalBytes += fi.Size()
+			files = append(files, fi.Name())
+			return nil
+		})
+		sizeMB := float64(int(float64(totalBytes)/1024/1024*10)) / 10
+		versions = append(versions, ToolVersion{
+			Version: e.Name(),
+			SizeMB:  sizeMB,
+			Current: e.Name() == t.Version,
+			Files:   files,
+		})
+	}
+	sort.Slice(versions, func(i, j int) bool {
+		return versions[i].Version > versions[j].Version
+	})
+	if versions == nil {
+		versions = []ToolVersion{}
+	}
+	jsonOK(w, map[string]any{"versions": versions})
+}
+
+func (s *Server) handleDeleteVersion(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	ver := chi.URLParam(r, "ver")
+	t, ok := s.findTool(id)
+	if !ok {
+		jsonErr(w, "tool not found", 404)
+		return
+	}
+	if ver == t.Version {
+		jsonErr(w, "cannot delete the current version — switch to another version first", 400)
+		return
+	}
+	verDir := filepath.Join(s.PrebuiltDir, "dev-tools", id, ver)
+	// Safety: path must stay inside prebuilt
+	if !strings.HasPrefix(filepath.Clean(verDir), filepath.Clean(s.PrebuiltDir)) {
+		jsonErr(w, "invalid version path", 400)
+		return
+	}
+	if _, err := os.Stat(verDir); os.IsNotExist(err) {
+		jsonErr(w, "version not found", 404)
+		return
+	}
+	if err := os.RemoveAll(verDir); err != nil {
+		jsonErr(w, "delete failed: "+err.Error(), 500)
+		return
+	}
+	jsonOK(w, map[string]any{"ok": true})
+}
+
+func (s *Server) handleUseVersion(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	ver := chi.URLParam(r, "ver")
+	t, ok := s.findTool(id)
+	if !ok {
+		jsonErr(w, "tool not found", 404)
+		return
+	}
+	verDir := filepath.Join(s.PrebuiltDir, "dev-tools", id, ver)
+	if _, err := os.Stat(verDir); os.IsNotExist(err) {
+		jsonErr(w, "version not found in prebuilt", 404)
+		return
+	}
+	devkitPath := findDevkitJSON(s.RepoRoot, id)
+	if devkitPath == "" {
+		jsonErr(w, "devkit.json not found", 404)
+		return
+	}
+	oldVer := t.Version
+	if err := updateDevkitVersion(devkitPath, ver); err != nil {
+		jsonErr(w, "could not update devkit.json: "+err.Error(), 500)
+		return
+	}
+	setupPath := filepath.Join(filepath.Dir(devkitPath), "setup.sh")
+	updateSetupVersion(setupPath, oldVer, ver) //nolint:errcheck
+	if loaded, err := tools.Load(s.RepoRoot); err == nil {
+		s.mu.Lock()
+		s.allTools = loaded
+		s.mu.Unlock()
+		_updateCache.mu.Lock()
+		_updateCache.checkedAt = time.Time{}
+		_updateCache.mu.Unlock()
+	}
+	jsonOK(w, map[string]any{"ok": true, "version": ver})
 }
 
 func findDevkitJSON(repoRoot, toolID string) string {

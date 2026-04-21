@@ -1430,4 +1430,105 @@ input, select, textarea { font-family: inherit; }
   user-select: none;
 }
 
-/* ── Progress drawer Clear button ── */
+/* ── Upgrade badge (purple gradient — replaces amber for update states) ── */
+.badge-upgrade {
+  background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%);
+  color: #fff;
+  border: none;
+  box-shadow: 0 2px 6px rgba(79,70,229,0.35);
+  letter-spacing: 0.01em;
+}
+.badge-upgrade.badge-dot::before { background: rgba(255,255,255,0.85); }
+[data-theme="dark"] .badge-upgrade {
+  background: linear-gradient(135deg, #6d28d9 0%, #4338ca 100%);
+  box-shadow: 0 2px 8px rgba(99,102,241,0.45);
+}
+
+/* ── Upgrade button ── */
+.btn-upgrade {
+  background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%);
+  color: #fff;
+  border: none;
+  box-shadow: 0 2px 8px rgba(79,70,229,0.3);
+}
+.btn-upgrade:hover:not(:disabled) {
+  filter: brightness(1.08);
+  box-shadow: 0 4px 14px rgba(79,70,229,0.45);
+}
+[data-theme="dark"] .btn-upgrade {
+  background: linear-gradient(135deg, #6d28d9 0%, #4338ca 100%);
+}
+
+/* ── Hero upgrade tint ── */
+.modal-hero.hero-upgrade {
+  background: linear-gradient(135deg, rgba(79,70,229,0.07) 0%, var(--surface-2) 100%);
+}
+
+/* ── Version history list ── */
+.ver-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-top: 4px;
+}
+.ver-history-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius);
+  font-size: 0.83rem;
+}
+.ver-history-item:nth-child(odd) { background: var(--surface-2); }
+.ver-history-ver {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--text-primary);
+  min-width: 90px;
+}
+.ver-history-size {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+.ver-history-badge-current {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--success);
+  background: var(--success-bg);
+  border: 1px solid var(--success-border);
+  padding: 1px 6px;
+  border-radius: 20px;
+}
+.ver-history-actions { margin-left: auto; display: flex; gap: 4px; flex-shrink: 0; }
+
+/* ── Update history log ── */
+.update-history-log {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+.update-history-entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  font-size: 0.78rem;
+  border: 1px solid var(--border-soft);
+}
+.update-history-arrow { color: var(--success); font-weight: 800; flex-shrink: 0; }
+.update-history-time {
+  margin-left: auto;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  flex-shrink: 0;
+}
+.update-history-host { color: var(--accent); font-weight: 600; font-size: 0.75rem; }
+
+/* ── Progress drawer Clear button ──*/

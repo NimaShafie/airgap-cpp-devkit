@@ -216,7 +216,7 @@ function showToolDetail(id) {
       // Hero status badge (inline)
       const heroStatus = document.getElementById('modal-status-hero');
       if (d.update_available) {
-        heroStatus.innerHTML = '<span class="badge badge-warning badge-dot">Update Available</span>';
+        heroStatus.innerHTML = '<span class="badge badge-upgrade badge-dot">Update Available</span>';
       } else if (installed) {
         heroStatus.innerHTML = '<span class="badge badge-success badge-dot">Installed</span>';
       } else if (!d.available) {
@@ -227,7 +227,7 @@ function showToolDetail(id) {
 
       // Hero tint based on status
       const hero = document.getElementById('modal-hero');
-      hero.className = 'modal-hero' + (installed ? (d.update_available ? ' hero-warning' : ' hero-success') : '');
+      hero.className = 'modal-hero' + (installed ? (d.update_available ? ' hero-upgrade' : ' hero-success') : '');
 
       // Description
       document.getElementById('modal-desc').textContent = d.description || '';
@@ -264,6 +264,8 @@ function showToolDetail(id) {
       }
       // Load persistent console (in-memory if exists, else latest disk log)
       _loadToolConsole(id);
+      // Load version history and update log
+      _loadVersionHistory(id);
 
       // Upload metadata (user packages)
       const uploaderPkgRow = document.getElementById('modal-uploader-pkg-row');
@@ -298,7 +300,7 @@ function showToolDetail(id) {
           actions.appendChild(removeBtn);
           if (d.update_available) {
             const updateBtn = document.createElement('button');
-            updateBtn.className = 'btn btn-warning btn-sm';
+            updateBtn.className = 'btn btn-upgrade btn-sm';
             updateBtn.textContent = 'Update to v' + d.version;
             updateBtn.onclick = () => { closeToolModal(); installTool(id, d.name, updateBtn); };
             actions.appendChild(updateBtn);
@@ -316,7 +318,7 @@ function showToolDetail(id) {
       const upd = _availableUpdates[id];
       if (upd && upd.available) {
         const updBtn = document.createElement('button');
-        updBtn.className = 'btn btn-warning btn-sm';
+        updBtn.className = 'btn btn-upgrade btn-sm';
         updBtn.innerHTML = '⬆ Download v' + upd.latest_version;
         updBtn.title = 'Download ' + upd.asset_name + ' from GitHub';
         updBtn.onclick = () => { closeToolModal(); downloadUpdate(id, upd.latest_version, updBtn); };
@@ -435,7 +437,9 @@ function downloadUpdate(id, ver, btn) {
       _liveEntry.html = formatLog(_liveLines.join('\n'));
       if (_modalToolId === id) _renderModalConsole();
       if (line === 'DONE:success') {
-        // Refresh update badge
+        // Immediately clear the stale update entry so modal re-opens clean
+        delete _availableUpdates[id];
+        // Then re-check GitHub (will re-populate if still applicable) and refresh card
         setTimeout(() => { checkUpdatesForced(); refreshCard(id); }, 500);
       }
       return;
@@ -541,6 +545,87 @@ function clearModalConsole() {
   if (!_modalToolId) return;
   _toolConsole[_modalToolId] = [];
   _renderModalConsole();
+}
+
+// ── Version history & update log ──
+function _loadVersionHistory(id) {
+  const histEl = document.getElementById('modal-ver-history');
+  const logEl  = document.getElementById('modal-update-log');
+  const cntEl  = document.getElementById('modal-ver-hist-count');
+  if (!histEl || !logEl) return;
+
+  fetch('/api/tool/' + encodeURIComponent(id) + '/versions')
+    .then(r => r.json())
+    .then(d => {
+      const vers = d.versions || [];
+      if (cntEl) cntEl.textContent = vers.length ? vers.length + ' downloaded' : '';
+      if (vers.length === 0) {
+        histEl.innerHTML = '<span class="console-empty">No downloaded versions found in prebuilt/.</span>';
+        return;
+      }
+      histEl.innerHTML = vers.map(v => `
+        <div class="ver-history-item">
+          <span class="ver-history-ver">${v.version}</span>
+          ${v.current ? '<span class="ver-history-badge-current">current</span>' : ''}
+          <span class="ver-history-size">${v.size_mb ? v.size_mb + ' MB' : ''}</span>
+          <div class="ver-history-actions">
+            ${!v.current
+              ? `<button class="btn btn-ghost btn-sm" style="font-size:0.72rem;padding:2px 8px;" onclick="useVersion('${id}','${v.version}',this)" title="Switch devkit to this version">Use</button>`
+              : ''}
+            ${!v.current
+              ? `<button class="btn btn-ghost btn-sm" style="font-size:0.72rem;padding:2px 8px;color:var(--danger);" onclick="deleteVersion('${id}','${v.version}',this)" title="Delete this version from prebuilt">Delete</button>`
+              : '<span style="font-size:0.7rem;color:var(--text-muted);padding:0 4px;">in use</span>'}
+          </div>
+        </div>`).join('');
+    })
+    .catch(() => { histEl.innerHTML = '<span class="console-empty">Could not load version list.</span>'; });
+
+  fetch('/api/update-history?tool=' + encodeURIComponent(id))
+    .then(r => r.json())
+    .then(d => {
+      const entries = d.entries || [];
+      if (entries.length === 0) {
+        logEl.innerHTML = '<span class="console-empty">No updates recorded for this tool.</span>';
+        return;
+      }
+      logEl.innerHTML = entries.map(e => `
+        <div class="update-history-entry">
+          <span class="font-mono text-xs" style="color:var(--text-muted)">${e.from_version}</span>
+          <span class="update-history-arrow">→</span>
+          <span class="font-mono text-xs fw-700">${e.to_version}</span>
+          <span class="update-history-host">${e.host || 'this machine'}</span>
+          <span class="update-history-time">${new Date(e.performed_at).toLocaleString()}</span>
+        </div>`).join('');
+    })
+    .catch(() => {});
+}
+
+function deleteVersion(id, ver, btn) {
+  if (!confirm('Delete version ' + ver + ' from prebuilt/? This cannot be undone.')) return;
+  btn.disabled = true;
+  fetch('/api/tool/' + encodeURIComponent(id) + '/versions/' + encodeURIComponent(ver), {method: 'DELETE'})
+    .then(r => r.json())
+    .then(d => {
+      if (d.ok) { _loadVersionHistory(id); }
+      else { alert('Error: ' + (d.error || 'Unknown')); btn.disabled = false; }
+    })
+    .catch(e => { alert('Error: ' + e); btn.disabled = false; });
+}
+
+function useVersion(id, ver, btn) {
+  if (!confirm('Switch ' + id + ' to version ' + ver + '?\nThis updates devkit.json and setup.sh.')) return;
+  btn.disabled = true;
+  fetch('/api/tool/' + encodeURIComponent(id) + '/versions/' + encodeURIComponent(ver) + '/use', {method: 'POST'})
+    .then(r => r.json())
+    .then(d => {
+      if (d.ok) {
+        delete _availableUpdates[id];
+        checkUpdatesForced();
+        refreshCard(id);
+        setTimeout(() => { _loadVersionHistory(id); showToolDetail(id); }, 400);
+      } else { alert('Error: ' + (d.error || 'Unknown')); btn.disabled = false; }
+    })
+    .catch(e => { alert('Error: ' + e); btn.disabled = false; });
 }
 
 function _loadToolConsole(id) {
@@ -652,10 +737,14 @@ function refreshCard(id) {
       el.style.animation = 'card-refresh-flash 0.5s ease';
       setTimeout(() => el.style.animation = '', 600);
 
+      // Update version text
+      const verEl = el.querySelector('.tool-card-version');
+      if (verEl && d.version) verEl.textContent = d.version;
+
       // Update status badge
       const badgeWrap = el.querySelector('.tool-card-header > div:last-child');
       if (badgeWrap) {
-        if (d.update_available) badgeWrap.innerHTML = '<span class="badge badge-warning badge-dot">Update</span>';
+        if (d.update_available) badgeWrap.innerHTML = '<span class="badge badge-upgrade badge-dot">Update</span>';
         else if (d.installed)   badgeWrap.innerHTML = '<span class="badge badge-success badge-dot">Installed</span>';
         else if (!d.available)  badgeWrap.innerHTML = '<span class="badge badge-gray">N/A</span>';
         else                    badgeWrap.innerHTML = '<span class="badge badge-gray badge-dot">Available</span>';
@@ -668,7 +757,7 @@ function refreshCard(id) {
         if (d.available) {
           if (d.installed) {
             html += `<button class="btn btn-danger btn-sm" onclick="uninstallTool('${id}','${d.name}',this)">Remove</button>`;
-            if (d.update_available) html += `<button class="btn btn-warning btn-sm" onclick="installTool('${id}','${d.name}',this)">Update</button>`;
+            if (d.update_available) html += `<button class="btn btn-upgrade btn-sm" onclick="installTool('${id}','${d.name}',this)">Update</button>`;
           } else {
             html += `<button class="btn btn-primary btn-sm" onclick="installTool('${id}','${d.name}',this)">Install</button>`;
           }
@@ -971,7 +1060,7 @@ function deletePackage(id, name, btn) {
               <div>
                 {{if .Installed}}
                   {{if .UpdateAvailable}}
-                    <span class="badge badge-warning badge-dot">Update</span>
+                    <span class="badge badge-upgrade badge-dot">Update</span>
                   {{else}}
                     <span class="badge badge-success badge-dot">Installed</span>
                   {{end}}
@@ -990,7 +1079,7 @@ function deletePackage(id, name, btn) {
                     Remove
                   </button>
                   {{if .UpdateAvailable}}
-                  <button class="btn btn-warning btn-sm" onclick="installTool('{{.ID}}','{{.Name}}',this)">
+                  <button class="btn btn-upgrade btn-sm" onclick="installTool('{{.ID}}','{{.Name}}',this)">
                     Update
                   </button>
                   {{end}}
@@ -1369,6 +1458,21 @@ function deletePackage(id, name, btn) {
         </div>
         <div id="modal-console" class="modal-console">
           <span class="console-empty">No activity yet. Run a check or install to see output here.</span>
+        </div>
+      </div>
+
+      <!-- Version History + Update Log -->
+      <div class="modal-section" id="modal-version-history-section">
+        <div class="modal-section-title" style="display:flex;align-items:center;justify-content:space-between;">
+          <span>Version History</span>
+          <span id="modal-ver-hist-count" class="text-xs text-muted"></span>
+        </div>
+        <div id="modal-ver-history" class="ver-history-list">
+          <span class="console-empty">Loading…</span>
+        </div>
+        <div class="modal-section-title" style="margin-top:14px;">Update Log</div>
+        <div id="modal-update-log" class="update-history-log">
+          <span class="console-empty">No updates recorded for this tool.</span>
         </div>
       </div>
 
