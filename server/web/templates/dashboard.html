@@ -1092,6 +1092,386 @@ function deletePackage(id, name, btn) {
     .then(d => { if (d.ok) { loadPackageList(); setTimeout(() => location.reload(), 600); } });
 }
 // Tab side-effects handled in the bottom script block via _origShowTab2
+
+// ── Layout management ─────────────────────────────────────────────────────────
+
+let _layoutEditMode = false;
+let _dndSrcCard = null;
+let _dndSrcSection = null;
+
+async function _loadAndApplyLayout() {
+  try {
+    const resp = await fetch('/api/layout');
+    const layout = await resp.json();
+    _applyLayout(layout);
+  } catch(e) {}
+}
+
+function _applyLayout(layout) {
+  const panel = document.getElementById('panel-tools');
+  if (!panel) return;
+
+  // Apply display names
+  if (layout.category_names) {
+    panel.querySelectorAll('.tool-section').forEach(sec => {
+      const orig = sec.dataset.category;
+      if (layout.category_names[orig]) {
+        const h2 = sec.querySelector('.section-title');
+        if (h2 && h2.tagName === 'H2') h2.textContent = layout.category_names[orig];
+      }
+    });
+  }
+
+  // Reorder sections
+  if (layout.category_order && layout.category_order.length > 0) {
+    const secs = {};
+    panel.querySelectorAll('.tool-section').forEach(s => { secs[s.dataset.category] = s; });
+    layout.category_order.forEach(cat => {
+      if (secs[cat]) panel.appendChild(secs[cat]);
+    });
+  }
+
+  // Reorder cards within each section
+  if (layout.tool_order) {
+    Object.entries(layout.tool_order).forEach(([cat, ids]) => {
+      const sec = panel.querySelector(`.tool-section[data-category="${cat}"]`);
+      if (!sec) return;
+      const grid = sec.querySelector('.tool-grid, .bundle-grid');
+      if (!grid) return;
+      const cards = {};
+      grid.querySelectorAll('[data-tool-id]').forEach(c => { cards[c.dataset.toolId] = c; });
+      ids.forEach(id => { if (cards[id]) grid.appendChild(cards[id]); });
+    });
+  }
+}
+
+function _serializeLayout() {
+  const panel = document.getElementById('panel-tools');
+  const layout = { category_order: [], category_names: {}, tool_order: {} };
+  panel.querySelectorAll('.tool-section').forEach(sec => {
+    const orig = sec.dataset.category;
+    layout.category_order.push(orig);
+    const displayName = sec.querySelector('.section-title')?.textContent?.trim();
+    if (displayName && displayName !== orig) layout.category_names[orig] = displayName;
+    const grid = sec.querySelector('.tool-grid, .bundle-grid');
+    if (grid) {
+      layout.tool_order[orig] = [...grid.querySelectorAll('[data-tool-id]')].map(c => c.dataset.toolId).filter(Boolean);
+    }
+  });
+  return layout;
+}
+
+function _saveLayout() {
+  const layout = _serializeLayout();
+  fetch('/api/layout', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(layout)
+  }).catch(() => {});
+}
+
+function resetLayout() {
+  if (!confirm('Reset dashboard layout to defaults? Category names, order, and card positions will be restored.')) return;
+  fetch('/api/layout', {method: 'DELETE'})
+    .then(() => location.reload());
+}
+
+function toggleLayoutEdit() {
+  _layoutEditMode = !_layoutEditMode;
+  const panel = document.getElementById('panel-tools');
+  const btn = document.getElementById('layout-edit-btn');
+  const hint = document.getElementById('layout-edit-hint');
+  if (_layoutEditMode) {
+    panel.classList.add('layout-edit-mode');
+    btn.textContent = 'Done';
+    btn.className = 'btn btn-primary btn-sm';
+    if (hint) hint.style.display = '';
+    _enableDnd();
+  } else {
+    panel.classList.remove('layout-edit-mode');
+    btn.textContent = 'Customize Layout';
+    btn.className = 'btn btn-ghost btn-sm';
+    if (hint) hint.style.display = 'none';
+    _disableDnd();
+    _saveLayout();
+  }
+}
+
+// ── Drag-and-Drop handlers ───────────────────────────────────────────────────
+
+function _enableDnd() {
+  const panel = document.getElementById('panel-tools');
+
+  panel.querySelectorAll('.tool-card, .bundle-card').forEach(card => {
+    card.setAttribute('draggable', 'true');
+    card.addEventListener('dragstart', _cardDragStart);
+    card.addEventListener('dragend',   _cardDragEnd);
+  });
+  panel.querySelectorAll('.tool-grid, .bundle-grid').forEach(grid => {
+    grid.addEventListener('dragover',  _gridDragOver);
+    grid.addEventListener('drop',      _gridDrop);
+    grid.addEventListener('dragleave', _gridDragLeave);
+  });
+  panel.querySelectorAll('.section-drag-handle').forEach(h => {
+    h.setAttribute('draggable', 'true');
+    h.addEventListener('dragstart', _sectionDragStart);
+    h.addEventListener('dragend',   _sectionDragEnd);
+  });
+  panel.querySelectorAll('.tool-section').forEach(sec => {
+    sec.addEventListener('dragover',  _sectionDragOver);
+    sec.addEventListener('drop',      _sectionDrop);
+    sec.addEventListener('dragleave', _sectionDragLeave);
+  });
+  panel.querySelectorAll('.section-title').forEach(h2 => {
+    h2.addEventListener('click', _onCategoryClick);
+  });
+}
+
+function _disableDnd() {
+  const panel = document.getElementById('panel-tools');
+  panel.querySelectorAll('.tool-card, .bundle-card').forEach(card => {
+    card.removeAttribute('draggable');
+    card.removeEventListener('dragstart', _cardDragStart);
+    card.removeEventListener('dragend',   _cardDragEnd);
+  });
+  panel.querySelectorAll('.tool-grid, .bundle-grid').forEach(grid => {
+    grid.removeEventListener('dragover',  _gridDragOver);
+    grid.removeEventListener('drop',      _gridDrop);
+    grid.removeEventListener('dragleave', _gridDragLeave);
+  });
+  panel.querySelectorAll('.section-drag-handle').forEach(h => {
+    h.removeAttribute('draggable');
+    h.removeEventListener('dragstart', _sectionDragStart);
+    h.removeEventListener('dragend',   _sectionDragEnd);
+  });
+  panel.querySelectorAll('.tool-section').forEach(sec => {
+    sec.removeEventListener('dragover',  _sectionDragOver);
+    sec.removeEventListener('drop',      _sectionDrop);
+    sec.removeEventListener('dragleave', _sectionDragLeave);
+  });
+  panel.querySelectorAll('.section-title').forEach(h2 => {
+    h2.removeEventListener('click', _onCategoryClick);
+  });
+}
+
+function _cardDragStart(e) {
+  if (!_layoutEditMode) return;
+  _dndSrcCard = this;
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', this.dataset.toolId || '');
+  e.stopPropagation();
+  setTimeout(() => this.classList.add('dnd-dragging'), 0);
+}
+function _cardDragEnd() {
+  this.classList.remove('dnd-dragging');
+  document.querySelectorAll('.dnd-over').forEach(el => el.classList.remove('dnd-over'));
+  _dndSrcCard = null;
+}
+function _gridDragOver(e) {
+  if (!_dndSrcCard) return;
+  e.preventDefault();
+  e.stopPropagation();
+  e.dataTransfer.dropEffect = 'move';
+  const target = e.target.closest('.tool-card, .bundle-card');
+  document.querySelectorAll('.dnd-over').forEach(el => el.classList.remove('dnd-over'));
+  if (target && target !== _dndSrcCard) target.classList.add('dnd-over');
+}
+function _gridDragLeave(e) {
+  if (!this.contains(e.relatedTarget)) {
+    this.querySelectorAll('.dnd-over').forEach(el => el.classList.remove('dnd-over'));
+  }
+}
+function _gridDrop(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  if (!_dndSrcCard) return;
+  const target = e.target.closest('.tool-card, .bundle-card');
+  const grid = this;
+  if (target && target !== _dndSrcCard) {
+    const cards = [...grid.querySelectorAll(':scope > [data-tool-id]')];
+    const srcIdx = cards.indexOf(_dndSrcCard);
+    const dstIdx = cards.indexOf(target);
+    if (srcIdx !== -1 && dstIdx !== -1) {
+      if (srcIdx < dstIdx) grid.insertBefore(_dndSrcCard, target.nextSibling);
+      else                 grid.insertBefore(_dndSrcCard, target);
+    } else {
+      grid.appendChild(_dndSrcCard);
+    }
+  } else if (!target) {
+    grid.appendChild(_dndSrcCard);
+  }
+  document.querySelectorAll('.dnd-over').forEach(el => el.classList.remove('dnd-over'));
+}
+
+function _sectionDragStart(e) {
+  _dndSrcSection = this.closest('.tool-section');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', _dndSrcSection?.dataset.category || '');
+  e.stopPropagation();
+  setTimeout(() => _dndSrcSection?.classList.add('dnd-dragging'), 0);
+}
+function _sectionDragEnd() {
+  _dndSrcSection?.classList.remove('dnd-dragging');
+  document.querySelectorAll('.section-dnd-over').forEach(el => el.classList.remove('section-dnd-over'));
+  _dndSrcSection = null;
+}
+function _sectionDragOver(e) {
+  if (!_dndSrcSection || this === _dndSrcSection) return;
+  // Only respond if we're the direct target, not a card inside
+  if (e.target.closest('.tool-grid, .bundle-grid')) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  this.classList.add('section-dnd-over');
+}
+function _sectionDragLeave(e) {
+  if (!this.contains(e.relatedTarget)) this.classList.remove('section-dnd-over');
+}
+function _sectionDrop(e) {
+  e.preventDefault();
+  this.classList.remove('section-dnd-over');
+  if (!_dndSrcSection || this === _dndSrcSection) return;
+  const panel = document.getElementById('panel-tools');
+  const srcIdx = [...panel.querySelectorAll(':scope > .tool-section')].indexOf(_dndSrcSection);
+  const dstIdx = [...panel.querySelectorAll(':scope > .tool-section')].indexOf(this);
+  if (srcIdx < dstIdx) panel.insertBefore(_dndSrcSection, this.nextSibling);
+  else                 panel.insertBefore(_dndSrcSection, this);
+}
+
+function _onCategoryClick(e) {
+  if (!_layoutEditMode) return;
+  const h2 = this;
+  if (h2.tagName !== 'H2') return;
+  const origText = h2.textContent.trim();
+  const input = document.createElement('input');
+  input.className = 'category-edit-input';
+  input.value = origText;
+  h2.replaceWith(input);
+  input.focus(); input.select();
+  const commit = () => {
+    const newH2 = document.createElement('h2');
+    newH2.className = h2.className;
+    newH2.textContent = input.value.trim() || origText;
+    newH2.addEventListener('click', _onCategoryClick);
+    input.replaceWith(newH2);
+  };
+  input.addEventListener('blur', commit);
+  input.addEventListener('keydown', ke => {
+    if (ke.key === 'Enter')  { ke.preventDefault(); commit(); }
+    if (ke.key === 'Escape') { input.value = origText; commit(); }
+  });
+}
+
+// ── Package Manager ───────────────────────────────────────────────────────────
+
+let _pkgFilter = 'all';
+let _pkgSearch = '';
+
+function setPkgFilter(f) {
+  _pkgFilter = f;
+  document.querySelectorAll('.pkg-filter-tab').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.filter === f);
+  });
+  renderPackageManager();
+}
+
+function pkgSearchChanged(val) {
+  _pkgSearch = val.toLowerCase().trim();
+  renderPackageManager();
+}
+
+function renderPackageManager() {
+  const all = Object.values(window._toolCache || {});
+  const search = _pkgSearch;
+  const filtered = all.filter(t => {
+    if (_pkgFilter === 'installed' && !t.installed) return false;
+    if (_pkgFilter === 'prebuilt'  && t.source !== 'builtin') return false;
+    if (_pkgFilter === 'user'      && t.source !== 'user')    return false;
+    if (search && !t.name.toLowerCase().includes(search) &&
+        !t.id.toLowerCase().includes(search) &&
+        !(t.category||'').toLowerCase().includes(search)) return false;
+    return true;
+  });
+
+  const count = document.getElementById('pkg-mgr-count');
+  if (count) count.textContent = filtered.length + ' packages';
+
+  const tbody = document.getElementById('pkg-mgr-tbody');
+  if (!tbody) return;
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-muted)">No packages match this filter.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(t => {
+    const srcCls  = t.source === 'builtin' ? 'source-builtin' : t.source === 'user' ? 'source-user' : '';
+    const srcLbl  = t.source === 'builtin' ? 'Prebuilt' : t.source === 'user' ? 'User' : (t.source || '—');
+    const status  = t.installed
+      ? '<span class="badge badge-success badge-dot">Installed</span>'
+      : t.available
+        ? '<span class="badge badge-gray badge-dot">Available</span>'
+        : '<span class="badge badge-gray">N/A</span>';
+    const esc = s => (s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+    const action  = !t.available ? '<span class="text-xs text-muted">N/A</span>'
+      : t.installed
+        ? `<button class="btn btn-danger btn-sm" style="font-size:0.72rem;padding:3px 9px" onclick="uninstallTool('${esc(t.id)}','${esc(t.name)}',this)">Remove</button>`
+        : `<button class="btn btn-primary btn-sm" style="font-size:0.72rem;padding:3px 9px" onclick="installTool('${esc(t.id)}','${esc(t.name)}',this)">Install</button>`;
+    return `<tr>
+      <td>
+        <span class="fw-700" style="cursor:pointer;color:var(--accent)" onclick="showToolDetail('${esc(t.id)}')">${t.name||t.id}</span>
+        <span class="font-mono text-xs text-muted" style="margin-left:6px">${t.id}</span>
+      </td>
+      <td class="font-mono" style="font-size:0.79rem">${t.version||'—'}</td>
+      <td><span class="text-xs text-muted">${t.category||'—'}</span></td>
+      <td><span class="pkg-source-badge ${srcCls}">${srcLbl}</span></td>
+      <td>${status}</td>
+      <td style="text-align:right">${action}</td>
+    </tr>`;
+  }).join('');
+}
+
+function resetToPrebuiltDefaults() {
+  const tools = Object.values(window._toolCache || {});
+  const toUninstall = tools.filter(t => t.installed);
+  const toDelete    = tools.filter(t => t.source === 'user');
+  if (toUninstall.length === 0 && toDelete.length === 0) {
+    alert('Nothing to reset — no tools are installed and no user packages exist.');
+    return;
+  }
+  const msg = [
+    'This will:',
+    toUninstall.length ? `  • Uninstall ${toUninstall.length} installed tool(s)` : '',
+    toDelete.length    ? `  • Delete ${toDelete.length} user-uploaded package(s)` : '',
+    '',
+    'Bundled prebuilt binaries remain and can be re-installed at any time.',
+    'Continue?'
+  ].filter(l => l !== null).join('\n');
+  if (!confirm(msg)) return;
+
+  drawer.init();
+  drawer.open('Resetting to prebuilt defaults…');
+
+  const jobs = [
+    ...toUninstall.map(t =>
+      fetch('/uninstall/' + encodeURIComponent(t.id), {method:'DELETE'})
+        .then(r => r.json())
+        .then(d => drawer.append((d.ok ? '✓ Removed ' : '✗ Failed ') + t.name))
+        .catch(() => drawer.append('✗ Error removing ' + t.name))
+    ),
+    ...toDelete.map(t =>
+      fetch('/packages/' + encodeURIComponent(t.id), {method:'DELETE'})
+        .then(r => r.json())
+        .then(d => drawer.append((d.ok ? '✓ Deleted ' : '✗ Failed ') + t.name))
+        .catch(() => drawer.append('✗ Error deleting ' + t.name))
+    )
+  ];
+
+  Promise.all(jobs).then(() => {
+    drawer.append('✓ Reset complete — reloading…');
+    drawer.setStatus(true);
+    setTimeout(() => location.reload(), 1200);
+  });
+}
 </script>
 <script>
 // Pre-load all tool data so showToolDetail can open modals instantly (no fetch-then-show flash)
@@ -1264,9 +1644,28 @@ window._toolCache = {};
 
     <!-- ── Tab: Tools ── -->
     <div id="panel-tools" class="tab-panel active">
+
+      <!-- Layout toolbar -->
+      <div class="layout-toolbar">
+        <button id="layout-edit-btn" class="btn btn-ghost btn-sm" onclick="toggleLayoutEdit()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="margin-right:5px"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z"/></svg>
+          Customize Layout
+        </button>
+        <button class="btn btn-ghost btn-sm" onclick="resetLayout()" style="color:var(--danger)">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="margin-right:5px"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
+          Reset View
+        </button>
+        <span id="layout-edit-hint" class="layout-edit-hint" style="display:none">
+          Drag cards to reorder · Drag the grip icon to move a category · Click a category name to rename
+        </span>
+      </div>
+
       {{range $cat, $ts := .Categories}}
       <div class="tool-section mb-4" data-category="{{$cat}}">
         <div class="section-header">
+          <div class="section-drag-handle" title="Drag to reorder category">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="currentColor" viewBox="0 0 24 24"><path d="M8.5 7a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm7 0a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm-7 7a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm7 0a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm-7 7a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm7 0a1.5 1.5 0 110-3 1.5 1.5 0 010 3z"/></svg>
+          </div>
           <h2 class="section-title">{{$cat}}</h2>
           <hr class="section-divider">
           <span class="section-count">{{len $ts}} tools</span>
@@ -1329,6 +1728,9 @@ window._toolCache = {};
       <!-- ── Bundles section ── -->
       <div class="tool-section mb-4 bundles-section" data-category="Bundles">
         <div class="section-header">
+          <div class="section-drag-handle" title="Drag to reorder category">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="currentColor" viewBox="0 0 24 24"><path d="M8.5 7a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm7 0a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm-7 7a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm7 0a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm-7 7a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm7 0a1.5 1.5 0 110-3 1.5 1.5 0 010 3z"/></svg>
+          </div>
           <h2 class="section-title">Bundles</h2>
           <hr class="section-divider">
           <span class="section-count">{{len .Bundles}} packs</span>
@@ -1458,14 +1860,62 @@ window._toolCache = {};
         </div>
       </div>
 
+      <!-- Package Manager -->
       <div class="card">
         <div class="card-header">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z"/></svg>
-          <span class="card-title">Installed Packages</span>
-          <span class="badge badge-gray ml-auto" id="pkg-count">loading…</span>
+          <span class="card-title">Package Manager</span>
+          <span class="badge badge-gray ml-auto" id="pkg-mgr-count">—</span>
         </div>
-        <div class="card-body" id="pkg-list">
-          <p class="text-muted text-sm">Loading…</p>
+        <div class="card-body">
+
+          <!-- Filter + Search bar -->
+          <div class="pkg-mgr-header">
+            <div class="pkg-filter-bar">
+              <button class="pkg-filter-tab active" data-filter="all"       onclick="setPkgFilter('all')">All</button>
+              <button class="pkg-filter-tab"         data-filter="installed" onclick="setPkgFilter('installed')">Installed</button>
+              <button class="pkg-filter-tab"         data-filter="prebuilt"  onclick="setPkgFilter('prebuilt')">Prebuilt</button>
+              <button class="pkg-filter-tab"         data-filter="user"      onclick="setPkgFilter('user')">User-uploaded</button>
+            </div>
+            <input class="pkg-search-input" type="search" placeholder="Search name, ID, category…" oninput="pkgSearchChanged(this.value)">
+          </div>
+
+          <!-- Table -->
+          <div style="overflow-x:auto;">
+            <table class="pkg-mgr-table">
+              <thead>
+                <tr>
+                  <th>Package</th>
+                  <th>Version</th>
+                  <th>Category</th>
+                  <th>Source</th>
+                  <th>Status</th>
+                  <th style="text-align:right">Action</th>
+                </tr>
+              </thead>
+              <tbody id="pkg-mgr-tbody">
+                <tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-muted)">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- User packages legacy list (hidden — kept for compatibility) -->
+          <div id="pkg-list" style="display:none"></div>
+          <span id="pkg-count" style="display:none"></span>
+
+          <!-- Reset to prebuilt defaults -->
+          <div class="reset-defaults-zone">
+            <div class="reset-defaults-title">Reset to Prebuilt Defaults</div>
+            <div class="reset-defaults-desc">
+              Uninstalls all installed tools and removes user-uploaded packages.
+              Bundled prebuilt binaries stay in the repository and can be re-installed at any time.
+            </div>
+            <button class="btn btn-danger btn-sm" onclick="resetToPrebuiltDefaults()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="margin-right:5px"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
+              Reset to Prebuilt Defaults
+            </button>
+          </div>
+
         </div>
       </div>
     </div>
@@ -2012,12 +2462,12 @@ function saveProfileEditor() {
     });
 }
 
-// Extend showTab to load profiles list when teams tab opens
+// Extend showTab to init package manager and profiles list on tab open
 const _origShowTab2 = showTab;
 showTab = function(id) {
   _origShowTab2(id);
-  if (id === 'packages') loadPackageList();
-  if (id === 'teams') loadProfilesList();
+  if (id === 'packages') renderPackageManager();
+  if (id === 'teams')    loadProfilesList();
 };
 
 // ── Sync toggle button icon to current theme on load
@@ -2028,6 +2478,10 @@ showTab = function(id) {
   btn.innerHTML = isDark ? _sunIcon() : _moonIcon();
   btn.title = isDark ? 'Switch to light mode' : 'Switch to dark mode';
 })();
+
+// ── Init layout + package manager on page load ──
+_loadAndApplyLayout();
+renderPackageManager();
 </script>
 </body>
 </html>

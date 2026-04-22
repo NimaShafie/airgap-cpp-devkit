@@ -124,6 +124,9 @@ func (s *Server) Routes() http.Handler {
 	r.Get("/remove-pkg/{id}/{pkg}", s.handleRemovePackage)
 	r.Post("/packages/upload", s.handlePackageUpload)
 	r.Delete("/packages/{id}", s.handlePackageDelete)
+	r.Get("/api/layout", s.handleGetLayout)
+	r.Post("/api/layout", s.handleSaveLayout)
+	r.Delete("/api/layout", s.handleResetLayout)
 	r.Get("/shutdown", s.handleShutdown)
 	return r
 }
