@@ -291,7 +291,7 @@ input, select, textarea { font-family: inherit; }
   margin-left: var(--sidebar-w);
   flex: 1;
   min-width: 0;
-  padding: 28px 32px 80px; /* bottom clears the always-visible drawer strip */
+  padding: 28px 32px 60px; /* bottom synced dynamically via _syncMainPadding() JS */
 }
 
 /* ── Navbar logo & OS icons ── */
@@ -846,7 +846,7 @@ input, select, textarea { font-family: inherit; }
   font-size: 0.72rem;
   color: var(--text-light);
   border-top: 1px solid var(--border-soft);
-  margin-top: 160px; /* push footer down toward the terminal strip */
+  margin-top: 40px;
 }
 .site-footer a {
   color: var(--text-muted);

@@ -377,6 +377,33 @@ func (s *Server) installEnv(t tools.Tool) []string {
 	return tools.BuildEnv(t, s.currentPrefix(), s.PrebuiltDir, s.OS)
 }
 
+func osLabel(goos string) string {
+	if goos != "windows" {
+		return goos
+	}
+	productName := "Windows"
+	displayVersion := ""
+
+	if out, err := exec.Command("reg", "query",
+		`HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion`,
+		"/v", "ProductName").Output(); err == nil {
+		if parts := strings.SplitN(string(out), "REG_SZ", 2); len(parts) == 2 {
+			productName = strings.TrimSpace(parts[1])
+		}
+	}
+	if out, err := exec.Command("reg", "query",
+		`HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion`,
+		"/v", "DisplayVersion").Output(); err == nil {
+		if parts := strings.SplitN(string(out), "REG_SZ", 2); len(parts) == 2 {
+			displayVersion = strings.TrimSpace(parts[1])
+		}
+	}
+	if displayVersion != "" {
+		return productName + " " + displayVersion
+	}
+	return productName
+}
+
 func detectPrefix(currentOS string) string {
 	if currentOS == "windows" {
 		if la := winLocalAppData(); la != "" {
@@ -476,6 +503,7 @@ func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
 		"InstalledCount": installed,
 		"TotalCount":     len(ts),
 		"OS":             s.OS,
+		"OSLabel":        osLabel(s.OS),
 		"Prefix":         s.currentPrefix(),
 		"Hostname":       hostname,
 		"Privilege":      privilege,
@@ -929,7 +957,7 @@ func slugify(name string) string {
 }
 
 func (s *Server) handlePackageUpload(w http.ResponseWriter, r *http.Request) {
-	if err := r.ParseMultipartForm(128 << 20); err != nil {
+	if err := r.ParseMultipartForm(512 << 20); err != nil {
 		jsonErr(w, "request too large or not multipart", 400)
 		return
 	}

@@ -11,6 +11,7 @@
   document.documentElement.setAttribute('data-theme', t);
 })();
 </script>
+<link rel="icon" type="image/png" href="/static/img/airgap-devkit-favicon.png">
 <link rel="stylesheet" href="/static/app.css">
 <script src="/static/htmx.min.js" defer></script>
 <script>
@@ -497,6 +498,16 @@ function _patchToolCard(id, d) {
 
 // ── Drawer collapse / expand ──
 let _drawerCollapsed = true;
+
+// Keep .main padding-bottom equal to the drawer's actual rendered height + a small buffer,
+// so page content is never hidden behind the fixed terminal strip.
+function _syncMainPadding() {
+  const main   = document.querySelector('.main');
+  const drawer = document.getElementById('progress-drawer');
+  if (!main || !drawer) return;
+  main.style.paddingBottom = (drawer.offsetHeight + 16) + 'px';
+}
+
 function toggleDrawerCollapse() {
   _drawerCollapsed = !_drawerCollapsed;
   const drawerEl = document.getElementById('progress-drawer');
@@ -504,6 +515,8 @@ function toggleDrawerCollapse() {
   if (_drawerCollapsed) drawerEl.classList.remove('drawer-expanded');
   else                  drawerEl.classList.add('drawer-expanded');
   if (icon) icon.style.transform = _drawerCollapsed ? 'rotate(180deg)' : '';
+  // Give the DOM one frame to re-render the drawer before measuring
+  requestAnimationFrame(_syncMainPadding);
 }
 function clearDrawer() {
   const log = document.getElementById('progress-log');
@@ -1736,7 +1749,7 @@ window._toolCache = {};
           {{else}}<img src="/static/img/linux.png" alt="Linux" class="os-icon-chip">{{end}}
         </div>
         <div>
-          <div class="stat-chip-val" style="font-size:1rem;padding-top:2px">{{.OS}}</div>
+          <div class="stat-chip-val" style="font-size:0.85rem;padding-top:2px">{{.OSLabel}}</div>
           <div class="stat-chip-label">Platform</div>
         </div>
       </div>
@@ -2012,7 +2025,7 @@ window._toolCache = {};
                ondrop="event.preventDefault();this.classList.remove('dragover');handleDrop(event)">
             <div style="font-size:2rem;margin-bottom:8px">📦</div>
             <div class="fw-700">Drop .zip here or click to browse</div>
-            <div class="text-xs text-muted mt-1">Max 128 MB</div>
+            <div class="text-xs text-muted mt-1">Max 512 MB</div>
           </div>
           <input type="file" id="pkg-file" accept=".zip" class="hidden" onchange="uploadPackage(this.files[0])">
           <div id="upload-status" class="mt-3 hidden"></div>
@@ -2823,6 +2836,10 @@ function _renderLogsTab() {
 _loadAndApplyLayout().finally(_applyFavorites);
 renderPackageManager();
 drawer.setIdle();
+
+// Sync main padding to drawer height on load and whenever the window resizes
+_syncMainPadding();
+window.addEventListener('resize', _syncMainPadding);
 </script>
 
 </body>
