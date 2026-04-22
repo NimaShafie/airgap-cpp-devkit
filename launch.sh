@@ -12,6 +12,7 @@
 #   bash launch.sh --host 0.0.0.0       # bind to all interfaces
 #   bash launch.sh --no-browser         # start server, don't open browser
 #   bash launch.sh --cli                # skip UI, run install-cli.sh directly
+#   bash launch.sh --rebuild            # rebuild binary from source, then launch
 # =============================================================================
 set -euo pipefail
 
@@ -25,6 +26,7 @@ _sep() { printf '%s\n' "========================================================
 # Parse flags
 # ---------------------------------------------------------------------------
 FORCE_CLI=false
+FORCE_REBUILD=false
 NO_BROWSER=false
 SERVER_ARGS=()
 UI_PORT=8080
@@ -33,6 +35,7 @@ UI_HOST="127.0.0.1"
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --cli)        FORCE_CLI=true; shift ;;
+        --rebuild)    FORCE_REBUILD=true; shift ;;
         --port)       UI_PORT="$2";  SERVER_ARGS+=("$1" "$2"); shift 2 ;;
         --host)       UI_HOST="$2";  SERVER_ARGS+=("$1" "$2"); shift 2 ;;
         --no-browser) NO_BROWSER=true; SERVER_ARGS+=("$1"); shift ;;
@@ -67,30 +70,23 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# Auto-rebuild if Go is available and source is newer than the binary
+# --rebuild: explicitly build from source before launching
 # ---------------------------------------------------------------------------
-_source_newer_than_bin() {
-    local newer
-    newer=$(find "${SCRIPT_DIR}/server" \
-        \( -name "*.go" -o \( -path "*/web/*" -type f \) \) \
-        -newer "${SERVER_BIN}" -print -quit 2>/dev/null)
-    [[ -n "$newer" ]]
-}
-
-if command -v go &>/dev/null 2>&1; then
+if [[ "${FORCE_REBUILD}" == "true" ]]; then
     # Add common Go install locations to PATH (needed in Git Bash / MINGW64)
     for _d in "/c/Program Files/Go/bin" "/c/Go/bin" "$HOME/go/bin" "/usr/local/go/bin"; do
         [[ -x "$_d/go" || -x "$_d/go.exe" ]] && export PATH="$PATH:$_d" && break
     done
-    if [[ ! -f "${SERVER_BIN}" ]] || _source_newer_than_bin; then
-        echo "  [i]  Source changed — rebuilding server binary..."
-        bash "${SCRIPT_DIR}/scripts/build-server.sh"
-        echo ""
+    if ! command -v go &>/dev/null 2>&1; then
+        echo "  [!!]  --rebuild requires Go 1.21+ on PATH. Install Go or omit --rebuild to use prebuilt." >&2
+        exit 1
     fi
+    bash "${SCRIPT_DIR}/scripts/build-server.sh"
+    echo ""
 fi
 
 # ---------------------------------------------------------------------------
-# Check binary exists (fallback if Go is not available)
+# Check binary exists
 # ---------------------------------------------------------------------------
 if [[ ! -f "${SERVER_BIN}" ]]; then
     echo ""
