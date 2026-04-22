@@ -117,16 +117,31 @@ const drawer = {
     this.log = document.getElementById('progress-log');
     this.title = document.getElementById('progress-title');
   },
-  open(toolName) {
-    this.title.textContent = 'Installing ' + toolName + '…';
+  open(title) {
+    this.title.textContent = title;
     this.log.innerHTML = '';
+    this._lineCount = 0;
     this.resetIcon();
     this.startTicker();
-    // Always start expanded
+    // Always expand body when a new operation starts
     if (_drawerCollapsed) toggleDrawerCollapse();
-    this.el.classList.add('open');
   },
-  close() { this.el.classList.remove('open'); },
+  close() { /* drawer stays visible; collapse it instead */
+    if (!_drawerCollapsed) toggleDrawerCollapse();
+  },
+  setIdle() {
+    this.init();
+    const icon = document.getElementById('progress-spinner');
+    if (icon) {
+      icon.className = 'progress-icon-idle';
+      icon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 7.5l3 2.25-3 2.25m4.5 0h3m-9 8.25h13.5A2.25 2.25 0 0021 18V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v12a2.25 2.25 0 002.25 2.25z"/></svg>';
+    }
+    if (this.title) this.title.textContent = 'Terminal';
+    const dot = document.getElementById('progress-status-dot');
+    const txt  = document.getElementById('progress-status-text');
+    if (dot) { dot.className = 'badge badge-gray badge-dot'; dot.textContent = 'Ready'; }
+    if (txt)  txt.textContent = 'Waiting for action...';
+  },
   startTicker() {
     this.stopTicker();
     this._tickerStart = Date.now();
@@ -158,17 +173,33 @@ const drawer = {
     el.textContent = t;
   },
   append(line) {
-    const div = document.createElement('div');
-    if (line.includes('✓') || line.includes('complete')) div.className = 'log-success';
-    else if (line.includes('✗') || line.includes('ERROR')) div.className = 'log-error';
-    else if (line.startsWith('──') || line === '') div.className = 'log-dim';
-    div.textContent = line;
-    this.log.appendChild(div);
+    this._lineCount = (this._lineCount || 0) + 1;
+    const row = document.createElement('div');
+    row.className = 'progress-log-line';
+
+    const num = document.createElement('span');
+    num.className = 'progress-log-linenum';
+    num.textContent = this._lineCount;
+
+    const content = document.createElement('span');
+    let cls = 'progress-log-content';
+    if (line.includes('✓') || line.includes('complete')) cls += ' log-success';
+    else if (line.includes('✗') || line.includes('ERROR')) cls += ' log-error';
+    else if (line.startsWith('──') || line === '') cls += ' log-dim';
+    content.className = cls;
+    content.textContent = line;
+
+    row.appendChild(num);
+    row.appendChild(content);
+    this.log.appendChild(row);
     this.log.scrollTop = this.log.scrollHeight;
     this.updateLastLine(line);
   },
   setStatus(success) {
     this.stopTicker();
+    if (this.title && this.title.textContent.endsWith('…')) {
+      this.title.textContent = this.title.textContent.slice(0, -1);
+    }
     const el = document.getElementById('progress-status-text');
     const dot = document.getElementById('progress-status-dot');
     const icon = document.getElementById('progress-spinner');
@@ -368,29 +399,117 @@ function showToolDetail(id) {
     .catch(() => {});
 }
 function closeToolModal() {
+  closeEditPanel();
   document.getElementById('tool-modal').style.display = 'none';
   _modalToolId = null;
 }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeToolModal(); });
 
+// ── Tool meta editor ──
+function openEditPanel() {
+  if (!_modalToolId) return;
+  const id = _modalToolId;
+  const cached = window._toolCache && window._toolCache[id];
+  const d = cached || {};
+  document.getElementById('edit-panel-id').textContent = id;
+  document.getElementById('edit-name').value = d.name || '';
+  document.getElementById('edit-version').value = d.version || '';
+  document.getElementById('edit-version-label').value = d.version_label || '';
+  document.getElementById('edit-category').value = d.category || '';
+  document.getElementById('edit-description').value = d.description || '';
+  document.getElementById('edit-estimate').value = d.estimate || '';
+  const panel = document.getElementById('tool-edit-panel');
+  panel.style.display = '';
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  document.getElementById('edit-name').focus();
+}
+
+function closeEditPanel() {
+  const panel = document.getElementById('tool-edit-panel');
+  if (panel) panel.style.display = 'none';
+}
+
+function saveToolMeta() {
+  if (!_modalToolId) return;
+  const id = _modalToolId;
+  const payload = {
+    name:          document.getElementById('edit-name').value.trim(),
+    version:       document.getElementById('edit-version').value.trim(),
+    version_label: document.getElementById('edit-version-label').value.trim(),
+    category:      document.getElementById('edit-category').value.trim(),
+    description:   document.getElementById('edit-description').value.trim(),
+    estimate:      document.getElementById('edit-estimate').value.trim(),
+  };
+  const btn = document.querySelector('#tool-edit-panel .btn-primary');
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+  fetch('/api/tool/' + encodeURIComponent(id) + '/meta', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.error) { alert('Error: ' + d.error); return; }
+    closeEditPanel();
+    return fetch('/api/tool/' + encodeURIComponent(id))
+      .then(r => r.json())
+      .then(fresh => {
+        if (window._toolCache) window._toolCache[id] = fresh;
+        if (_modalToolId === id) _populateModal(fresh);
+        _patchToolCard(id, fresh);
+      });
+  })
+  .catch(e => alert('Save failed: ' + e))
+  .finally(() => { if (btn) { btn.disabled = false; btn.textContent = 'Save Changes'; } });
+}
+
+function resetToolMeta() {
+  if (!_modalToolId) return;
+  const id = _modalToolId;
+  const label = (window._toolCache && window._toolCache[id] && window._toolCache[id].name) || id;
+  if (!confirm('Reset all custom edits for "' + label + '" back to defaults?')) return;
+  fetch('/api/tool/' + encodeURIComponent(id) + '/meta', { method: 'DELETE' })
+  .then(r => r.json())
+  .then(d => {
+    if (d.error) { alert('Error: ' + d.error); return; }
+    closeEditPanel();
+    return fetch('/api/tool/' + encodeURIComponent(id))
+      .then(r => r.json())
+      .then(fresh => {
+        if (window._toolCache) window._toolCache[id] = fresh;
+        if (_modalToolId === id) _populateModal(fresh);
+        _patchToolCard(id, fresh);
+      });
+  })
+  .catch(e => alert('Reset failed: ' + e));
+}
+
+function _patchToolCard(id, d) {
+  const card = document.querySelector('[data-tool-id="' + CSS.escape(id) + '"]');
+  if (!card) return;
+  const nameEl = card.querySelector('.tool-card-name');
+  if (nameEl) nameEl.textContent = d.name || id;
+  const verEl = card.querySelector('.tool-card-version');
+  if (verEl) verEl.textContent = d.version_label || d.version || '';
+  const descEl = card.querySelector('.tool-card-desc');
+  if (descEl) descEl.textContent = d.description || '';
+}
+
 // ── Drawer collapse / expand ──
-let _drawerCollapsed = false;
+let _drawerCollapsed = true;
 function toggleDrawerCollapse() {
-  const body = document.getElementById('progress-body');
-  const icon = document.getElementById('drawer-collapse-icon');
   _drawerCollapsed = !_drawerCollapsed;
-  body.style.display = _drawerCollapsed ? 'none' : '';
-  // Rotate chevron: down = expanded, up = collapsed
-  icon.style.transform = _drawerCollapsed ? 'rotate(180deg)' : '';
+  const drawerEl = document.getElementById('progress-drawer');
+  const icon     = document.getElementById('drawer-collapse-icon');
+  if (_drawerCollapsed) drawerEl.classList.remove('drawer-expanded');
+  else                  drawerEl.classList.add('drawer-expanded');
+  if (icon) icon.style.transform = _drawerCollapsed ? 'rotate(180deg)' : '';
 }
 function clearDrawer() {
   const log = document.getElementById('progress-log');
   if (log) log.innerHTML = '';
-  document.getElementById('progress-status-text').textContent = 'In progress…';
-  const dot = document.getElementById('progress-status-dot');
-  dot.className = 'badge badge-gray badge-dot';
-  dot.textContent = 'Running';
-  drawer.resetIcon();
+  drawer._lineCount = 0;
+  drawer.setIdle();
 }
 
 // ── Copy log to clipboard ──
@@ -408,7 +527,7 @@ function copyLog() {
 // ── Install via SSE ──
 function installTool(id, name, btn) {
   drawer.init();
-  drawer.open(name);
+  drawer.open('Installing ' + name + '…');
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span> Installing…';
 
@@ -500,7 +619,7 @@ function downloadUpdate(id, ver, btn) {
 function uninstallTool(id, name, btn) {
   if (!confirm('Remove ' + name + ' from the install prefix?')) return;
   drawer.init();
-  drawer.open('Uninstalling ' + name);
+  drawer.open('Uninstalling ' + name + '…');
   btn.disabled = true;
 
   const es = new EventSource('/uninstall/' + encodeURIComponent(id));
@@ -522,7 +641,7 @@ function uninstallTool(id, name, btn) {
 // ── Install profile via SSE ──
 function installProfile(id, name) {
   drawer.init();
-  drawer.open('Profile: ' + name);
+  drawer.open('Installing Profile: ' + name + '…');
 
   const es = new EventSource('/install-profile/' + id);
   es.onmessage = e => {
@@ -544,32 +663,41 @@ function exportConfig() {
 
 // ── Open install log in bottom drawer ──
 function openToolLog(id) {
-  // Fetch the latest saved log and stream it into the drawer
+  closeToolModal();
   fetch('/api/tool/' + encodeURIComponent(id))
     .then(r => r.json())
     .then(d => {
+      const toolName = d.name || id;
       drawer.init();
-      drawer.open((d.name || id) + ' — install log');
+      // Set up as a log viewer — no "Installing", no trailing "…"
+      drawer.log.innerHTML = '';
+      drawer.resetIcon();
+      drawer.stopTicker();
+      drawer.title.textContent = toolName + ' — Log';
+      if (_drawerCollapsed) toggleDrawerCollapse();
+      drawer.el.classList.add('open');
+
+      // Prefer in-memory console (same content the modal Console shows)
+      const entries = _toolConsole[id] || [];
+      if (entries.length > 0) {
+        entries.forEach(e => {
+          drawer.append('── ' + e.time + ' · ' + e.source + ' ──');
+          const tmp = document.createElement('div');
+          tmp.innerHTML = e.html;
+          (tmp.textContent || '').split('\n').forEach(l => drawer.append(l));
+        });
+        drawer.setStatus(true);
+        return Promise.resolve(null);
+      }
       return fetch('/api/tool/' + encodeURIComponent(id) + '/log');
     })
-    .then(r => r.json())
+    .then(r => r && r.json())
     .then(ld => {
+      if (!ld) return;
       if (ld.ok && ld.log) {
         ld.log.split('\n').forEach(line => drawer.append(line));
       } else {
-        // Fall back to in-memory console entries if no disk log
-        const entries = _toolConsole[id] || [];
-        if (entries.length > 0) {
-          entries.forEach(e => {
-            drawer.append('── ' + e.time + ' · ' + e.source + ' ──');
-            // Strip HTML tags for the drawer
-            const div = document.createElement('div');
-            div.innerHTML = e.html;
-            (div.textContent || '').split('\n').forEach(line => drawer.append(line));
-          });
-        } else {
-          drawer.append('No install log found for this tool.');
-        }
+        drawer.append('No install log found for this tool.');
       }
       drawer.setStatus(true);
     })
@@ -994,6 +1122,9 @@ function refreshCard(id) {
 }
 
 // ── Prefix settings ──
+function openInstallPrefix() {
+  fetch('/api/open-prefix', {method:'POST'}).catch(()=>{});
+}
 function savePrefix() {
   const val = document.getElementById('prefix-input').value.trim();
   if (!val) return;
@@ -1148,7 +1279,7 @@ function _applyLayout(layout) {
 function _serializeLayout() {
   const panel = document.getElementById('panel-tools');
   const layout = { category_order: [], category_names: {}, tool_order: {} };
-  panel.querySelectorAll('.tool-section').forEach(sec => {
+  panel.querySelectorAll('.tool-section:not([data-fav-section])').forEach(sec => {
     const orig = sec.dataset.category;
     layout.category_order.push(orig);
     const displayName = sec.querySelector('.section-title')?.textContent?.trim();
@@ -1217,7 +1348,7 @@ function _enableDnd() {
     h.addEventListener('dragstart', _sectionDragStart);
     h.addEventListener('dragend',   _sectionDragEnd);
   });
-  panel.querySelectorAll('.tool-section').forEach(sec => {
+  panel.querySelectorAll('.tool-section:not([data-fav-section])').forEach(sec => {
     sec.addEventListener('dragover',  _sectionDragOver);
     sec.addEventListener('drop',      _sectionDrop);
     sec.addEventListener('dragleave', _sectionDragLeave);
@@ -1244,7 +1375,7 @@ function _disableDnd() {
     h.removeEventListener('dragstart', _sectionDragStart);
     h.removeEventListener('dragend',   _sectionDragEnd);
   });
-  panel.querySelectorAll('.tool-section').forEach(sec => {
+  panel.querySelectorAll('.tool-section:not([data-fav-section])').forEach(sec => {
     sec.removeEventListener('dragover',  _sectionDragOver);
     sec.removeEventListener('drop',      _sectionDrop);
     sec.removeEventListener('dragleave', _sectionDragLeave);
@@ -1291,11 +1422,13 @@ function _gridDrop(e) {
     const cards = [...grid.querySelectorAll(':scope > [data-tool-id]')];
     const srcIdx = cards.indexOf(_dndSrcCard);
     const dstIdx = cards.indexOf(target);
-    if (srcIdx !== -1 && dstIdx !== -1) {
-      if (srcIdx < dstIdx) grid.insertBefore(_dndSrcCard, target.nextSibling);
-      else                 grid.insertBefore(_dndSrcCard, target);
+    if (srcIdx === -1) {
+      // Cross-category: card comes from a different grid — insert before target
+      grid.insertBefore(_dndSrcCard, target);
+    } else if (srcIdx < dstIdx) {
+      grid.insertBefore(_dndSrcCard, target.nextSibling);
     } else {
-      grid.appendChild(_dndSrcCard);
+      grid.insertBefore(_dndSrcCard, target);
     }
   } else if (!target) {
     grid.appendChild(_dndSrcCard);
@@ -1483,20 +1616,19 @@ window._toolCache = {};
 
 <!-- ── Navbar ── -->
 <nav class="navbar">
-  <div class="navbar-brand">
-    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-      <path stroke-linecap="round" stroke-linejoin="round" d="M14.25 9.75L16.5 12l-2.25 2.25m-4.5 0L7.5 12l2.25-2.25M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z"/>
-    </svg>
+  <a href="/" class="navbar-brand">
+    <img src="/static/img/airgap-devkit-logo-transparent.png" alt="AirGap DevKit" class="navbar-logo">
     {{.Config.DevkitName}}
-  </div>
-  <span class="navbar-version">v2.0</span>
+  </a>
+  <span class="navbar-version">v{{.AppVersion}}</span>
   <div class="navbar-center">
     <div class="navbar-stat">
       <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125"/></svg>
       <strong>{{.InstalledCount}}</strong> / {{.TotalCount}} installed
     </div>
     <div class="navbar-stat">
-      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0H3"/></svg>
+      {{if eq .OS "windows"}}<img src="/static/img/windows.png" class="os-icon-sm" alt="Windows">
+      {{else}}<img src="/static/img/linux.png" class="os-icon-sm" alt="Linux">{{end}}
       <strong>{{.OS}}</strong>
     </div>
     <div class="navbar-stat">
@@ -1518,10 +1650,6 @@ window._toolCache = {};
     <button id="theme-toggle" class="btn btn-ghost btn-sm btn-icon" onclick="toggleTheme()" title="Switch to dark mode">
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z"/></svg>
     </button>
-    <a href="/logs" class="btn btn-ghost btn-sm">
-      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
-      Logs
-    </a>
     <button class="btn btn-ghost btn-sm" onclick="showTab('teams')" title="Teams, profiles & sharing">
       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z"/></svg>
       Share
@@ -1566,7 +1694,11 @@ window._toolCache = {};
       </div>
       <div class="sidebar-stats-row">
         <span>Platform</span>
-        <span class="sidebar-stats-val">{{.OS}}</span>
+        <span class="sidebar-stats-val" style="display:flex;align-items:center;gap:4px;">
+          {{if eq .OS "windows"}}<img src="/static/img/windows.png" class="os-icon-sm" alt="Windows">
+          {{else}}<img src="/static/img/linux.png" class="os-icon-sm" alt="Linux">{{end}}
+          {{.OS}}
+        </span>
       </div>
       <div class="sidebar-stats-row">
         <span>Host</span>
@@ -1599,21 +1731,25 @@ window._toolCache = {};
         </div>
       </div>
       <div class="stat-chip">
-        <div class="stat-chip-icon chip-slate">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0H3"/></svg>
+        <div class="stat-chip-icon chip-slate" style="overflow:hidden;padding:0;">
+          {{if eq .OS "windows"}}<img src="/static/img/windows.png" alt="Windows" class="os-icon-chip">
+          {{else}}<img src="/static/img/linux.png" alt="Linux" class="os-icon-chip">{{end}}
         </div>
         <div>
           <div class="stat-chip-val" style="font-size:1rem;padding-top:2px">{{.OS}}</div>
           <div class="stat-chip-label">Platform</div>
         </div>
       </div>
-      <div class="stat-chip">
+      <div class="stat-chip stat-chip-clickable" onclick="openInstallPrefix()" title="Open in file explorer">
         <div class="stat-chip-icon chip-purple">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/></svg>
         </div>
         <div>
           <div class="stat-chip-val" style="font-size:.75rem;padding-top:4px;font-family:var(--font-mono)">{{.Prefix}}</div>
-          <div class="stat-chip-label">Install Prefix</div>
+          <div class="stat-chip-label" style="display:flex;align-items:center;gap:4px;">
+            Install Prefix
+            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="opacity:.55"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
+          </div>
         </div>
       </div>
     </div>
@@ -1640,6 +1776,10 @@ window._toolCache = {};
         <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
         Settings
       </button>
+      <button class="tab-btn" data-tab="logs" onclick="showTab('logs')">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
+        Logs
+      </button>
     </div>
 
     <!-- ── Tab: Tools ── -->
@@ -1658,6 +1798,19 @@ window._toolCache = {};
         <span id="layout-edit-hint" class="layout-edit-hint" style="display:none">
           Drag cards to reorder · Drag the grip icon to move a category · Click a category name to rename
         </span>
+      </div>
+
+      <!-- ── Favorites section (shown when at least one tool is favorited) ── -->
+      <div id="favorites-section" class="tool-section mb-4" data-fav-section="1" style="display:none">
+        <div class="section-header">
+          <h2 class="section-title fav-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="currentColor" style="color:#e11d48;margin-right:5px;flex-shrink:0"><path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z"/></svg>
+            Favorites
+          </h2>
+          <hr class="section-divider">
+          <span class="section-count" id="fav-count">0 tools</span>
+        </div>
+        <div class="tool-grid" id="favorites-grid"></div>
       </div>
 
       {{range $cat, $ts := .Categories}}
@@ -1691,6 +1844,9 @@ window._toolCache = {};
                   <span class="badge badge-gray badge-dot">Available</span>
                 {{end}}
                 <span class="badge badge-upgrade badge-dot card-update-badge" title="Newer version available on GitHub" style="display:none;">GitHub Update</span>
+                <button class="fav-btn" onclick="toggleFavorite('{{.ID}}',event)" title="Add to Favorites" aria-label="Favorite">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+                </button>
               </div>
             </div>
             <div class="tool-card-desc">{{.Description}}</div>
@@ -1756,6 +1912,9 @@ window._toolCache = {};
                   <span class="badge badge-gray badge-dot">Available</span>
                 {{end}}
                 <span class="badge badge-upgrade badge-dot card-update-badge" title="Newer version available on GitHub" style="display:none;">GitHub Update</span>
+                <button class="fav-btn" onclick="toggleFavorite('{{.ID}}',event)" title="Add to Favorites" aria-label="Favorite">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+                </button>
               </div>
             </div>
             <div class="tool-card-desc">{{.Description}}</div>
@@ -2065,6 +2224,52 @@ window._toolCache = {};
       </div>
     </div>
 
+    <!-- ── Tab: Logs ── -->
+    <div id="panel-logs" class="tab-panel">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Install Logs</div>
+          <div class="page-subtitle">Session activity on {{.OS}}</div>
+        </div>
+      </div>
+
+      <!-- Session activity card -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z"/></svg>
+          <span class="card-title">Session Activity</span>
+        </div>
+        <div class="card-body">
+          <div id="logs-session-list">
+            <span class="text-muted text-sm">No install or check activity yet this session.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Log file info card -->
+      <div class="card">
+        <div class="card-header">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
+          <span class="card-title">Log File Storage</span>
+        </div>
+        <div class="card-body">
+          <p class="text-muted text-sm">
+            Log files are written by individual <code>setup.sh</code> scripts to the tool's install directory.
+            Each successful install writes an <code>INSTALL_RECEIPT.txt</code> and a timestamped log under <code>/tmp/airgap-cpp-devkit/logs/</code>.
+          </p>
+          <p class="text-muted text-sm mt-2">
+            Click <strong>View in Terminal</strong> inside any tool card's Console section to see its log in the bottom drawer.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <footer class="site-footer">
+      &copy; 2026 <a href="https://github.com/NimaShafie" target="_blank" rel="noopener">Nima Shafie</a>
+      &nbsp;&middot;&nbsp;
+      <a href="https://github.com/airgap-devkit" target="_blank" rel="noopener">AirGap DevKit</a>
+    </footer>
+
   </main>
 </div>
 
@@ -2146,6 +2351,50 @@ window._toolCache = {};
 
     <!-- Description -->
     <div class="modal-body">
+
+      <!-- Edit panel (hidden until activated) -->
+      <div id="tool-edit-panel" class="edit-panel" style="display:none;">
+        <div class="edit-panel-header">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"/></svg>
+          <span class="edit-panel-title">Edit Tool</span>
+          <span class="edit-panel-id font-mono text-xs text-muted" id="edit-panel-id"></span>
+          <button class="btn btn-ghost btn-sm btn-icon" onclick="closeEditPanel()" style="margin-left:auto;" title="Close editor">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div class="edit-fields">
+          <div class="edit-field-row">
+            <label class="edit-label">Name</label>
+            <input type="text" id="edit-name" class="edit-input" placeholder="Display name">
+          </div>
+          <div class="edit-field-row">
+            <label class="edit-label">Version</label>
+            <input type="text" id="edit-version" class="edit-input" placeholder="e.g. 1.2.3">
+          </div>
+          <div class="edit-field-row">
+            <label class="edit-label">Version Label</label>
+            <input type="text" id="edit-version-label" class="edit-input" placeholder="e.g. Latest Stable">
+          </div>
+          <div class="edit-field-row">
+            <label class="edit-label">Category</label>
+            <input type="text" id="edit-category" class="edit-input" placeholder="e.g. Toolchains">
+          </div>
+          <div class="edit-field-row">
+            <label class="edit-label">Description</label>
+            <textarea id="edit-description" class="edit-input edit-textarea" rows="2" placeholder="Short description"></textarea>
+          </div>
+          <div class="edit-field-row">
+            <label class="edit-label">Est. Install Time</label>
+            <input type="text" id="edit-estimate" class="edit-input" placeholder="e.g. ~2 min">
+          </div>
+        </div>
+        <div class="edit-panel-actions">
+          <button class="btn btn-primary btn-sm" onclick="saveToolMeta()">Save Changes</button>
+          <button class="btn btn-ghost btn-sm" onclick="resetToolMeta()" title="Remove all overrides and restore defaults">Reset to Default</button>
+          <button class="btn btn-ghost btn-sm" onclick="closeEditPanel()">Cancel</button>
+        </div>
+      </div>
+
       <p id="modal-desc" class="modal-desc"></p>
 
       <!-- Two-column details grid -->
@@ -2235,6 +2484,10 @@ window._toolCache = {};
     <div class="modal-footer" id="modal-footer">
       <div id="modal-actions"></div>
       <div style="display:flex;gap:8px;align-items:center;margin-left:auto;">
+        <button class="btn btn-ghost btn-sm" onclick="openEditPanel()" title="Edit tool metadata (name, version, category, description…)" id="modal-edit-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125"/></svg>
+          Edit
+        </button>
         <button class="btn btn-ghost btn-sm" id="modal-check-btn" onclick="runModalCheck()" title="Probe system for current installed version">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
           Run Check
@@ -2245,12 +2498,14 @@ window._toolCache = {};
   </div>
 </div>
 
-<!-- ── Progress Drawer ── -->
+<!-- ── Progress Drawer — always visible ── -->
 <div id="progress-drawer" class="progress-drawer">
   <div class="progress-drawer-header" onclick="toggleDrawerCollapse()" style="cursor:pointer;" title="Click to expand/collapse">
-    <div class="spinner" id="progress-spinner" style="flex-shrink:0;"></div>
+    <div class="progress-icon-idle" id="progress-spinner" style="flex-shrink:0;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 7.5l3 2.25-3 2.25m4.5 0h3m-9 8.25h13.5A2.25 2.25 0 0021 18V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v12a2.25 2.25 0 002.25 2.25z"/></svg>
+    </div>
     <div style="display:flex;flex-direction:column;min-width:0;">
-      <span class="progress-drawer-title" id="progress-title">Installing…</span>
+      <span class="progress-drawer-title" id="progress-title">Terminal</span>
       <span id="progress-elapsed" style="display:none;font-size:0.68rem;color:var(--text-muted);font-family:monospace;margin-top:1px;">0s</span>
     </div>
     <div style="display:flex;gap:6px;margin-left:auto;" onclick="event.stopPropagation()">
@@ -2259,8 +2514,8 @@ window._toolCache = {};
         Copy
       </button>
       <button class="btn btn-ghost btn-sm" onclick="clearDrawer()" title="Clear log">Clear</button>
-      <button class="btn btn-ghost btn-sm btn-icon" id="drawer-collapse-btn" onclick="toggleDrawerCollapse()" title="Minimise / Expand">
-        <svg id="drawer-collapse-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
+      <button class="btn btn-ghost btn-sm btn-icon" id="drawer-collapse-btn" onclick="toggleDrawerCollapse()" title="Expand / Minimise">
+        <svg id="drawer-collapse-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="transform:rotate(180deg)"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
       </button>
     </div>
   </div>
@@ -2268,8 +2523,8 @@ window._toolCache = {};
     <div class="progress-log" id="progress-log"></div>
     <div id="progress-ticker" style="display:none;font-size:0.72rem;color:var(--text-muted);padding:4px 12px;border-top:1px solid var(--border);font-family:monospace;background:var(--surface);"></div>
     <div class="progress-status">
-      <span class="badge badge-gray badge-dot" id="progress-status-dot">Running</span>
-      <span id="progress-status-text" class="text-sm text-muted">In progress…</span>
+      <span class="badge badge-gray badge-dot" id="progress-status-dot">Ready</span>
+      <span id="progress-status-text" class="text-sm text-muted">Waiting for action...</span>
     </div>
   </div>
 </div>
@@ -2462,13 +2717,98 @@ function saveProfileEditor() {
     });
 }
 
-// Extend showTab to init package manager and profiles list on tab open
+// ── Favorites ────────────────────────────────────────────────────────────────
+const _favorites = new Set(JSON.parse(localStorage.getItem('devkit-favorites') || '[]'));
+
+function _saveFavorites() {
+  localStorage.setItem('devkit-favorites', JSON.stringify([..._favorites]));
+}
+
+function _updateFavSection() {
+  const sec  = document.getElementById('favorites-section');
+  const grid = document.getElementById('favorites-grid');
+  const cnt  = document.getElementById('fav-count');
+  if (!sec || !grid) return;
+  const n = grid.querySelectorAll('[data-tool-id]').length;
+  sec.style.display = n > 0 ? '' : 'none';
+  if (cnt) cnt.textContent = n + (n === 1 ? ' tool' : ' tools');
+}
+
+function toggleFavorite(id, e) {
+  if (e) e.stopPropagation();
+  const grid    = document.getElementById('favorites-grid');
+  const allBtns = document.querySelectorAll(`.fav-btn[onclick*="'${id}'"]`);
+  if (_favorites.has(id)) {
+    // Un-favorite: move card back to its original category grid
+    _favorites.delete(id);
+    allBtns.forEach(b => b.classList.remove('favorited'));
+    const card = grid && grid.querySelector(`[data-tool-id="${id}"]`);
+    if (card) {
+      const origCat = card.dataset.origCat;
+      const target  = origCat
+        ? document.querySelector(`.tool-section[data-category="${origCat}"] .tool-grid, .tool-section[data-category="${origCat}"] .bundle-grid`)
+        : null;
+      if (target) target.appendChild(card);
+    }
+  } else {
+    // Favorite: track original category, move card to favorites grid
+    _favorites.add(id);
+    allBtns.forEach(b => b.classList.add('favorited'));
+    const card = document.querySelector(`[data-tool-id="${id}"]`);
+    if (card && grid) {
+      const parentSec = card.closest('.tool-section:not([data-fav-section])');
+      if (parentSec) card.dataset.origCat = parentSec.dataset.category;
+      grid.appendChild(card);
+    }
+  }
+  _saveFavorites();
+  _updateFavSection();
+}
+
+function _applyFavorites() {
+  const grid = document.getElementById('favorites-grid');
+  if (!grid) return;
+  _favorites.forEach(id => {
+    const card = document.querySelector(`#panel-tools [data-tool-id="${id}"]:not(#favorites-grid [data-tool-id])`);
+    if (!card) return;
+    const parentSec = card.closest('.tool-section:not([data-fav-section])');
+    if (parentSec) card.dataset.origCat = parentSec.dataset.category;
+    card.querySelectorAll('.fav-btn').forEach(b => b.classList.add('favorited'));
+    grid.appendChild(card);
+  });
+  _updateFavSection();
+}
+
+// Extend showTab to init package manager, profiles list, and logs on tab open
 const _origShowTab2 = showTab;
 showTab = function(id) {
   _origShowTab2(id);
   if (id === 'packages') renderPackageManager();
   if (id === 'teams')    loadProfilesList();
+  if (id === 'logs')     _renderLogsTab();
 };
+
+function _renderLogsTab() {
+  const el = document.getElementById('logs-session-list');
+  if (!el) return;
+  const ids = Object.keys(_toolConsole).filter(id => _toolConsole[id].length > 0);
+  if (ids.length === 0) {
+    el.innerHTML = '<span class="text-muted text-sm">No install or check activity yet this session.</span>';
+    return;
+  }
+  el.innerHTML = ids.map(id => {
+    const t = window._toolCache && window._toolCache[id];
+    const name = t ? t.name : id;
+    const last = _toolConsole[id][_toolConsole[id].length - 1];
+    return `<div class="log-session-row">
+      <div class="log-session-info">
+        <span class="log-session-name">${name}</span>
+        <span class="log-session-meta">${last.time} &middot; ${last.source}</span>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="openToolLog('${id}')">View in Terminal</button>
+    </div>`;
+  }).join('');
+}
 
 // ── Sync toggle button icon to current theme on load
 (function() {
@@ -2480,8 +2820,10 @@ showTab = function(id) {
 })();
 
 // ── Init layout + package manager on page load ──
-_loadAndApplyLayout();
+_loadAndApplyLayout().finally(_applyFavorites);
 renderPackageManager();
+drawer.setIdle();
 </script>
+
 </body>
 </html>

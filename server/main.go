@@ -74,7 +74,7 @@ func main() {
 	url := fmt.Sprintf("http://%s:%d", *host, *port)
 
 	fmt.Printf("╔══════════════════════════════════════════╗\n")
-	fmt.Printf("║  AirGap DevKit  v2.0                     ║\n")
+	fmt.Printf("║  AirGap DevKit  v%-24s║\n", api.AppVersion)
 	fmt.Printf("╠══════════════════════════════════════════╣\n")
 	fmt.Printf("║  UI  →  %-33s║\n", url)
 	fmt.Printf("║  OS  →  %-33s║\n", currentOS)

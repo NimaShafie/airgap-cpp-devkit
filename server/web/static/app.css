@@ -160,16 +160,28 @@ input, select, textarea { font-family: inherit; }
   gap: 12px;
   z-index: 100;
   box-shadow: var(--shadow-sm);
+  animation: fade-in-down 0.3s ease both;
 }
 .navbar-brand {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   font-weight: 700;
   font-size: 1.1rem;
   color: var(--text-primary);
   letter-spacing: -0.01em;
+  text-decoration: none;
+  border-radius: var(--radius);
+  padding: 4px 6px;
+  margin-left: -6px;
+  transition: background 0.15s ease, color 0.15s ease;
 }
+.navbar-brand:hover {
+  text-decoration: none;
+  background: var(--border-soft);
+  color: var(--text-primary);
+}
+.navbar-brand:hover .navbar-logo { transform: scale(1.07) rotate(-2deg); }
 .navbar-brand svg {
   color: var(--accent);
   flex-shrink: 0;
@@ -184,7 +196,7 @@ input, select, textarea { font-family: inherit; }
   border: 1px solid #bfdbfe;
 }
 .navbar-spacer { flex: 1; }
-.navbar-actions { display: flex; align-items: center; gap: 8px; }
+.navbar-actions { display: flex; align-items: center; gap: 22px; }
 
 /* ── Layout ── */
 .layout {
@@ -279,7 +291,40 @@ input, select, textarea { font-family: inherit; }
   margin-left: var(--sidebar-w);
   flex: 1;
   min-width: 0;
-  padding: 28px 32px;
+  padding: 28px 32px 80px; /* bottom clears the always-visible drawer strip */
+}
+
+/* ── Navbar logo & OS icons ── */
+.navbar-logo {
+  height: 36px;
+  width: auto;
+  object-fit: contain;
+  flex-shrink: 0;
+  transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1);
+}
+.os-icon-sm {
+  height: 14px;
+  width: auto;
+  object-fit: contain;
+  display: inline-block;
+  vertical-align: middle;
+}
+.os-icon-chip {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  padding: 8px;
+}
+
+/* ── Progress icon idle state ── */
+.progress-icon-idle {
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
 }
 
 /* ── Page Header ── */
@@ -420,14 +465,18 @@ input, select, textarea { font-family: inherit; }
 }
 
 /* ── Network status pill ── */
-.net-status { display:flex;align-items:center;gap:5px;font-size:0.72rem;padding:3px 9px;border-radius:99px;border:1px solid var(--border);background:var(--surface);cursor:default;user-select:none; }
-.net-dot { width:7px;height:7px;border-radius:50%;flex-shrink:0; }
-.net-online .net-dot  { background:#16a34a; }
+.net-status { display:flex;align-items:center;gap:5px;font-size:0.72rem;padding:3px 9px;border-radius:99px;border:1px solid var(--border);background:var(--surface);cursor:default;user-select:none;transition:color 0.4s ease, border-color 0.4s ease, background 0.4s ease; }
+.net-dot { width:7px;height:7px;border-radius:50%;flex-shrink:0;transition:background 0.4s ease; }
+.net-online .net-dot  { background:#16a34a; animation: net-dot-pulse 2.5s ease-in-out infinite; }
 .net-offline .net-dot { background:#dc2626; }
 .net-unknown .net-dot { background:#94a3b8; }
 .net-online  { color:#16a34a; }
 .net-offline { color:#dc2626; }
 .net-unknown { color:#64748b; }
+@keyframes net-dot-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(22,163,74,0.4); }
+  50%       { box-shadow: 0 0 0 4px rgba(22,163,74,0); }
+}
 
 /* ── Buttons ── */
 .btn {
@@ -470,8 +519,10 @@ input, select, textarea { font-family: inherit; }
   background: transparent;
   color: var(--text-muted);
   border-color: transparent;
+  transition: background 0.15s, color 0.15s, transform 0.15s;
 }
-.btn-ghost:hover:not(:disabled) { background: var(--border-soft); color: var(--text-primary); }
+.btn-ghost:hover:not(:disabled) { background: var(--border-soft); color: var(--text-primary); transform: translateY(-1px); }
+.btn-ghost:active:not(:disabled) { transform: translateY(0); }
 .btn-sm { padding: 4px 10px; font-size: 0.75rem; }
 .btn-icon { padding: 7px; }
 .btn-icon.btn-sm { padding: 4px; }
@@ -525,46 +576,125 @@ input, select, textarea { font-family: inherit; }
 .profile-gray .profile-card-icon  { background: #f1f5f9; color: #475569; }
 .profile-purple .profile-card-icon{ background: #ede9fe; color: #6d28d9; }
 
-/* ── Progress Drawer ── */
+/* ── Progress Drawer — always visible, body collapses ── */
 .progress-drawer {
   position: fixed;
   bottom: 0; left: var(--sidebar-w); right: 0;
-  background: var(--surface);
-  border-top: 1px solid var(--border);
-  box-shadow: 0 -4px 12px rgba(0,0,0,.1);
+  background: var(--term-header-bg);
+  border-top: 2px solid var(--term-border);
+  box-shadow: 0 -4px 16px rgba(0,0,0,.18);
   z-index: 90;
-  transition: transform 0.25s ease;
-  transform: translateY(100%);
 }
-.progress-drawer.open { transform: translateY(0); }
+.progress-body { display: none; }
+.progress-drawer.drawer-expanded .progress-body { display: flex; flex-direction: column; }
 .progress-drawer-header {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 10px 16px;
-  border-bottom: 1px solid var(--border);
-  background: var(--surface-2);
+  border-bottom: 1px solid var(--term-border);
+  background: var(--term-header-bg);
+  color: var(--term-text);
 }
+.progress-drawer-header .btn-ghost { color: var(--term-muted); }
+.progress-drawer-header .btn-ghost:hover:not(:disabled) { background: var(--term-line-hover); color: var(--term-text); }
 .progress-drawer-title {
   font-size: 0.85rem;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--term-text);
+  font-family: var(--font-mono);
   flex: 1;
 }
 .progress-log {
   font-family: var(--font-mono);
-  font-size: 0.78rem;
-  padding: 12px 16px;
+  font-size: 0.8rem;
+  padding: 0;
   height: 200px;
   overflow-y: auto;
-  color: var(--text-body);
-  background: #fafafa;
+  color: var(--term-text);
+  background: var(--term-bg);
   white-space: pre-wrap;
   word-break: break-all;
+  border-top: 1px solid var(--term-border);
 }
-.progress-log .log-success { color: var(--success); }
-.progress-log .log-error   { color: var(--danger); }
-.progress-log .log-dim     { color: var(--text-light); }
+.progress-log-line {
+  display: flex;
+  align-items: flex-start;
+  line-height: 1.65;
+  padding: 0;
+}
+.progress-log-line:hover { background: var(--term-line-hover); }
+.progress-log-linenum {
+  min-width: 42px;
+  text-align: right;
+  padding: 2px 10px 2px 10px;
+  flex-shrink: 0;
+  color: var(--term-linenum);
+  border-right: 1px solid var(--term-border);
+  margin-right: 12px;
+  user-select: none;
+  font-size: 0.72rem;
+  opacity: 0.7;
+}
+.progress-log-content {
+  flex: 1;
+  padding: 2px 12px 2px 0;
+  min-width: 0;
+  word-break: break-all;
+}
+.progress-log-content.log-success { color: var(--term-success); }
+.progress-log-content.log-error   { color: var(--term-error); }
+.progress-log-content.log-dim     { color: var(--term-muted); }
+
+/* ── Terminal status bar & ticker — themed to match drawer ── */
+.progress-status {
+  background: var(--term-header-bg);
+  border-top: 1px solid var(--term-border);
+}
+.progress-status .badge-gray    { background: var(--term-badge-gray-bg);    color: var(--term-muted);   border-color: var(--term-border); }
+.progress-status .badge-success { background: var(--term-badge-ok-bg);      color: var(--term-success); border-color: var(--term-badge-ok-border); }
+.progress-status .badge-danger  { background: var(--term-badge-err-bg);     color: var(--term-error);   border-color: var(--term-badge-err-border); }
+#progress-ticker {
+  background: var(--term-bg) !important;
+  color: var(--term-muted) !important;
+  border-top-color: var(--term-border) !important;
+}
+
+/* ── Terminal CSS variables — light mode ── */
+:root {
+  --term-bg:               #f6f8fa;
+  --term-header-bg:        #eaeef2;
+  --term-border:           #d0d7de;
+  --term-text:             #1f2328;
+  --term-muted:            #57606a;
+  --term-linenum:          #8c959f;
+  --term-success:          #1a7f37;
+  --term-error:            #cf222e;
+  --term-line-hover:       rgba(0,0,0,0.04);
+  --term-badge-gray-bg:    #f0f0f0;
+  --term-badge-ok-bg:      #dafbe1;
+  --term-badge-ok-border:  #82e09a;
+  --term-badge-err-bg:     #ffebe9;
+  --term-badge-err-border: #ff818266;
+}
+
+/* ── Terminal CSS variables — dark mode ── */
+[data-theme="dark"] {
+  --term-bg:               #0d1117;
+  --term-header-bg:        #161b22;
+  --term-border:           #30363d;
+  --term-text:             #c9d1d9;
+  --term-muted:            #8b949e;
+  --term-linenum:          #484f58;
+  --term-success:          #3fb950;
+  --term-error:            #f85149;
+  --term-line-hover:       rgba(255,255,255,0.04);
+  --term-badge-gray-bg:    #21262d;
+  --term-badge-ok-bg:      #033a16;
+  --term-badge-ok-border:  #196c2e;
+  --term-badge-err-bg:     #3d0a0a;
+  --term-badge-err-border: #8e1a1a;
+}
 
 /* ── Modal log pre ── */
 .modal-log-pre {
@@ -700,6 +830,69 @@ input, select, textarea { font-family: inherit; }
   color: var(--text-muted);
   margin-top: 3px;
 }
+.stat-chip-clickable {
+  cursor: pointer;
+  transition: border-color .15s, box-shadow .15s;
+}
+.stat-chip-clickable:hover {
+  border-color: var(--accent);
+  box-shadow: var(--shadow), 0 0 0 2px var(--accent-dim);
+}
+
+/* ── Copyright footer (inside .main, scrolls with content) ── */
+.site-footer {
+  text-align: center;
+  padding: 16px 24px 4px;
+  font-size: 0.72rem;
+  color: var(--text-light);
+  border-top: 1px solid var(--border-soft);
+  margin-top: 160px; /* push footer down toward the terminal strip */
+}
+.site-footer a {
+  color: var(--text-muted);
+  text-decoration: none;
+}
+.site-footer a:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+/* ── Favorite button on tool cards ── */
+.fav-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 3px;
+  color: var(--text-light);
+  transition: color .15s, transform .15s;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+.fav-btn:hover { color: #e11d48; transform: scale(1.2); }
+.fav-btn.favorited svg { fill: #e11d48; stroke: #e11d48; }
+.fav-btn.favorited { color: #e11d48; }
+
+/* ── Favorites section header ── */
+.fav-section-title {
+  display: flex;
+  align-items: center;
+  color: #e11d48;
+}
+
+/* ── Logs tab: session row ── */
+.log-session-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-soft);
+  gap: 12px;
+}
+.log-session-row:last-child { border-bottom: none; }
+.log-session-info { display: flex; flex-direction: column; gap: 2px; }
+.log-session-name { font-weight: 600; font-size: 0.88rem; color: var(--text-primary); }
+.log-session-meta { font-size: 0.75rem; color: var(--text-muted); }
 
 /* ── Section header with divider ── */
 .section-header {
@@ -1123,6 +1316,76 @@ input, select, textarea { font-family: inherit; }
 }
 #modal-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
+/* ── Tool Edit Panel ── */
+.edit-panel {
+  background: var(--surface-2);
+  border: 1.5px solid var(--accent);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px 14px;
+  margin-bottom: 16px;
+}
+.edit-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  color: var(--accent);
+}
+.edit-panel-title {
+  font-weight: 700;
+  font-size: 0.88rem;
+}
+.edit-panel-id {
+  opacity: 0.6;
+}
+.edit-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.edit-field-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.edit-label {
+  min-width: 120px;
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding-top: 7px;
+}
+.edit-input {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.875rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.edit-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-dim);
+}
+.edit-textarea {
+  resize: vertical;
+  min-height: 54px;
+}
+.edit-panel-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-soft);
+}
+
 /* ── Responsive ── */
 @media (max-width: 768px) {
   .sidebar { display: none; }
@@ -1218,7 +1481,7 @@ input, select, textarea { font-family: inherit; }
 }
 
 /* ── Progress log lines ── */
-.progress-log > div {
+.progress-log-line {
   animation: log-line-in 0.15s ease both;
 }
 
@@ -1260,9 +1523,9 @@ input, select, textarea { font-family: inherit; }
 .profile-card:nth-child(3) { animation-delay: 0.15s; }
 .profile-card:nth-child(4) { animation-delay: 0.20s; }
 
-/* ── Progress drawer open/close ── */
-.progress-drawer {
-  transition: transform 0.25s cubic-bezier(0.4,0,0.2,1), box-shadow 0.25s ease;
+/* ── Progress drawer expand/collapse body animation ── */
+.progress-body {
+  transition: none;
 }
 
 /* ── Tool card hover lift ── */

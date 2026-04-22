@@ -35,7 +35,17 @@ type Server struct {
 	allTools []tools.Tool
 	prefix  string
 
-	profiles map[string]Profile
+	profiles      map[string]Profile
+	metaOverrides map[string]ToolMetaOverride
+}
+
+type ToolMetaOverride struct {
+	Name         string `json:"name,omitempty"`
+	Version      string `json:"version,omitempty"`
+	VersionLabel string `json:"version_label,omitempty"`
+	Category     string `json:"category,omitempty"`
+	Description  string `json:"description,omitempty"`
+	Estimate     string `json:"estimate,omitempty"`
 }
 
 type Profile struct {
@@ -86,6 +96,10 @@ func New(repoRoot, prebuiltDir, currentOS string, cfg devconfig.Config, webFS fs
 	// Load persisted profiles (overrides defaults if file exists)
 	s.loadProfiles()
 
+	// Load persisted tool meta overrides
+	s.metaOverrides = make(map[string]ToolMetaOverride)
+	s.loadMetaOverrides()
+
 	return s, nil
 }
 
@@ -127,6 +141,9 @@ func (s *Server) Routes() http.Handler {
 	r.Get("/api/layout", s.handleGetLayout)
 	r.Post("/api/layout", s.handleSaveLayout)
 	r.Delete("/api/layout", s.handleResetLayout)
+	r.Post("/api/open-prefix", s.handleOpenPrefix)
+	r.Post("/api/tool/{id}/meta", s.handleSaveToolMeta)
+	r.Delete("/api/tool/{id}/meta", s.handleResetToolMeta)
 	r.Get("/shutdown", s.handleShutdown)
 	return r
 }
@@ -204,6 +221,96 @@ func (s *Server) handleDeleteProfile(w http.ResponseWriter, r *http.Request) {
 	jsonOK(w, map[string]any{"ok": true})
 }
 
+// ── Tool meta override persistence ──────────────────────────────────────────
+
+func (s *Server) metaOverridesPath() string {
+	return filepath.Join(s.RepoRoot, "tool-meta-overrides.json")
+}
+
+func (s *Server) loadMetaOverrides() {
+	data, err := os.ReadFile(s.metaOverridesPath())
+	if err != nil {
+		return
+	}
+	var loaded map[string]ToolMetaOverride
+	if json.Unmarshal(data, &loaded) == nil && len(loaded) > 0 {
+		s.mu.Lock()
+		s.metaOverrides = loaded
+		s.mu.Unlock()
+	}
+}
+
+func (s *Server) saveMetaOverrides() error {
+	s.mu.RLock()
+	data, err := json.MarshalIndent(s.metaOverrides, "", "  ")
+	s.mu.RUnlock()
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(s.metaOverridesPath(), data, 0o644)
+}
+
+func (s *Server) applyMetaOverride(t tools.Tool) tools.Tool {
+	s.mu.RLock()
+	ov, ok := s.metaOverrides[t.ID]
+	s.mu.RUnlock()
+	if !ok {
+		return t
+	}
+	if ov.Name != "" {
+		t.Name = ov.Name
+	}
+	if ov.Version != "" {
+		t.Version = ov.Version
+	}
+	if ov.VersionLabel != "" {
+		t.VersionLabel = ov.VersionLabel
+	}
+	if ov.Category != "" {
+		t.Category = ov.Category
+	}
+	if ov.Description != "" {
+		t.Description = ov.Description
+	}
+	if ov.Estimate != "" {
+		t.Estimate = ov.Estimate
+	}
+	return t
+}
+
+func (s *Server) handleSaveToolMeta(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if _, ok := s.findTool(id); !ok {
+		jsonErr(w, "tool not found", 404)
+		return
+	}
+	var ov ToolMetaOverride
+	if err := json.NewDecoder(r.Body).Decode(&ov); err != nil {
+		jsonErr(w, "invalid body", 400)
+		return
+	}
+	s.mu.Lock()
+	s.metaOverrides[id] = ov
+	s.mu.Unlock()
+	if err := s.saveMetaOverrides(); err != nil {
+		jsonErr(w, "failed to save: "+err.Error(), 500)
+		return
+	}
+	jsonOK(w, map[string]any{"ok": true})
+}
+
+func (s *Server) handleResetToolMeta(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	s.mu.Lock()
+	delete(s.metaOverrides, id)
+	s.mu.Unlock()
+	if err := s.saveMetaOverrides(); err != nil {
+		jsonErr(w, "failed to save: "+err.Error(), 500)
+		return
+	}
+	jsonOK(w, map[string]any{"ok": true})
+}
+
 // ── Config save handler ──────────────────────────────────────────────────────
 
 func (s *Server) handleSaveConfig(w http.ResponseWriter, r *http.Request) {
@@ -244,7 +351,7 @@ func (s *Server) getTools() []tools.ToolStatus {
 
 	result := make([]tools.ToolStatus, 0, len(ts))
 	for _, t := range ts {
-		result = append(result, tools.GetStatus(t, prefix, s.OS))
+		result = append(result, tools.GetStatus(s.applyMetaOverride(t), prefix, s.OS))
 	}
 	return result
 }
@@ -319,7 +426,7 @@ func jsonOK(w http.ResponseWriter, v any) {
 // ─── route handlers ──────────────────────────────────────────────────────────
 
 func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
-	jsonOK(w, map[string]string{"status": "ok", "version": "2.0"})
+	jsonOK(w, map[string]string{"status": "ok", "version": AppVersion})
 }
 
 func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
@@ -373,6 +480,7 @@ func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
 		"Hostname":       hostname,
 		"Privilege":      privilege,
 		"Year":           time.Now().Year(),
+		"AppVersion":     AppVersion,
 	}
 
 	if err := renderTemplate(s.webFS, "dashboard.html", w, data); err != nil {
@@ -401,7 +509,7 @@ func (s *Server) handleAPITool(w http.ResponseWriter, r *http.Request) {
 		jsonErr(w, "tool not found", 404)
 		return
 	}
-	jsonOK(w, tools.GetStatus(t, s.currentPrefix(), s.OS))
+	jsonOK(w, tools.GetStatus(s.applyMetaOverride(t), s.currentPrefix(), s.OS))
 }
 
 func (s *Server) handleGetPrefix(w http.ResponseWriter, r *http.Request) {
@@ -433,6 +541,38 @@ func (s *Server) handleResetPrefix(w http.ResponseWriter, r *http.Request) {
 	s.prefix = p
 	s.mu.Unlock()
 	jsonOK(w, map[string]any{"prefix": p, "ok": true})
+}
+
+func (s *Server) handleOpenPrefix(w http.ResponseWriter, r *http.Request) {
+	prefix := s.currentPrefix()
+
+	// Ensure the target directory exists; create it if needed so the explorer has somewhere to go.
+	_ = os.MkdirAll(prefix, 0o755)
+
+	var cmd *exec.Cmd
+	switch runtime.GOOS {
+	case "windows":
+		// Walk up to the deepest path that actually exists (in case subdirs are missing).
+		p := filepath.FromSlash(prefix)
+		for {
+			if _, err := os.Stat(p); err == nil {
+				break
+			}
+			parent := filepath.Dir(p)
+			if parent == p {
+				break
+			}
+			p = parent
+		}
+		// "cmd /c start" is the most reliable way to open Explorer from a Go process on Windows.
+		cmd = exec.Command("cmd", "/c", "start", "", p)
+	case "darwin":
+		cmd = exec.Command("open", prefix)
+	default:
+		cmd = exec.Command("xdg-open", prefix)
+	}
+	_ = cmd.Start()
+	jsonOK(w, map[string]string{"ok": "true"})
 }
 
 func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
