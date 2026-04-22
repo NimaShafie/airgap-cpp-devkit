@@ -1,0 +1,104 @@
+name: Smoke Test
+
+# Full install + run-tests.sh regression suite.
+#
+# REQUIREMENTS:
+#   This workflow installs real tools from the prebuilt archives.
+#   The prebuilt submodule must contain the tool archives (tar.xz / zip),
+#   OR a self-hosted runner must have them pre-staged at the repo root.
+#   GitHub-hosted runners can run this only if archives are committed to
+#   the prebuilt submodule (large files should use Git LFS).
+#
+# TRIGGERS:
+#   - Weekly (Monday 06:00 UTC) — automated regression check
+#   - workflow_dispatch          — manual trigger with profile selection
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: 'Install profile'
+        required: false
+        default: 'minimal'
+        type: choice
+        options: [minimal, cpp-dev, devops, full]
+      os:
+        description: 'Platform to test'
+        required: false
+        default: 'both'
+        type: choice
+        options: [both, linux-only, windows-only]
+
+concurrency:
+  group: smoke-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  smoke-test:
+    name: Smoke test — ${{ matrix.label }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            label: Linux (ubuntu-latest)
+            os_flag: linux
+            skip_if: ${{ github.event.inputs.os == 'windows-only' }}
+          - runner: windows-latest
+            label: Windows (windows-latest)
+            os_flag: windows
+            skip_if: ${{ github.event.inputs.os == 'linux-only' }}
+
+    steps:
+      - name: Skip check
+        if: matrix.skip_if == 'true'
+        run: echo "Skipping ${{ matrix.label }} as requested." && exit 0
+
+      - name: Checkout (with all submodules)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      # ── Install ─────────────────────────────────────────────────────────
+      - name: Install tools
+        shell: bash
+        run: |
+          PROFILE="${{ github.event.inputs.profile || 'minimal' }}"
+          echo "Installing profile: $PROFILE"
+          bash install-cli.sh --yes --profile "$PROFILE"
+
+      # ── Smoke tests ──────────────────────────────────────────────────────
+      - name: Run smoke tests
+        shell: bash
+        run: bash tests/run-tests.sh --verbose
+
+      # ── check_cmd regression ─────────────────────────────────────────────
+      # Reads check_cmd from every installed tool's devkit.json and runs it.
+      # Fails if a check_cmd exits non-zero for a tool with an INSTALL_RECEIPT.
+      - name: Run check_cmd for installed tools
+        shell: bash
+        run: bash tests/check-installed-tools.sh --verbose
+
+      # ── Artifacts ────────────────────────────────────────────────────────
+      - name: Collect receipts
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p /tmp/receipts
+          find / -name "INSTALL_RECEIPT.txt" -not -path "*/.git/*" \
+            2>/dev/null | while read -r f; do
+              dest="/tmp/receipts/$(echo "$f" | tr '/' '_').txt"
+              cp "$f" "$dest" 2>/dev/null || true
+            done
+
+      - name: Upload receipts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: install-receipts-${{ matrix.os_flag }}
+          path: /tmp/receipts/
+          if-no-files-found: ignore
+          retention-days: 14
