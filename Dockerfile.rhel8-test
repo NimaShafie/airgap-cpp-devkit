@@ -1,0 +1,65 @@
+# RHEL 8 integration test container
+#
+# Validates that install-cli.sh, setup.sh scripts, and run-tests.sh all work
+# on a RHEL 8 / glibc 2.28 baseline with no EPEL and no internet access
+# (once the image is built with the repo COPY'd in).
+#
+# Build:
+#   docker build -f Dockerfile.rhel8-test -t airgap-devkit-rhel8 .
+#
+# Run full install + tests:
+#   docker run --rm airgap-devkit-rhel8
+#
+# Run only script syntax validation (no actual installs):
+#   docker run --rm airgap-devkit-rhel8 bash /workspace/tests/lint-scripts.sh
+#
+# Run with a custom profile:
+#   docker run --rm -e DEVKIT_PROFILE=minimal airgap-devkit-rhel8
+
+FROM registry.access.redhat.com/ubi8/ubi:8.10
+
+# Install only packages available in UBI8 base — no EPEL.
+# tar/xz/bzip2: needed by many setup.sh archives
+# findutils/which/file: standard tooling used by setup.sh guards
+# sudo: lets the test user do privilege escalation for /opt installs
+RUN dnf install -y \
+      bash \
+      git \
+      tar \
+      xz \
+      bzip2 \
+      gzip \
+      findutils \
+      which \
+      file \
+      sudo \
+      shadow-utils \
+    && dnf clean all
+
+# Create a non-root user that mirrors a typical developer account.
+# Grant passwordless sudo so installs to /opt work without switching users.
+RUN useradd -m -s /bin/bash devkit \
+ && echo "devkit ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/devkit \
+ && chmod 0440 /etc/sudoers.d/devkit
+
+# Copy the repo into the container.
+# In CI, make sure the prebuilt/ submodule is checked out first:
+#   git submodule update --init prebuilt
+COPY --chown=devkit:devkit . /workspace
+
+WORKDIR /workspace
+USER devkit
+
+# Default: install the cpp-dev profile then run the full smoke-test suite.
+# Override DEVKIT_PROFILE to test a different profile (minimal, devops, full).
+ENV DEVKIT_PROFILE=cpp-dev
+
+CMD bash -c "\
+  echo '==> airgap-devkit RHEL 8 integration test' && \
+  echo '    Profile: ${DEVKIT_PROFILE}' && \
+  echo '    glibc: '$(ldd --version | head -1) && \
+  echo '' && \
+  bash install-cli.sh --yes --profile \"\${DEVKIT_PROFILE}\" && \
+  echo '' && \
+  bash tests/run-tests.sh --verbose \
+"

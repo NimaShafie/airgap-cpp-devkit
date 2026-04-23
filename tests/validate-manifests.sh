@@ -10,7 +10,7 @@
 # Usage: bash tests/validate-manifests.sh [--verbose]
 # Exit 0 = all passed. Exit 1 = one or more failures.
 
-set -uo pipefail
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"

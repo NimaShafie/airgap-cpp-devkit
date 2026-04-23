@@ -1140,6 +1140,75 @@ function refreshCard(id) {
   }
 }
 
+// ── Health check ──
+function runHealthCheck() {
+  const btn = document.getElementById('health-run-btn');
+  const badge = document.getElementById('health-summary-badge');
+  const resultsDiv = document.getElementById('health-results');
+  const tbody = document.getElementById('health-tbody');
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Running checks…';
+  badge.innerHTML = '';
+  resultsDiv.style.display = 'none';
+  tbody.innerHTML = '';
+
+  fetch('/api/health/tools')
+    .then(r => r.json())
+    .then(d => {
+      const results = d.results || [];
+      const s = d.summary || {};
+
+      // Summary badge
+      const fail = s.failed || 0;
+      const pass = s.passed || 0;
+      const total = s.total || 0;
+      if (fail === 0) {
+        badge.innerHTML = `<span class="badge badge-success badge-dot">${pass}/${total} passed</span>`;
+      } else {
+        badge.innerHTML = `<span class="badge badge-danger badge-dot">${fail} failed · ${pass} passed</span>`;
+      }
+
+      // Rows
+      results.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.style.cssText = 'border-bottom:1px solid var(--border-light,#f0f0f0);cursor:pointer;';
+        tr.onmouseenter = () => tr.style.background = 'var(--bg-hover,rgba(0,0,0,.03))';
+        tr.onmouseleave = () => tr.style.background = '';
+        tr.onclick = () => showToolDetail(r.id);
+
+        let statusCell;
+        if (r.no_check) {
+          statusCell = `<span class="badge badge-gray" style="font-size:0.65rem;">no check</span>`;
+        } else if (r.ok) {
+          statusCell = `<span class="badge badge-success" style="font-size:0.65rem;">✓ pass</span>`;
+        } else {
+          statusCell = `<span class="badge badge-danger" style="font-size:0.65rem;">✗ fail</span>`;
+        }
+
+        const firstLine = (r.output || r.error || '').split('\n')[0].trim();
+        const ms = r.duration_ms ? `<span class="text-muted">${r.duration_ms}</span>` : '';
+
+        tr.innerHTML = `
+          <td style="padding:5px 8px;font-weight:500;">${r.name}</td>
+          <td style="padding:5px 8px;color:var(--text-muted);font-size:0.75rem;">${r.category}</td>
+          <td style="padding:5px 8px;">${statusCell}</td>
+          <td style="padding:5px 8px;color:var(--text-muted);font-size:0.75rem;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${(r.output||'').replace(/"/g,'&quot;')}">${firstLine}</td>
+          <td style="padding:5px 8px;text-align:right;font-size:0.7rem;color:var(--text-muted);">${ms}</td>`;
+        tbody.appendChild(tr);
+      });
+
+      resultsDiv.style.display = '';
+    })
+    .catch(e => {
+      badge.innerHTML = `<span class="badge badge-danger">Error: ${e}</span>`;
+    })
+    .finally(() => {
+      btn.disabled = false;
+      btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="margin-right:5px"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 010 1.972l-11.54 6.347a1.125 1.125 0 01-1.667-.986V5.653z"/></svg>Validate All Installed Tools';
+    });
+}
+
 // ── Prefix settings ──
 function openInstallPrefix() {
   fetch('/api/open-prefix', {method:'POST'}).catch(()=>{});
@@ -2216,6 +2285,36 @@ window._toolCache = {};
         <div class="card-footer">
           Edit <code>devkit.config.json</code> in the repo root to change team_name, devkit_name, theme_color, and default_profile.
           Restart the server to apply changes.
+        </div>
+      </div>
+
+      <!-- ── Health Check card ── -->
+      <div class="card mt-4" id="health-check-card">
+        <div class="card-header">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <span class="card-title">Tool Health Check</span>
+          <div class="ml-auto" id="health-summary-badge"></div>
+        </div>
+        <div class="card-body">
+          <p class="text-sm text-muted mb-3">Runs every installed tool's check command in parallel and reports pass / fail.</p>
+          <button class="btn btn-primary btn-sm" id="health-run-btn" onclick="runHealthCheck()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="margin-right:5px"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 010 1.972l-11.54 6.347a1.125 1.125 0 01-1.667-.986V5.653z"/></svg>
+            Validate All Installed Tools
+          </button>
+          <div id="health-results" style="margin-top:1rem;display:none;">
+            <table class="w-full text-sm" style="border-collapse:collapse;" id="health-table">
+              <thead>
+                <tr style="border-bottom:1px solid var(--border);">
+                  <th style="text-align:left;padding:4px 8px;font-weight:600;color:var(--text-muted);font-size:0.7rem;text-transform:uppercase;letter-spacing:.05em;">Tool</th>
+                  <th style="text-align:left;padding:4px 8px;font-weight:600;color:var(--text-muted);font-size:0.7rem;text-transform:uppercase;letter-spacing:.05em;">Category</th>
+                  <th style="text-align:left;padding:4px 8px;font-weight:600;color:var(--text-muted);font-size:0.7rem;text-transform:uppercase;letter-spacing:.05em;">Status</th>
+                  <th style="text-align:left;padding:4px 8px;font-weight:600;color:var(--text-muted);font-size:0.7rem;text-transform:uppercase;letter-spacing:.05em;">Output</th>
+                  <th style="text-align:right;padding:4px 8px;font-weight:600;color:var(--text-muted);font-size:0.7rem;text-transform:uppercase;letter-spacing:.05em;">ms</th>
+                </tr>
+              </thead>
+              <tbody id="health-tbody"></tbody>
+            </table>
+          </div>
         </div>
       </div>
 

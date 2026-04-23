@@ -118,6 +118,8 @@ _free_port() {
     [[ -z "$pids" ]] && return 0
     echo "  [!!]  Port ${port} in use — killing: ${pids}"
     for pid in $pids; do
+        # Reject non-numeric tokens that could be injected by malformed netstat output.
+        [[ "$pid" =~ ^[0-9]+$ ]] || continue
         if [[ "$PLATFORM" == "windows" ]]; then
             taskkill.exe //PID "$pid" //F 2>/dev/null || true
         else
@@ -132,7 +134,7 @@ _free_port() {
 # ---------------------------------------------------------------------------
 echo ""
 _sep
-echo "  airgap-cpp-devkit -- DevKit Manager v2"
+echo "  airgap-cpp-devkit -- DevKit Manager"
 _sep
 echo "  Platform : ${PLATFORM}"
 echo "  Binary   : ${SERVER_BIN}"

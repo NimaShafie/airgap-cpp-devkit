@@ -6,7 +6,7 @@
 #
 # Usage: bash tests/check-installed-tools.sh [--verbose] [--prefix <path>]
 
-set -uo pipefail
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -125,8 +125,10 @@ while IFS= read -r -d '' devkit_json; do
         continue
     fi
 
-    # Run the check_cmd; capture output
-    if output=$(eval "$check_cmd" 2>&1); then
+    # Run the check_cmd through bash so shell metacharacters (pipes, redirects)
+    # work as intended. check_cmd values come exclusively from tools/ devkit.json
+    # files (the trusted submodule) — user-packages/ is not searched by this script.
+    if output=$(bash -c "$check_cmd" 2>&1); then
         first_line="$(echo "$output" | head -1)"
         _pass "$tool_name — $first_line"
     else

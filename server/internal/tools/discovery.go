@@ -28,7 +28,11 @@ type Tool struct {
 	Description  string        `json:"description"`
 	Setup        string        `json:"setup"`
 	ReceiptName  string        `json:"receipt_name"`
-	CheckCmd     string        `json:"check_cmd"`
+	CheckCmd        string   `json:"check_cmd"`
+	CheckCmdWindows string   `json:"check_cmd_windows,omitempty"`
+	CheckCmdLinux   string   `json:"check_cmd_linux,omitempty"`
+	CheckBinary     string   `json:"check_binary,omitempty"`
+	CheckArgs       []string `json:"check_args,omitempty"`
 	Estimate     string        `json:"estimate"`
 	UsesPrebuilt bool          `json:"uses_prebuilt"`
 	SortOrder    int           `json:"sort_order"`
@@ -126,4 +130,21 @@ func Load(repoRoot string) ([]Tool, error) {
 		return strings.ToLower(tools[i].Name) < strings.ToLower(tools[j].Name)
 	})
 	return tools, nil
+}
+
+// ResolvedCheckCmd returns the most specific check command for the given OS:
+// check_cmd_windows / check_cmd_linux take priority over check_cmd.
+// Returns "" when no check command is configured for that platform.
+func (t Tool) ResolvedCheckCmd(goos string) string {
+	switch goos {
+	case "windows":
+		if t.CheckCmdWindows != "" {
+			return t.CheckCmdWindows
+		}
+	case "linux", "darwin":
+		if t.CheckCmdLinux != "" {
+			return t.CheckCmdLinux
+		}
+	}
+	return t.CheckCmd
 }

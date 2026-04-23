@@ -144,6 +144,7 @@ func (s *Server) Routes() http.Handler {
 	r.Post("/api/open-prefix", s.handleOpenPrefix)
 	r.Post("/api/tool/{id}/meta", s.handleSaveToolMeta)
 	r.Delete("/api/tool/{id}/meta", s.handleResetToolMeta)
+	r.Get("/api/health/tools", s.handleHealthTools)
 	r.Get("/shutdown", s.handleShutdown)
 	return r
 }
@@ -552,6 +553,10 @@ func (s *Server) handleSetPrefix(w http.ResponseWriter, r *http.Request) {
 		jsonErr(w, "prefix cannot be empty", 400)
 		return
 	}
+	if !filepath.IsAbs(body.Prefix) || filepath.Clean(body.Prefix) != body.Prefix {
+		jsonErr(w, "prefix must be an absolute, clean path", 400)
+		return
+	}
 	if err := os.WriteFile(prefixOverridePath(s.RepoRoot), []byte(body.Prefix), 0o644); err != nil {
 		jsonErr(w, err.Error(), 500)
 		return
@@ -664,6 +669,10 @@ func (s *Server) handleImport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if tc.Prefix != "" {
+		if !filepath.IsAbs(tc.Prefix) || filepath.Clean(tc.Prefix) != tc.Prefix {
+			jsonErr(w, "imported prefix must be an absolute, clean path", 400)
+			return
+		}
 		_ = os.WriteFile(prefixOverridePath(s.RepoRoot), []byte(tc.Prefix), 0o644)
 		s.mu.Lock()
 		s.prefix = tc.Prefix
@@ -711,6 +720,29 @@ func (s *Server) handleInstall(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(f, finalMsg)
 		f.Close()
 	}
+
+	// Post-install verification: run check_cmd to confirm the binary is reachable.
+	if rc == 0 && (t.CheckBinary != "" || t.ResolvedCheckCmd(runtime.GOOS) != "") {
+		sse.Send("── Verifying install ──")
+		res := s.runCheckCmd(t)
+		firstLine := strings.SplitN(strings.TrimSpace(res.Output), "\n", 2)[0]
+		if res.OK {
+			if firstLine != "" {
+				sse.Send("✓ " + firstLine)
+			} else {
+				sse.Send("✓ Check passed")
+			}
+		} else {
+			if firstLine != "" {
+				sse.Send("⚠ Check after install: " + firstLine)
+			}
+			if res.Error != "" {
+				sse.Send("  " + res.Error)
+			}
+			sse.Send("  Binary may not be on PATH until you restart your shell.")
+		}
+	}
+
 	sse.Done(doneStatus)
 }
 
@@ -722,27 +754,60 @@ func (s *Server) handleUninstall(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sse, ok2 := newSSE(w)
-	if !ok2 {
-		http.Error(w, "streaming not supported", 500)
-		return
-	}
-
-	sse.Send(fmt.Sprintf("Uninstalling %s...", t.Name))
+	w.Header().Set("Content-Type", "application/json")
 	clean := strings.ReplaceAll(t.ReceiptName, "/", string(os.PathSeparator))
 	installDir := filepath.Join(s.currentPrefix(), clean)
 	if _, err := os.Stat(installDir); os.IsNotExist(err) {
-		sse.Send("Nothing to remove — directory does not exist.")
-		sse.Done("success")
+		jsonOK(w, map[string]any{"ok": true, "message": "Nothing to remove — directory does not exist."})
 		return
 	}
 	if err := os.RemoveAll(installDir); err != nil {
-		sse.Send("✗ ERROR: " + err.Error())
-		sse.Done("failed")
+		jsonOK(w, map[string]any{"ok": false, "error": err.Error()})
 		return
 	}
-	sse.Send("✓ Removed " + installDir)
-	sse.Done("success")
+
+	msg := "✓ Removed " + installDir
+	// Scrub any shell-rc lines that source this install directory so stale PATH
+	// entries don't linger after the files are gone.
+	if cleaned := cleanupShellRc(installDir); cleaned != "" {
+		msg += "\n" + cleaned
+	}
+	jsonOK(w, map[string]any{"ok": true, "message": msg})
+}
+
+// cleanupShellRc removes lines referencing installDir from common shell rc files.
+// Returns a human-readable summary of what was removed, or "" if nothing changed.
+func cleanupShellRc(installDir string) string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return ""
+	}
+	// Normalise to forward slashes for string matching (handles Windows paths too).
+	needle := filepath.ToSlash(installDir)
+	rcFiles := []string{".bashrc", ".bash_profile", ".profile", ".zshrc"}
+	var msgs []string
+	for _, name := range rcFiles {
+		path := filepath.Join(home, name)
+		raw, err := os.ReadFile(path)
+		if err != nil {
+			continue
+		}
+		lines := strings.Split(string(raw), "\n")
+		var kept []string
+		removed := 0
+		for _, line := range lines {
+			if strings.Contains(filepath.ToSlash(line), needle) {
+				removed++
+			} else {
+				kept = append(kept, line)
+			}
+		}
+		if removed > 0 {
+			_ = os.WriteFile(path, []byte(strings.Join(kept, "\n")), 0o644)
+			msgs = append(msgs, fmt.Sprintf("Removed %d PATH line(s) from ~/%s", removed, name))
+		}
+	}
+	return strings.Join(msgs, "\n")
 }
 
 func (s *Server) handleInstallProfile(w http.ResponseWriter, r *http.Request) {
@@ -791,6 +856,77 @@ func (s *Server) handleInstallProfile(w http.ResponseWriter, r *http.Request) {
 	sse.Done("success")
 }
 
+// checkEnv builds a copy of os.Environ() with the tool's install directory
+// prepended to PATH, so devkit-installed binaries are found even when the
+// server process was launched before the tool was added to the system PATH.
+func (s *Server) checkEnv(t tools.Tool) []string {
+	receipt := tools.GetReceipt(s.currentPrefix(), t.ReceiptName)
+	if !receipt.Exists {
+		return nil
+	}
+	instDir := receipt.InstallPath
+	if instDir == "" {
+		instDir = filepath.Join(s.currentPrefix(), t.ReceiptName)
+	}
+	sep := string(os.PathListSeparator)
+	extra := instDir + sep + instDir + string(os.PathSeparator) + "bin"
+	env := os.Environ()
+	for i, e := range env {
+		if strings.HasPrefix(strings.ToUpper(e), "PATH=") {
+			env[i] = e[:5] + extra + sep + e[5:]
+			return env
+		}
+	}
+	return append(env, "PATH="+extra)
+}
+
+// runCheckResult holds the outcome of a single tool check.
+type runCheckResult struct {
+	OK       bool
+	Output   string
+	Error    string
+	CheckCmd string // the command that was actually run
+}
+
+// runCheckCmd executes the check for a tool and returns the result.
+// Uses check_binary for a direct exec (no bash, no shell escaping) when set;
+// otherwise resolves check_cmd_windows / check_cmd_linux / check_cmd and runs
+// it through bash so shell metacharacters work consistently across platforms.
+func (s *Server) runCheckCmd(t tools.Tool) runCheckResult {
+	checkCmd := t.ResolvedCheckCmd(runtime.GOOS)
+
+	// Native binary probe — bypasses bash entirely, no shell-escape issues.
+	if t.CheckBinary != "" {
+		args := t.CheckArgs
+		if len(args) == 0 {
+			args = []string{"--version"}
+		}
+		cmd := exec.Command(t.CheckBinary, args...)
+		if env := s.checkEnv(t); env != nil {
+			cmd.Env = env
+		}
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			return runCheckResult{OK: false, Output: string(out), Error: err.Error(), CheckCmd: t.CheckBinary + " " + strings.Join(args, " ")}
+		}
+		return runCheckResult{OK: true, Output: string(out), CheckCmd: t.CheckBinary + " " + strings.Join(args, " ")}
+	}
+
+	if checkCmd == "" {
+		return runCheckResult{OK: false, Error: "no check_cmd configured", CheckCmd: "(none)"}
+	}
+
+	cmd := exec.Command("bash", "-c", checkCmd)
+	if env := s.checkEnv(t); env != nil {
+		cmd.Env = env
+	}
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return runCheckResult{OK: false, Output: string(out), Error: err.Error(), CheckCmd: checkCmd}
+	}
+	return runCheckResult{OK: true, Output: string(out), CheckCmd: checkCmd}
+}
+
 func (s *Server) handleCheck(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	t, ok := s.findTool(id)
@@ -799,8 +935,8 @@ func (s *Server) handleCheck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// No check_cmd: fall back to reading the install receipt
-	if t.CheckCmd == "" {
+	// No check configured: fall back to reading the install receipt.
+	if t.CheckBinary == "" && t.ResolvedCheckCmd(runtime.GOOS) == "" {
 		receipt := tools.GetReceipt(s.currentPrefix(), t.ReceiptName)
 		if receipt.Exists {
 			lines := []string{"(no check_cmd defined — showing install receipt)", ""}
@@ -816,11 +952,7 @@ func (s *Server) handleCheck(w http.ResponseWriter, r *http.Request) {
 			if receipt.InstallPath != "" {
 				lines = append(lines, "Install path: "+receipt.InstallPath)
 			}
-			jsonOK(w, map[string]any{
-				"ok":        true,
-				"output":    strings.Join(lines, "\n"),
-				"check_cmd": "(receipt file)",
-			})
+			jsonOK(w, map[string]any{"ok": true, "output": strings.Join(lines, "\n"), "check_cmd": "(receipt file)"})
 		} else {
 			jsonOK(w, map[string]any{
 				"ok":        false,
@@ -831,29 +963,12 @@ func (s *Server) handleCheck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Run the configured check command
-	// On Windows run via cmd /c so PATH-aware commands resolve correctly
-	var cmd *exec.Cmd
-	if runtime.GOOS == "windows" {
-		cmd = exec.Command("cmd", append([]string{"/c"}, t.CheckCmd)...)
-	} else {
-		parts := strings.Fields(t.CheckCmd)
-		cmd = exec.Command(parts[0], parts[1:]...)
-	}
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		jsonOK(w, map[string]any{
-			"ok":        false,
-			"output":    string(out),
-			"error":     err.Error(),
-			"check_cmd": t.CheckCmd,
-		})
-		return
-	}
+	res := s.runCheckCmd(t)
 	jsonOK(w, map[string]any{
-		"ok":        true,
-		"output":    string(out),
-		"check_cmd": t.CheckCmd,
+		"ok":        res.OK,
+		"output":    res.Output,
+		"error":     res.Error,
+		"check_cmd": res.CheckCmd,
 	})
 }
 
@@ -884,9 +999,23 @@ func (s *Server) handleToolLog(w http.ResponseWriter, r *http.Request) {
 	jsonOK(w, map[string]any{"ok": false, "error": "No install log found for this tool."})
 }
 
+func (s *Server) logDirForID(id string) (string, bool) {
+	logsRoot := filepath.Clean(filepath.Join(s.RepoRoot, "devkit-logs"))
+	dir := filepath.Join(logsRoot, strings.ReplaceAll(id, "/", "_"))
+	// Ensure the resolved path stays inside devkit-logs/.
+	if !strings.HasPrefix(dir, logsRoot+string(os.PathSeparator)) {
+		return "", false
+	}
+	return dir, true
+}
+
 func (s *Server) handleToolLogList(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	logDir := filepath.Join(s.RepoRoot, "devkit-logs", strings.ReplaceAll(id, "/", "_"))
+	logDir, ok := s.logDirForID(id)
+	if !ok {
+		jsonErr(w, "invalid tool id", 400)
+		return
+	}
 	entries, err := os.ReadDir(logDir)
 	if err != nil {
 		jsonOK(w, map[string]any{"ok": true, "logs": []any{}})
@@ -928,7 +1057,11 @@ func (s *Server) handleToolLogFile(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	logDir := filepath.Join(s.RepoRoot, "devkit-logs", strings.ReplaceAll(id, "/", "_"))
+	logDir, ok := s.logDirForID(id)
+	if !ok {
+		jsonErr(w, "invalid tool id", 400)
+		return
+	}
 	b, err := os.ReadFile(filepath.Join(logDir, file))
 	if err != nil {
 		jsonErr(w, "log not found", 404)
@@ -937,7 +1070,97 @@ func (s *Server) handleToolLogFile(w http.ResponseWriter, r *http.Request) {
 	jsonOK(w, map[string]any{"ok": true, "log": string(b), "filename": file})
 }
 
+// handleHealthTools runs every installed tool's check command in parallel and
+// returns a pass/fail summary — used by the "Validate All" UI feature.
+func (s *Server) handleHealthTools(w http.ResponseWriter, r *http.Request) {
+	type HealthResult struct {
+		ID         string `json:"id"`
+		Name       string `json:"name"`
+		Category   string `json:"category"`
+		OK         bool   `json:"ok"`
+		Output     string `json:"output"`
+		Error      string `json:"error,omitempty"`
+		CheckCmd   string `json:"check_cmd"`
+		DurationMS int64  `json:"duration_ms"`
+		NoCheck    bool   `json:"no_check,omitempty"`
+	}
+
+	allTools := s.getTools()
+	prefix := s.currentPrefix()
+
+	type workItem struct {
+		t      tools.Tool
+		status tools.ToolStatus
+	}
+	var work []workItem
+	for _, ts := range allTools {
+		if ts.Installed {
+			work = append(work, workItem{t: ts.Tool, status: ts})
+		}
+	}
+	_ = prefix // held for future per-check override; runCheckCmd uses s.currentPrefix()
+
+	results := make([]HealthResult, len(work))
+	var wg sync.WaitGroup
+	for i, w2 := range work {
+		wg.Add(1)
+		go func(idx int, t tools.Tool) {
+			defer wg.Done()
+			hr := HealthResult{
+				ID:       t.ID,
+				Name:     t.Name,
+				Category: t.Category,
+			}
+			hasCheck := t.CheckBinary != "" || t.ResolvedCheckCmd(runtime.GOOS) != ""
+			if !hasCheck {
+				hr.OK = true
+				hr.NoCheck = true
+				hr.CheckCmd = "(none)"
+				results[idx] = hr
+				return
+			}
+			start := time.Now()
+			res := s.runCheckCmd(t)
+			hr.OK = res.OK
+			hr.Output = strings.TrimSpace(res.Output)
+			hr.Error = res.Error
+			hr.CheckCmd = res.CheckCmd
+			hr.DurationMS = time.Since(start).Milliseconds()
+			results[idx] = hr
+		}(i, w2.t)
+	}
+	wg.Wait()
+
+	passed, failed, noCheck := 0, 0, 0
+	for _, r2 := range results {
+		switch {
+		case r2.NoCheck:
+			noCheck++
+		case r2.OK:
+			passed++
+		default:
+			failed++
+		}
+	}
+	jsonOK(w, map[string]any{
+		"results": results,
+		"summary": map[string]int{
+			"total":    len(results),
+			"passed":   passed,
+			"failed":   failed,
+			"no_check": noCheck,
+		},
+	})
+}
+
 func (s *Server) handleShutdown(w http.ResponseWriter, r *http.Request) {
+	// Only allow shutdown from loopback — reject remote clients even when
+	// the server is bound to 0.0.0.0.
+	host, _, _ := strings.Cut(r.RemoteAddr, ":")
+	if host != "127.0.0.1" && host != "::1" {
+		jsonErr(w, "forbidden", 403)
+		return
+	}
 	jsonOK(w, map[string]string{"status": "shutting down"})
 	go func() {
 		time.Sleep(200 * time.Millisecond)
@@ -999,13 +1222,13 @@ func (s *Server) handlePackageUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Extract zip (guard against path traversal)
+	// Extract zip — reject any entry whose resolved path escapes destDir.
+	safeRoot := filepath.Clean(destDir) + string(os.PathSeparator)
 	for _, f := range zr.File {
-		rel := filepath.Clean(f.Name)
-		if strings.HasPrefix(rel, "..") {
+		target := filepath.Join(destDir, filepath.Clean(f.Name))
+		if !strings.HasPrefix(target, safeRoot) {
 			continue
 		}
-		target := filepath.Join(destDir, rel)
 		if f.FileInfo().IsDir() {
 			_ = os.MkdirAll(target, 0o755)
 			continue
@@ -1086,7 +1309,13 @@ echo "✓ %s installed to $TOOL_DIR"
 
 func (s *Server) handlePackageDelete(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	destDir := filepath.Join(s.RepoRoot, "user-packages", id)
+	userPkgRoot := filepath.Clean(filepath.Join(s.RepoRoot, "user-packages"))
+	destDir := filepath.Join(userPkgRoot, id)
+	// Reject any id that escapes the user-packages/ directory (e.g. "../tools").
+	if !strings.HasPrefix(destDir, userPkgRoot+string(os.PathSeparator)) {
+		jsonErr(w, "invalid package id", 400)
+		return
+	}
 	if _, err := os.Stat(destDir); os.IsNotExist(err) {
 		jsonErr(w, "package not found", 404)
 		return

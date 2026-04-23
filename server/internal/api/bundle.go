@@ -35,7 +35,7 @@ func (s *Server) handleBundlePackageStatus(w http.ResponseWriter, r *http.Reques
 
 	switch t.BundleType {
 	case "pip":
-		installed := pipInstalledMap()
+		installed := pipInstalledMap(s.currentPrefix())
 		for _, p := range t.Packages {
 			ps := PackageStatus{PackageItem: p}
 			if iv, ok := installed[strings.ToLower(p.Name)]; ok {
@@ -137,7 +137,7 @@ func (s *Server) handleRemovePackage(w http.ResponseWriter, r *http.Request) {
 
 	switch t.BundleType {
 	case "pip":
-		pipRemoveOne(sse, target)
+		pipRemoveOne(sse, target, s.currentPrefix())
 	case "vscode":
 		vscodeRemoveOne(sse, target)
 	default:
@@ -174,15 +174,13 @@ func pipPython(prefix string) string {
 	return "python"
 }
 
-// pipInstalledMap returns a map of lowercase package name → installed version.
-func pipInstalledMap() map[string]string {
-	out, err := exec.Command("pip", "list", "--format=json").Output()
+// pipInstalledMap returns a map of lowercase package name → installed version,
+// using the same Python environment as pipInstallOne so results are consistent.
+func pipInstalledMap(prefix string) map[string]string {
+	py := pipPython(prefix)
+	out, err := exec.Command(py, "-m", "pip", "list", "--format=json").Output()
 	if err != nil {
-		// Try python -m pip
-		out, err = exec.Command("python", "-m", "pip", "list", "--format=json").Output()
-		if err != nil {
-			return map[string]string{}
-		}
+		return map[string]string{}
 	}
 	var pkgs []struct {
 		Name    string `json:"name"`
@@ -230,15 +228,11 @@ func pipInstallOne(sse *sseWriter, p *tools.PackageItem, prefix, prebuiltDir str
 	sse.Done("success")
 }
 
-func pipRemoveOne(sse *sseWriter, p *tools.PackageItem) {
+func pipRemoveOne(sse *sseWriter, p *tools.PackageItem, prefix string) {
+	py := pipPython(prefix)
 	sse.Send(fmt.Sprintf("==> Removing %s ...", p.Name))
-	cmd := exec.Command("pip", "uninstall", "-y", p.Name)
+	cmd := exec.Command(py, "-m", "pip", "uninstall", "-y", p.Name)
 	out, err := cmd.CombinedOutput()
-	if err != nil {
-		// Try via python -m pip
-		cmd2 := exec.Command("python", "-m", "pip", "uninstall", "-y", p.Name)
-		out, err = cmd2.CombinedOutput()
-	}
 	if len(out) > 0 {
 		sse.Send(strings.TrimSpace(string(out)))
 	}

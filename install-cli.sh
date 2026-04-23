@@ -470,9 +470,9 @@ fi
 # Step 2: tools/toolchains/clang
 # ---------------------------------------------------------------------------
 echo ""
-echo "  [2/13] Installing tools/toolchains/clang (required)..."
-_run_bootstrap "toolchains/clang" \
-    "${REPO_ROOT}/tools/toolchains/clang/source-build/setup.sh"
+echo "  [2/13] Installing tools/toolchains/llvm (required)..."
+_run_bootstrap "toolchains/llvm" \
+    "${REPO_ROOT}/tools/toolchains/llvm/setup.sh"
 
 # ---------------------------------------------------------------------------
 # Step 3: cmake
@@ -510,7 +510,7 @@ fi
 echo ""
 echo "  [6/13] Installing style-formatter (required)..."
 _run_bootstrap_no_prefix "style-formatter" \
-    "${REPO_ROOT}/tools/toolchains/clang/style-formatter/bootstrap.sh"
+    "${REPO_ROOT}/tools/toolchains/llvm/style-formatter/bootstrap.sh"
 
 # ---------------------------------------------------------------------------
 # Step 7: 7zip (optional)
@@ -528,7 +528,7 @@ fi
 # Step 8: servy (optional, Windows only)
 # ---------------------------------------------------------------------------
 echo ""
-echo "  [8/13] Servy 7.8 (optional, Windows only)..."
+echo "  [8/13] Servy 7.9 (optional, Windows only)..."
 if [[ "${INSTALL_SERVY}" == "true" ]]; then
     _run_setup "servy" "${REPO_ROOT}/tools/dev-tools/servy/setup.sh"
 else
