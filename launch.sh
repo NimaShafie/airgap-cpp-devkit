@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Author: Nima Shafie
 # =============================================================================
-# launch.sh -- airgap-cpp-devkit primary entry point (v2 — Go server)
+# launch.sh -- airgap-cpp-devkit primary entry point
 #
 # Starts the DevKit Manager web UI using a pre-compiled Go binary.
 # No Python, no pip, no runtime dependencies.

@@ -6,11 +6,14 @@ import (
 	"io/fs"
 	"net/http"
 	"strings"
+
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 var funcMap = template.FuncMap{
 	"lower": strings.ToLower,
-	"title": strings.Title, //nolint:staticcheck
+	"title": cases.Title(language.English).String,
 	"join":  strings.Join,
 	"hasPrefix":  strings.HasPrefix,
 	"trimPrefix": strings.TrimPrefix,
@@ -19,7 +22,8 @@ var funcMap = template.FuncMap{
 		if err != nil {
 			return template.JS("null")
 		}
-		return template.JS(b)
+		s := strings.ReplaceAll(string(b), "</", `<\/`)
+		return template.JS(s)
 	},
 }
 

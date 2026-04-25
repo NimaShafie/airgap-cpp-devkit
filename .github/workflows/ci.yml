@@ -12,15 +12,14 @@ concurrency:
 
 jobs:
   # ── Job 1: Static validation ─────────────────────────────────────────────
-  # Runs on every push/PR. No binaries needed — just source files.
-  # Catches broken JSON, missing required fields, bad platform values,
-  # and shell syntax errors before anything else runs.
   validate:
     name: Validate manifests & scripts
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
         with:
           persist-credentials: false
 
@@ -31,12 +30,12 @@ jobs:
         run: bash tests/validate-manifests.sh --verbose
 
   # ── Job 2: Server binary health check ────────────────────────────────────
-  # Starts the prebuilt server binary and verifies the HTTP API responds
-  # correctly. Runs on both Linux and Windows to catch platform regressions.
   server-health:
     name: Server health (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     needs: validate
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:
@@ -48,7 +47,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
         with:
           persist-credentials: false
 
@@ -80,14 +79,20 @@ jobs:
           echo "ERROR: server did not become ready within 15 seconds" >&2
           exit 1
 
+      - name: Read auth token
+        shell: bash
+        run: |
+          TOKEN=$(cat .devkit-token 2>/dev/null || echo "")
+          echo "DEVKIT_TOKEN=$TOKEN" >> "$GITHUB_ENV"
+
       - name: GET /health
         shell: bash
         run: curl -sf http://127.0.0.1:8080/health
 
-      - name: GET /api/tools — verify tool discovery
+      - name: GET /api/tools -- verify tool discovery
         shell: bash
         run: |
-          resp=$(curl -sf http://127.0.0.1:8080/api/tools)
+          resp=$(curl -sf -H "X-DevKit-Token: $DEVKIT_TOKEN" http://127.0.0.1:8080/api/tools)
           count=$(echo "$resp" | python3 -c "
           import json, sys
           tools = json.load(sys.stdin)
@@ -96,9 +101,10 @@ jobs:
           echo "Discovered $count tools"
           [ "$count" -gt 0 ] || { echo "ERROR: /api/tools returned no tools"; exit 1; }
 
-      - name: GET /api/profiles — verify profiles endpoint
+      - name: GET /api/profiles -- verify profiles endpoint
         shell: bash
-        run: curl -sf http://127.0.0.1:8080/api/profiles
+        run: |
+          curl -sf -H "X-DevKit-Token: $DEVKIT_TOKEN" http://127.0.0.1:8080/api/profiles
 
       - name: Stop server
         if: always()

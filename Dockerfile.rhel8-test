@@ -37,9 +37,14 @@ RUN dnf install -y \
     && dnf clean all
 
 # Create a non-root user that mirrors a typical developer account.
-# Grant passwordless sudo so installs to /opt work without switching users.
+# Pre-create the install prefix owned by devkit so no sudo is needed at all.
+# A narrow sudo allowlist covers edge cases in setup.sh scripts that still
+# need to write to /opt paths not pre-created here.
 RUN useradd -m -s /bin/bash devkit \
- && echo "devkit ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/devkit \
+ && mkdir -p /opt/airgap-cpp-devkit \
+ && chown -R devkit:devkit /opt/airgap-cpp-devkit \
+ && echo "devkit ALL=(ALL) NOPASSWD: /usr/bin/install, /bin/mkdir, /bin/cp, /bin/chown, /bin/chmod" \
+    >> /etc/sudoers.d/devkit \
  && chmod 0440 /etc/sudoers.d/devkit
 
 # Copy the repo into the container.

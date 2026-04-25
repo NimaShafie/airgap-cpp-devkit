@@ -54,8 +54,17 @@ func (s *Server) handleSaveLayout(w http.ResponseWriter, r *http.Request) {
 		jsonErr(w, "invalid layout", 400)
 		return
 	}
+	for cat, ids := range l.ToolOrder {
+		var kept []string
+		for _, id := range ids {
+			if t, ok := s.findTool(id); !ok || t.Source != "user" {
+				kept = append(kept, id)
+			}
+		}
+		l.ToolOrder[cat] = kept
+	}
 	data, _ := json.MarshalIndent(l, "", "  ")
-	if err := os.WriteFile(s.layoutPath(), data, 0o644); err != nil {
+	if err := os.WriteFile(s.layoutPath(), data, 0o600); err != nil {
 		jsonErr(w, err.Error(), 500)
 		return
 	}

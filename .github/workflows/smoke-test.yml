@@ -10,8 +10,8 @@ name: Smoke Test
 #   the prebuilt submodule (large files should use Git LFS).
 #
 # TRIGGERS:
-#   - Weekly (Monday 06:00 UTC) — automated regression check
-#   - workflow_dispatch          — manual trigger with profile selection
+#   - Weekly (Monday 06:00 UTC) -- automated regression check
+#   - workflow_dispatch          -- manual trigger with profile selection
 
 on:
   schedule:
@@ -37,8 +37,10 @@ concurrency:
 
 jobs:
   smoke-test:
-    name: Smoke test — ${{ matrix.label }}
+    name: Smoke test -- ${{ matrix.label }}
     runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:
@@ -58,11 +60,11 @@ jobs:
         run: echo "Skipping ${{ matrix.label }} as requested." && exit 0
 
       - name: Checkout (with all submodules)
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
         with:
           submodules: recursive
 
-      # ── Install ─────────────────────────────────────────────────────────
+      # -- Install ─────────────────────────────────────────────────────────
       - name: Install tools
         shell: bash
         run: |
@@ -70,19 +72,17 @@ jobs:
           echo "Installing profile: $PROFILE"
           bash install-cli.sh --yes --profile "$PROFILE"
 
-      # ── Smoke tests ──────────────────────────────────────────────────────
+      # -- Smoke tests ──────────────────────────────────────────────────────
       - name: Run smoke tests
         shell: bash
         run: bash tests/run-tests.sh --verbose
 
-      # ── check_cmd regression ─────────────────────────────────────────────
-      # Reads check_cmd from every installed tool's devkit.json and runs it.
-      # Fails if a check_cmd exits non-zero for a tool with an INSTALL_RECEIPT.
+      # -- check_cmd regression ─────────────────────────────────────────────
       - name: Run check_cmd for installed tools
         shell: bash
         run: bash tests/check-installed-tools.sh --verbose
 
-      # ── Artifacts ────────────────────────────────────────────────────────
+      # -- Artifacts ────────────────────────────────────────────────────────
       - name: Collect receipts
         if: always()
         shell: bash
@@ -96,7 +96,7 @@ jobs:
 
       - name: Upload receipts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08  # v4.6.0
         with:
           name: install-receipts-${{ matrix.os_flag }}
           path: /tmp/receipts/

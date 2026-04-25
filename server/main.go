@@ -1,11 +1,19 @@
 package main
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/x509"
+	"crypto/x509/pkix"
 	"embed"
+	"encoding/pem"
 	"flag"
 	"fmt"
 	"io/fs"
 	"log"
+	"math/big"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
@@ -22,19 +30,17 @@ var webFS embed.FS
 
 func main() {
 	var (
-		toolsDir   = flag.String("tools", "", "path to tools/ directory (default: <repo>/tools)")
-		prebuilt   = flag.String("prebuilt", "", "path to prebuilt/ directory (default: <repo>/prebuilt)")
-		port       = flag.Int("port", 8080, "HTTP listen port")
-		host       = flag.String("host", "127.0.0.1", "HTTP bind address")
-		noBrowser  = flag.Bool("no-browser", false, "don't open browser on startup")
+		toolsDir  = flag.String("tools", "", "path to tools/ directory (default: <repo>/tools)")
+		prebuilt  = flag.String("prebuilt", "", "path to prebuilt/ directory (default: <repo>/prebuilt)")
+		port      = flag.Int("port", 8080, "HTTP listen port")
+		host      = flag.String("host", "127.0.0.1", "HTTP bind address")
+		noBrowser = flag.Bool("no-browser", false, "don't open browser on startup")
+		tlsFlag   = flag.Bool("tls", false, "enable HTTPS with an auto-generated self-signed certificate")
 	)
 	flag.Parse()
 
-	// Resolve repo root from --tools path (strip trailing /tools).
-	// Binary lives at prebuilt/bin/ so we derive root from --tools if given.
 	currentOS := detectOS()
 
-	// Default tool/prebuilt dirs relative to binary location (prebuilt/bin/)
 	exePath, _ := os.Executable()
 	exeDir := filepath.Dir(exePath)
 	repoRoot := filepath.Join(exeDir, "..", "..")
@@ -43,7 +49,6 @@ func main() {
 	if *toolsDir == "" {
 		*toolsDir = filepath.Join(repoRoot, "tools")
 	} else {
-		// Derive repo root from --tools path
 		repoRoot, _ = filepath.Abs(filepath.Join(*toolsDir, ".."))
 	}
 	if *prebuilt == "" {
@@ -59,7 +64,6 @@ func main() {
 		*host = cfg.Hostname
 	}
 
-	// webFS is embedded at build time; the root is "web/".
 	sub, err := fs.Sub(webFS, "web")
 	if err != nil {
 		log.Fatalf("embed FS error: %v", err)
@@ -70,35 +74,108 @@ func main() {
 		log.Fatalf("server init error: %v", err)
 	}
 
+	scheme := "http"
+	if *tlsFlag {
+		scheme = "https"
+	}
+
 	addr := fmt.Sprintf("%s:%d", *host, *port)
-	url := fmt.Sprintf("http://%s:%d", *host, *port)
+	baseURL := fmt.Sprintf("%s://%s:%d", scheme, *host, *port)
+	browserURL := fmt.Sprintf("%s/auth/bootstrap?token=%s&next=/", baseURL, srv.Token())
 
 	fmt.Printf("╔══════════════════════════════════════════╗\n")
 	fmt.Printf("║  AirGap DevKit  v%-24s║\n", api.AppVersion)
 	fmt.Printf("╠══════════════════════════════════════════╣\n")
-	fmt.Printf("║  UI  →  %-33s║\n", url)
+	fmt.Printf("║  UI  →  %-33s║\n", baseURL)
 	fmt.Printf("║  OS  →  %-33s║\n", currentOS)
 	fmt.Printf("╚══════════════════════════════════════════╝\n")
+	fmt.Printf("  Auth token: %s\n", srv.Token())
+	fmt.Printf("  (saved to .devkit-token for API/CI use)\n\n")
 
 	mux := http.NewServeMux()
 	mux.Handle("/static/", http.FileServer(http.FS(sub)))
 	mux.Handle("/", srv.Routes())
 
-	if !*noBrowser {
-		go openBrowser(url)
+	httpSrv := &http.Server{
+		Addr:        addr,
+		Handler:     mux,
+		ReadTimeout: 30 * time.Second,
+		IdleTimeout: 120 * time.Second,
+		// WriteTimeout intentionally omitted — SSE streaming endpoints need
+		// long-lived connections and would be broken by a hard write deadline.
 	}
 
-	log.Printf("Listening on %s", addr)
-	if err := http.ListenAndServe(addr, mux); err != nil {
-		log.Fatalf("server error: %v", err)
+	if !*noBrowser {
+		go openBrowser(browserURL)
 	}
+
+	log.Printf("Listening on %s://%s", scheme, addr)
+
+	if *tlsFlag {
+		certFile, keyFile, tlsErr := ensureTLSCert(repoRoot)
+		if tlsErr != nil {
+			log.Fatalf("TLS cert error: %v", tlsErr)
+		}
+		log.Fatal(httpSrv.ListenAndServeTLS(certFile, keyFile))
+	} else {
+		log.Fatal(httpSrv.ListenAndServe())
+	}
+}
+
+func ensureTLSCert(repoRoot string) (certFile, keyFile string, err error) {
+	certFile = filepath.Join(repoRoot, "devkit-tls.crt")
+	keyFile = filepath.Join(repoRoot, "devkit-tls.key")
+	if _, e := os.Stat(certFile); e == nil {
+		return certFile, keyFile, nil
+	}
+
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		return "", "", err
+	}
+
+	tmpl := &x509.Certificate{
+		SerialNumber: big.NewInt(1),
+		Subject:      pkix.Name{CommonName: "devkit-local"},
+		NotBefore:    time.Now().Add(-time.Minute),
+		NotAfter:     time.Now().Add(10 * 365 * 24 * time.Hour),
+		KeyUsage:     x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		DNSNames:     []string{"localhost"},
+		IPAddresses:  []net.IP{net.ParseIP("127.0.0.1"), net.ParseIP("::1")},
+	}
+
+	certDER, err := x509.CreateCertificate(rand.Reader, tmpl, tmpl, &key.PublicKey, key)
+	if err != nil {
+		return "", "", err
+	}
+	keyDER, err := x509.MarshalECPrivateKey(key)
+	if err != nil {
+		return "", "", err
+	}
+
+	cf, err := os.OpenFile(certFile, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o644)
+	if err != nil {
+		return "", "", err
+	}
+	_ = pem.Encode(cf, &pem.Block{Type: "CERTIFICATE", Bytes: certDER})
+	cf.Close()
+
+	kf, err := os.OpenFile(keyFile, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o600)
+	if err != nil {
+		return "", "", err
+	}
+	_ = pem.Encode(kf, &pem.Block{Type: "EC PRIVATE KEY", Bytes: keyDER})
+	kf.Close()
+
+	log.Printf("TLS: generated self-signed certificate at %s", certFile)
+	return certFile, keyFile, nil
 }
 
 func detectOS() string {
 	if runtime.GOOS == "windows" {
 		return "windows"
 	}
-	// Also catch MINGW/MSYS environments via env
 	if ms := os.Getenv("MSYSTEM"); ms != "" {
 		return "windows"
 	}
@@ -106,13 +183,10 @@ func detectOS() string {
 }
 
 func openBrowser(url string) {
-	// Wait for the HTTP server to be ready before opening.
 	time.Sleep(800 * time.Millisecond)
 
 	switch runtime.GOOS {
 	case "windows":
-		// Try powershell first (works from MINGW64/Git Bash context),
-		// fall back to cmd /c start.
 		if err := exec.Command("powershell.exe", "-NoProfile", "-Command",
 			"Start-Process", "'"+url+"'").Start(); err != nil {
 			_ = exec.Command("cmd", "/c", "start", url).Start()
@@ -128,4 +202,3 @@ func openBrowser(url string) {
 		}
 	}
 }
-

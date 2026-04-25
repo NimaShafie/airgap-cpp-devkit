@@ -1,9 +1,6 @@
 [submodule "prebuilt"]
 	path = prebuilt
 	url = https://github.com/airgap-devkit/prebuilt.git
-[submodule "manager"]
-	path = manager
-	url = https://github.com/airgap-devkit/manager.git
 [submodule "tools"]
 	path = tools
 	url = https://github.com/airgap-devkit/tools.git

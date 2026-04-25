@@ -243,7 +243,7 @@ func (s *Server) handleDownloadUpdate(w http.ResponseWriter, r *http.Request) {
 	if _, statErr := os.Stat(destFile); statErr == nil {
 		sse.Send(fmt.Sprintf("File already cached: %s", destFile))
 	} else {
-		if err := os.MkdirAll(destDir, 0o755); err != nil {
+		if err := os.MkdirAll(destDir, 0o750); err != nil {
 			sse.Send("ERROR: cannot create directory: " + err.Error())
 			sse.Done("failed")
 			return
@@ -345,7 +345,7 @@ func (s *Server) appendUpdateHistory(entry UpdateHistoryEntry) {
 	}
 	entries = append([]UpdateHistoryEntry{entry}, entries...) // newest first
 	if data, err := json.MarshalIndent(entries, "", "  "); err == nil {
-		os.WriteFile(path, append(data, '\n'), 0o644) //nolint:errcheck
+		os.WriteFile(path, append(data, '\n'), 0o600) //nolint:errcheck
 	}
 }
 
@@ -518,7 +518,7 @@ func updateDevkitVersion(path, version string) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, append(out, '\n'), 0o644)
+	return os.WriteFile(path, append(out, '\n'), 0o600)
 }
 
 func updateSetupVersion(path, oldVer, newVer string) error {
@@ -534,5 +534,5 @@ func updateSetupVersion(path, oldVer, newVer string) error {
 	if updated == content {
 		return fmt.Errorf("VERSION=%q not found in setup.sh", oldVer)
 	}
-	return os.WriteFile(path, []byte(updated), 0o644)
+	return os.WriteFile(path, []byte(updated), 0o600)
 }

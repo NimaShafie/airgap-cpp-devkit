@@ -90,7 +90,7 @@ pushed live via `POST /api/config` or through CI/CD pipelines without restarting
 
 ---
 
-## DevKit Manager Features (v2)
+## DevKit Manager Features
 
 The manager is a self-contained Go binary with an embedded web UI. Features:
 
@@ -397,7 +397,7 @@ airgap-cpp-devkit/
 +-- .gitlab-ci.yml                         <- GitLab CI/CD pipeline
 +-- .gitmodules                            <- submodule pointers (prebuilt, tools)
 |
-+-- server/                                <- Go server source (v2 DevKit Manager)
++-- server/                                <- Go server source (DevKit Manager)
 |   +-- main.go
 |   +-- go.mod / go.sum
 |   +-- internal/

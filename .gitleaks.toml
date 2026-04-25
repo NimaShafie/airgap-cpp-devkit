@@ -1,0 +1,14 @@
+# gitleaks configuration for airgap-devkit
+# Suppressess known-false-positive curl-auth patterns in documentation files
+# where placeholder text like REPLACE_WITH_ATLASSIAN_API_TOKEN is intentional.
+
+title = "airgap-devkit gitleaks config"
+
+[allowlist]
+  description = "Placeholder credential strings in documentation"
+  regexes = ['''REPLACE_WITH_''']
+  paths = [
+    '''README\.md''',
+    '''\.ci/README\.md''',
+    '''\.ci/jenkins/SETUP\.md''',
+  ]

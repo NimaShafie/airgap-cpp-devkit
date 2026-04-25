@@ -25,17 +25,17 @@ import (
 )
 
 type Server struct {
-	RepoRoot   string
+	RepoRoot    string
 	PrebuiltDir string
-	OS         string
-	Bash       string
-	Config     devconfig.Config
-	webFS      fs.FS
+	OS          string
+	Bash        string
+	Config      devconfig.Config
+	webFS       fs.FS
+	token       string
 
-	mu     sync.RWMutex
-	allTools []tools.Tool
-	prefix  string
-
+	mu            sync.RWMutex
+	allTools      []tools.Tool
+	prefix        string
 	profiles      map[string]Profile
 	metaOverrides map[string]ToolMetaOverride
 }
@@ -63,6 +63,11 @@ func New(repoRoot, prebuiltDir, currentOS string, cfg devconfig.Config, webFS fs
 		return nil, err
 	}
 
+	tok, err := loadOrCreateToken(repoRoot)
+	if err != nil {
+		return nil, fmt.Errorf("auth token: %w", err)
+	}
+
 	allIDs := make([]string, 0, len(loaded))
 	for _, t := range loaded {
 		allIDs = append(allIDs, t.ID)
@@ -75,6 +80,7 @@ func New(repoRoot, prebuiltDir, currentOS string, cfg devconfig.Config, webFS fs
 		Bash:        tools.FindBash(),
 		Config:      cfg,
 		webFS:       webFS,
+		token:       tok,
 		allTools:    loaded,
 		prefix:      detectPrefix(currentOS),
 		profiles: map[string]Profile{
@@ -104,8 +110,24 @@ func New(repoRoot, prebuiltDir, currentOS string, cfg devconfig.Config, webFS fs
 	return s, nil
 }
 
+func (s *Server) Token() string { return s.token }
+
+func responseHeaders(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("X-Frame-Options", "DENY")
+		w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
+		w.Header().Set("Content-Security-Policy",
+			"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:")
+		next.ServeHTTP(w, r)
+	})
+}
+
 func (s *Server) Routes() http.Handler {
 	r := chi.NewRouter()
+	r.Use(responseHeaders)
+	r.Use(s.tokenAuth)
+	r.Get("/auth/bootstrap", s.handleAuthBootstrap)
 	r.Get("/", s.handleDashboard)
 	r.Get("/logs", s.handleLogs)
 	r.Get("/health", s.handleHealth)
@@ -176,7 +198,7 @@ func (s *Server) saveProfiles() error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(s.profilesPath(), data, 0o644)
+	return os.WriteFile(s.profilesPath(), data, 0o600)
 }
 
 // ── Profile CRUD handlers ────────────────────────────────────────────────────
@@ -249,7 +271,7 @@ func (s *Server) saveMetaOverrides() error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(s.metaOverridesPath(), data, 0o644)
+	return os.WriteFile(s.metaOverridesPath(), data, 0o600)
 }
 
 func (s *Server) applyMetaOverride(t tools.Tool) tools.Tool {
@@ -583,7 +605,7 @@ func (s *Server) handleSetPrefix(w http.ResponseWriter, r *http.Request) {
 		jsonErr(w, "prefix must be an absolute, clean path", 400)
 		return
 	}
-	if err := os.WriteFile(prefixOverridePath(s.RepoRoot), []byte(body.Prefix), 0o644); err != nil {
+	if err := os.WriteFile(prefixOverridePath(s.RepoRoot), []byte(body.Prefix), 0o600); err != nil {
 		jsonErr(w, err.Error(), 500)
 		return
 	}
@@ -699,7 +721,7 @@ func (s *Server) handleImport(w http.ResponseWriter, r *http.Request) {
 			jsonErr(w, "imported prefix must be an absolute, clean path", 400)
 			return
 		}
-		_ = os.WriteFile(prefixOverridePath(s.RepoRoot), []byte(tc.Prefix), 0o644)
+		_ = os.WriteFile(prefixOverridePath(s.RepoRoot), []byte(tc.Prefix), 0o600)
 		s.mu.Lock()
 		s.prefix = tc.Prefix
 		s.mu.Unlock()
@@ -723,7 +745,7 @@ func (s *Server) handleInstall(w http.ResponseWriter, r *http.Request) {
 
 	// Save full install output to a timestamped log file
 	logDir := filepath.Join(s.RepoRoot, "devkit-logs", strings.ReplaceAll(id, "/", "_"))
-	_ = os.MkdirAll(logDir, 0o755)
+	_ = os.MkdirAll(logDir, 0o750)
 	logFile := filepath.Join(logDir, time.Now().UTC().Format("20060102-150405")+".log")
 	ssePipe := newPipe(sse)
 	var pw io.Writer = ssePipe
@@ -742,7 +764,7 @@ func (s *Server) handleInstall(w http.ResponseWriter, r *http.Request) {
 	}
 	sse.Send(finalMsg)
 	// Also append final line to log file
-	if f, err := os.OpenFile(logFile, os.O_APPEND|os.O_WRONLY, 0o644); err == nil {
+	if f, err := os.OpenFile(logFile, os.O_APPEND|os.O_WRONLY, 0o600); err == nil {
 		fmt.Fprintln(f, finalMsg)
 		f.Close()
 	}
@@ -919,6 +941,14 @@ type runCheckResult struct {
 // otherwise resolves check_cmd_windows / check_cmd_linux / check_cmd and runs
 // it through bash so shell metacharacters work consistently across platforms.
 func (s *Server) runCheckCmd(t tools.Tool) runCheckResult {
+	if t.Source == "user" {
+		return runCheckResult{
+			OK:       false,
+			Error:    "check_cmd execution is disabled for user-uploaded packages",
+			CheckCmd: "(blocked — user source)",
+		}
+	}
+
 	checkCmd := t.ResolvedCheckCmd(runtime.GOOS)
 
 	// Native binary probe — bypasses bash entirely, no shell-escape issues.
@@ -1196,6 +1226,11 @@ func (s *Server) handleShutdown(w http.ResponseWriter, r *http.Request) {
 
 // ─── Package upload ──────────────────────────────────────────────────────────
 
+const (
+	maxZipUncompressed = 256 << 20 // 256 MB
+	maxZipSingleEntry  = 64 << 20  // 64 MB
+)
+
 var reSlug = regexp.MustCompile(`[^a-z0-9\-]`)
 
 func slugify(name string) string {
@@ -1235,6 +1270,16 @@ func (s *Server) handlePackageUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var totalUncompressed uint64
+	for _, f := range zr.File {
+		totalUncompressed += f.UncompressedSize64
+	}
+	if totalUncompressed > maxZipUncompressed {
+		jsonErr(w, fmt.Sprintf("zip expands to %.0f MB which exceeds the %.0f MB limit",
+			float64(totalUncompressed)/(1<<20), float64(maxZipUncompressed)/(1<<20)), 400)
+		return
+	}
+
 	// Derive tool ID from filename: "My Tool 1.2.zip" → "my-tool"
 	base := strings.TrimSuffix(filepath.Base(header.Filename), ".zip")
 	toolID := slugify(base)
@@ -1243,7 +1288,7 @@ func (s *Server) handlePackageUpload(w http.ResponseWriter, r *http.Request) {
 	}
 
 	destDir := filepath.Join(s.RepoRoot, "user-packages", toolID)
-	if err := os.MkdirAll(destDir, 0o755); err != nil {
+	if err := os.MkdirAll(destDir, 0o750); err != nil {
 		jsonErr(w, "cannot create package dir: "+err.Error(), 500)
 		return
 	}
@@ -1256,10 +1301,10 @@ func (s *Server) handlePackageUpload(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		if f.FileInfo().IsDir() {
-			_ = os.MkdirAll(target, 0o755)
+			_ = os.MkdirAll(target, 0o750)
 			continue
 		}
-		_ = os.MkdirAll(filepath.Dir(target), 0o755)
+		_ = os.MkdirAll(filepath.Dir(target), 0o750)
 		rc, err := f.Open()
 		if err != nil {
 			continue
@@ -1269,9 +1314,14 @@ func (s *Server) handlePackageUpload(w http.ResponseWriter, r *http.Request) {
 			rc.Close()
 			continue
 		}
-		_, _ = io.Copy(out, rc)
+		n, cpErr := io.Copy(out, io.LimitReader(rc, maxZipSingleEntry))
 		out.Close()
 		rc.Close()
+		if cpErr != nil || n >= maxZipSingleEntry {
+			os.Remove(target)
+			jsonErr(w, "zip entry exceeds maximum allowed size", 400)
+			return
+		}
 	}
 
 	uploadedBy := currentOSUsername()
@@ -1294,7 +1344,7 @@ func (s *Server) handlePackageUpload(w http.ResponseWriter, r *http.Request) {
 			"uploaded_at":  uploadedAt,
 		}
 		mjson, _ := json.MarshalIndent(manifest, "", "  ")
-		_ = os.WriteFile(devkitJSON, mjson, 0o644)
+		_ = os.WriteFile(devkitJSON, mjson, 0o600)
 
 		// Generate a minimal setup.sh
 		setupSh := filepath.Join(destDir, "setup.sh")
