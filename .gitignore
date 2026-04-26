@@ -57,7 +57,7 @@ mintty*.png
 CLAUDE.md
 .claude/
 
-# Auth token (generated at runtime, contains a secret — never commit)
+# Auth token (generated at runtime)
 .devkit-token
 
 # TLS certs (generated at runtime)
