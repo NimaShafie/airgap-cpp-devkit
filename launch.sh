@@ -156,27 +156,11 @@ _effective_port() {
 EFFECTIVE_PORT="$(_effective_port)"
 _free_port "${EFFECTIVE_PORT}"
 
-# Fork a background job to open the browser — this survives exec below.
-# 2-second delay gives the server time to bind its port first.
-if [[ "${NO_BROWSER}" != "true" ]]; then
-    OPEN_URL="http://${UI_HOST}:${EFFECTIVE_PORT}"
-    (
-        sleep 2
-        if [[ "${PLATFORM}" == "windows" ]]; then
-            powershell.exe -NoProfile -Command "Start-Process '${OPEN_URL}'" 2>/dev/null || \
-            cmd.exe /c start "${OPEN_URL}" 2>/dev/null || true
-        else
-            xdg-open "${OPEN_URL}" 2>/dev/null || \
-            gnome-open "${OPEN_URL}" 2>/dev/null || true
-        fi
-    ) &
-fi
-
 chmod +x "${SERVER_BIN}" 2>/dev/null || true
 
-# Always pass --no-browser to the binary; the shell handles opening above.
+# Let the binary open the browser — it constructs the /auth/bootstrap URL
+# that includes the session token, so the browser lands authenticated.
 exec "${SERVER_BIN}" \
     --tools    "${SCRIPT_DIR}/tools" \
     --prebuilt "${SCRIPT_DIR}/prebuilt" \
-    --no-browser \
     "${SERVER_ARGS[@]+"${SERVER_ARGS[@]}"}"

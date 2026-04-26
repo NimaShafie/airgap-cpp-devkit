@@ -6,4 +6,4 @@ package api
 //   MINOR    — increments with each feature milestone
 //   PATCH    — increments for bug-fix-only drops
 //   PRERELEASE — alpha.N → beta.N → rc.N (dropped on stable release)
-const AppVersion = "1.0.0-rc.1"
+const AppVersion = "1.0.0-rc.2"
