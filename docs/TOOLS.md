@@ -70,7 +70,7 @@ gRPC prebuilt includes: `bin/` (protoc, grpc_cpp_plugin, all plugins), `include/
 | **Notepad++** | 8.9.3 | Windows | Yes (portable zip + installer) | `tools/dev-tools/notepadpp/` |
 | **PuTTY** | 0.83 | Windows + Linux | Yes (Win MSI) / source build (Linux) | `tools/dev-tools/putty/` |
 | **SourceTree** | 3.4.30 | Windows | Yes | `tools/dev-tools/sourcetree/` |
-| **Servy** | 7.9 | Windows | Yes (single file ~80 MB) | `tools/dev-tools/servy/` |
+| **Servy** | 8.6 | Windows | Yes (single file ~80 MB) | `tools/dev-tools/servy/` |
 | **Conan** | 2.30.0 | Windows + Linux | Yes (self-contained) | `tools/dev-tools/conan/` |
 | **VS Code extensions** | Various | Windows + Linux | Yes (.vsix) | `tools/dev-tools/vscode-extensions/` |
 | **SQLite CLI** | 3.53.0 (Win) / 3.26.0 RPM (RHEL 8) | Windows + Linux | Yes | `tools/dev-tools/sqlite/` |
@@ -201,7 +201,7 @@ All .zip archives use deflate level 9 compression.
 | gcc-toolset-15 RHEL8 RPMs (.tar) | 87MB | 2 | 50MB |
 | CMake 4.3.1 Linux (.tar.gz) | 61MB | 1 | -- single file |
 | CMake 4.3.1 Windows (.zip) | 51MB | 1 | -- single file |
-| Servy 7.9 Windows (.7z) | 80MB | 1 | -- single file |
+| Servy 8.6 Windows (.7z) | 80MB | 1 | -- single file |
 | Conan 2.30.0 Windows (.zip) | 15MB | 1 | -- single file |
 | Conan 2.30.0 Linux (.tgz) | 27MB | 1 | -- single file |
 | Python 3.14.4 Windows embed (.zip) | 12MB | 1 | -- single file |
@@ -230,7 +230,7 @@ All .zip archives use deflate level 9 compression.
 | Notepad++ 8.9.3 | Yes | - | Windows only; portable zip (no admin) + installer available |
 | PuTTY 0.83 | Yes (MSI) | Yes (source) | Linux builds CLI tools only; requires cmake + gcc |
 | SourceTree 3.4.30 | Yes | - | Windows only; Squirrel installer targets %LocalAppData%\SourceTree |
-| Servy 7.9 | Yes | - | Windows only, graceful no-op on Linux |
+| Servy 8.6 | Yes | - | Windows only, graceful no-op on Linux |
 | Conan 2.30.0 | Yes | Yes | Self-contained, no Python required |
 | VS Code extensions | Yes | Yes | Per-platform .vsix files |
 | SQLite CLI | Yes (3.53.0) | Yes (3.26.0 RPM) | RHEL 8 uses system RPM |
@@ -284,7 +284,7 @@ bash tools/build-tools/cmake/setup.sh                # CMake 4.3.1
 bash tools/toolchains/lcov/setup.sh                 # lcov 2.5 (Linux only)
 bash tools/languages/python/setup.sh                 # Python 3.14.4 + pip packages
 bash tools/dev-tools/conan/setup.sh                  # Conan 2.30.0
-bash tools/dev-tools/servy/setup.sh                  # Servy 7.9 (Windows only)
+bash tools/dev-tools/servy/setup.sh                  # Servy 8.6 (Windows only)
 bash tools/dev-tools/sqlite/setup.sh                 # SQLite CLI
 bash tools/dev-tools/matlab/setup.sh                 # MATLAB verification
 bash tools/dev-tools/vscode-extensions/setup.sh      # VS Code extensions
