@@ -270,7 +270,14 @@ _sep
 echo "  [6] Style Formatter"
 _sep
 HOOK="${REPO_ROOT}/.git/hooks/pre-commit"
-[[ -f "${HOOK}" ]] && _ok "pre-commit hook installed" || _fail "pre-commit hook missing"
+if ! git -C "${REPO_ROOT}" rev-parse --git-dir &>/dev/null; then
+  # The pre-commit hook is only installed inside a git repository; outside one
+  # (e.g. an unpacked source tarball) the style-formatter step is skipped by
+  # the installer, so its absence here is expected, not a failure.
+  _na "pre-commit hook (no git repository)"
+else
+  [[ -f "${HOOK}" ]] && _ok "pre-commit hook installed" || _fail "pre-commit hook missing"
+fi
 _check_bin_receipt "clang-format (hook)" "clang-llvm" clang-format --version
 
 # ---------------------------------------------------------------------------
