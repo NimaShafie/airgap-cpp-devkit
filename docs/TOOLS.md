@@ -40,11 +40,11 @@ All tools work without internet access. All dependencies are vendored.
 
 | Tool | Version | Platform | Prebuilt? | Location |
 |------|---------|----------|-----------|----------|
-| **gRPC** | 1.81.1 | Windows | Yes (.zip, per MSVC toolset — v142/v143/v145, ~5 parts each) | `tools/frameworks/grpc/` |
+| **gRPC** | 1.83.0 | Windows + Linux | Yes (Windows .zip per MSVC toolset v142/v143/v145 × Release/Debug; Linux .tar.gz RHEL 8/9 x86_64) | `tools/frameworks/grpc/` |
 | **zlib** | 1.3.2 | Windows + Linux | - (vendored source, CMake build ~30s) | `tools/lib/zlib/` |
 | **Conan Air-Gap Kit** | 1.0.0 (Conan 2.30.0) | Windows + Linux | - (scripts) | `conan-airgap/` · tool: `tools/frameworks/conan-airgap/` |
 
-gRPC ships one prebuilt package per Visual Studio toolset (ABI-locked static libs): `v142` = VS 2019, `v143` = VS 2022 (default), `v145` = VS 2026. Choose the matching one in devkit-ui or with `setup.sh --toolset <v142|v143|v145>`.
+gRPC ships one prebuilt package per Visual Studio toolset (ABI-locked static libs): `v142` = VS 2019, `v143` = VS 2022 (default), `v145` = VS 2026 — each in **Release** and **Debug**. It also ships a Linux RHEL 8/9 (x86_64) package. Choose the matching one in devkit-ui or with `setup.sh --toolset <v142|v143|v145> --config <release|debug>` (Windows) / `setup.sh --platform linux` (Linux).
 
 gRPC prebuilt includes: `bin/` (protoc, grpc_cpp_plugin, all plugins), `include/`, `lib/` (static), `share/` (cmake config).
 
@@ -67,11 +67,11 @@ gRPC prebuilt includes: `bin/` (protoc, grpc_cpp_plugin, all plugins), `include/
 |------|---------|----------|-----------|----------|
 | **FileZilla** | 3.70.4 | Windows + Linux | Yes | `tools/dev-tools/filezilla/` |
 | **GDB** | 17.1 | Linux | No (source build ~25 min) | `tools/dev-tools/gdb/` |
-| **Notepad++** | 8.9.3 | Windows | Yes (portable zip + installer) | `tools/dev-tools/notepadpp/` |
+| **Notepad++** | 8.9.7 | Windows | Yes (portable zip + installer) | `tools/dev-tools/notepadpp/` |
 | **PuTTY** | 0.83 | Windows + Linux | Yes (Win MSI) / source build (Linux) | `tools/dev-tools/putty/` |
 | **SourceTree** | 3.4.30 | Windows | Yes | `tools/dev-tools/sourcetree/` |
-| **Servy** | 8.6 | Windows | Yes (single file ~80 MB) | `tools/dev-tools/servy/` |
-| **Conan** | 2.30.0 | Windows + Linux | Yes (self-contained) | `tools/dev-tools/conan/` |
+| **Servy** | 8.7 | Windows | Yes (single file ~80 MB) | `tools/dev-tools/servy/` |
+| **Conan** | 2.31.1 | Windows + Linux | Yes (self-contained) | `tools/dev-tools/conan/` |
 | **VS Code extensions** | Various | Windows + Linux | Yes (.vsix) | `tools/dev-tools/vscode-extensions/` |
 | **SQLite CLI** | 3.53.0 (Win) / 3.26.0 RPM (RHEL 8) | Windows + Linux | Yes | `tools/dev-tools/sqlite/` |
 | **MATLAB verification** | - | Windows + Linux | - (checks existing install) | `tools/dev-tools/matlab/` |
@@ -188,7 +188,9 @@ All .zip archives use deflate level 9 compression.
 
 | Archive | Size | Parts | Split at |
 |---------|------|-------|----------|
-| gRPC 1.81.1 Windows (.zip, ×3 toolsets v142/v143/v145) | ~200MB each | 5 each | 45MB |
+| gRPC 1.83.0 Windows Release (.zip, ×3 toolsets v142/v143/v145) | ~180MB each | 4 each | 45MB |
+| gRPC 1.83.0 Windows Debug (.zip, ×3 toolsets v142/v143/v145) | ~490MB each | 11 each | 45MB |
+| gRPC 1.83.0 Linux RHEL 8/9 (.tar.gz, x86_64) | ~91MB | 2 | 45MB |
 | WinLibs GCC 15.2.0 Windows (.zip) | 264MB | 6 | 49MB |
 | llvm-mingw 20260407 Windows (.zip) | 179MB | 4 | 49MB |
 | llvm-mingw 20260407 Linux (.tar.xz) | 82MB | 2 | 50MB |
@@ -201,9 +203,9 @@ All .zip archives use deflate level 9 compression.
 | gcc-toolset-15 RHEL8 RPMs (.tar) | 87MB | 2 | 50MB |
 | CMake 4.3.1 Linux (.tar.gz) | 61MB | 1 | -- single file |
 | CMake 4.3.1 Windows (.zip) | 51MB | 1 | -- single file |
-| Servy 8.6 Windows (.7z) | 80MB | 1 | -- single file |
-| Conan 2.30.0 Windows (.zip) | 15MB | 1 | -- single file |
-| Conan 2.30.0 Linux (.tgz) | 27MB | 1 | -- single file |
+| Servy 8.7 Windows (.7z) | 80MB | 1 | -- single file |
+| Conan 2.31.1 Windows (.zip) | 15MB | 1 | -- single file |
+| Conan 2.31.1 Linux (.tgz) | 27MB | 1 | -- single file |
 | Python 3.14.4 Windows embed (.zip) | 12MB | 1 | -- single file |
 | SQLite 3.53.0 Windows CLI (.zip) | 6.2MB | 1 | -- single file |
 | SQLite 3.53.0 Linux CLI (.zip) | 4.1MB | 1 | -- single file |
@@ -222,16 +224,16 @@ All .zip archives use deflate level 9 compression.
 | GCC cross/native | - | Yes | Linux only |
 | CMake 4.3.1 | Yes | Yes | Prebuilt for both |
 | Ninja | Yes | Yes | Prebuilt for both |
-| gRPC 1.81.1 | Yes | - | Windows only, prebuilt per MSVC toolset (v142/v143/v145) |
+| gRPC 1.83.0 | Yes | Yes | Windows: per MSVC toolset (v142/v143/v145) × Release/Debug. Linux: RHEL 8/9 x86_64 static-runtime package |
 | Python 3.14.4 | Yes | Yes | Different packages per platform |
 | .NET SDK 10.0.202 | Yes | Yes | Portable, no installer |
 | FileZilla 3.70.4 | Yes | Yes | Prebuilt installer (Win) + binary tarball (Linux) |
 | GDB 17.1 | - | Yes | Linux source build; requires gcc, make, readline-devel |
-| Notepad++ 8.9.3 | Yes | - | Windows only; portable zip (no admin) + installer available |
+| Notepad++ 8.9.7 | Yes | - | Windows only; portable zip (no admin) + installer available |
 | PuTTY 0.83 | Yes (MSI) | Yes (source) | Linux builds CLI tools only; requires cmake + gcc |
 | SourceTree 3.4.30 | Yes | - | Windows only; Squirrel installer targets %LocalAppData%\SourceTree |
-| Servy 8.6 | Yes | - | Windows only, graceful no-op on Linux |
-| Conan 2.30.0 | Yes | Yes | Self-contained, no Python required |
+| Servy 8.7 | Yes | - | Windows only, graceful no-op on Linux |
+| Conan 2.31.1 | Yes | Yes | Self-contained, no Python required |
 | VS Code extensions | Yes | Yes | Per-platform .vsix files |
 | SQLite CLI | Yes (3.53.0) | Yes (3.26.0 RPM) | RHEL 8 uses system RPM |
 | MATLAB verification | Yes | Yes | Checks existing install only |
@@ -283,15 +285,15 @@ bash tools/toolchains/clang/style-formatter/bootstrap.sh  # pre-commit hook
 bash tools/build-tools/cmake/setup.sh                # CMake 4.3.1
 bash tools/toolchains/lcov/setup.sh                 # lcov 2.5 (Linux only)
 bash tools/languages/python/setup.sh                 # Python 3.14.4 + pip packages
-bash tools/dev-tools/conan/setup.sh                  # Conan 2.30.0
-bash tools/dev-tools/servy/setup.sh                  # Servy 8.6 (Windows only)
+bash tools/dev-tools/conan/setup.sh                  # Conan 2.31.1
+bash tools/dev-tools/servy/setup.sh                  # Servy 8.7 (Windows only)
 bash tools/dev-tools/sqlite/setup.sh                 # SQLite CLI
 bash tools/dev-tools/matlab/setup.sh                 # MATLAB verification
 bash tools/dev-tools/vscode-extensions/setup.sh      # VS Code extensions
 bash tools/toolchains/gcc/windows/setup.sh x86_64    # GCC + MinGW-w64 (Windows only)
 bash tools/dev-tools/filezilla/setup.sh              # FileZilla 3.70.4
 bash tools/dev-tools/gdb/setup.sh                    # GDB 17.1 (Linux only, source build ~25 min)
-bash tools/dev-tools/notepadpp/setup.sh              # Notepad++ 8.9.3 (Windows only)
+bash tools/dev-tools/notepadpp/setup.sh              # Notepad++ 8.9.7 (Windows only)
 bash tools/dev-tools/putty/setup.sh                  # PuTTY 0.83
 bash tools/dev-tools/sourcetree/setup.sh             # SourceTree 3.4.30 (Windows only)
 ```

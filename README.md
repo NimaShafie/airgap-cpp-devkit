@@ -316,13 +316,13 @@ or via the API (`GET /api/prefix`, `POST /api/prefix`).
 | [`tools/languages/dotnet/`](tools/languages/dotnet/README.md) | Portable .NET 10 SDK 10.0.202 — Windows + Linux, no installer | No |
 | [`tools/dev-tools/vscode-extensions/`](tools/dev-tools/vscode-extensions/README.md) | Offline VS Code extensions: C/C++, C++ TestMate, Python | No |
 | [`tools/toolchains/gcc/windows/`](tools/toolchains/gcc/windows/README.md) | GCC 15.2.0 + MinGW-w64 13.0.0 UCRT for Windows | No |
-| [`tools/dev-tools/servy/`](tools/dev-tools/servy/README.md) | Servy 8.6 — Windows service manager (no-op on Linux) | No |
+| [`tools/dev-tools/servy/`](tools/dev-tools/servy/README.md) | Servy 8.7 — Windows service manager (no-op on Linux) | No |
 | [`tools/dev-tools/conan/`](tools/dev-tools/conan/README.md) | Conan 2.27.1 — C/C++ package manager, no Python required | No |
-| [`tools/frameworks/grpc/`](tools/frameworks/grpc/README.md) | gRPC v1.81.1 for Windows — prebuilt per MSVC toolset (VS 2019/2022/2026), pick your version | No |
+| [`tools/frameworks/grpc/`](tools/frameworks/grpc/README.md) | gRPC v1.83.0 — Windows prebuilt per MSVC toolset (VS 2019/2022/2026, Release or Debug) + Linux RHEL 8/9 (x86_64) | No |
 | [`tools/lib/zlib/`](tools/lib/zlib/) | zlib 1.3.2 — gzip/DEFLATE compression library; vendored source, CMake build; Windows + Linux | No |
 | [`tools/dev-tools/filezilla/`](tools/dev-tools/filezilla/README.md) | FileZilla 3.70.4 — FTP/SFTP client; Windows + Linux | No |
 | [`tools/dev-tools/gdb/`](tools/dev-tools/gdb/README.md) | GDB 17.1 — Linux source build (~25 min) | No |
-| [`tools/dev-tools/notepadpp/`](tools/dev-tools/notepadpp/README.md) | Notepad++ 8.9.3 — Windows only; portable zip or NSIS installer | No |
+| [`tools/dev-tools/notepadpp/`](tools/dev-tools/notepadpp/README.md) | Notepad++ 8.9.7 — Windows only; portable zip or NSIS installer | No |
 | [`tools/dev-tools/putty/`](tools/dev-tools/putty/README.md) | PuTTY 0.83 — Windows MSI + Linux source build | No |
 | [`tools/dev-tools/sourcetree/`](tools/dev-tools/sourcetree/README.md) | SourceTree 3.4.30 — Git GUI client; Windows only | No |
 

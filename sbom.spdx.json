@@ -2,7 +2,7 @@
   "SPDXID": "SPDXRef-DOCUMENT",
   "spdxVersion": "SPDX-2.3",
   "creationInfo": {
-    "created": "2026-07-25T16:23:38Z",
+    "created": "2026-07-25T16:57:34Z",
     "creators": [
       "Organization: airgap-cpp-devkit",
       "Tool: airgap-cpp-devkit/scripts/internal/generate-sbom.sh"
@@ -707,7 +707,7 @@
     {
       "SPDXID": "SPDXRef-conan",
       "name": "dev-tools/conan",
-      "versionInfo": "2.30.0",
+      "versionInfo": "2.31.1",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
       "filesAnalyzed": false,
@@ -719,22 +719,22 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "7956bbf45bdac0e14cf36e439f772daa0089c4f7551fe935121599f4d999b6f9"
+          "checksumValue": "0e3371a817c9f3b60e2af0fdbf4fdec80c882749ce4251a5dd998d525cba069e"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "d2ea64d2691e39da286b51e1a54fe80fa02c9734168fbfed3d302f54b299a29a"
+          "checksumValue": "b42491ccf90ef6ed433e465c00806b1b5a3d958b315adb7b01d1b6d232f17c14"
         }
       ],
       "attributionTexts": [
-        "linux-x64: conan-2.30.0-linux-x86_64.tar.gz SHA256:7956bbf45bdac0e14cf36e439f772daa0089c4f7551fe935121599f4d999b6f9",
-        "windows: conan-2.30.0-windows-x86_64.zip SHA256:d2ea64d2691e39da286b51e1a54fe80fa02c9734168fbfed3d302f54b299a29a"
+        "linux-x64: conan-2.31.1-linux-x86_64.tar.gz SHA256:0e3371a817c9f3b60e2af0fdbf4fdec80c882749ce4251a5dd998d525cba069e",
+        "windows: conan-2.31.1-windows-x86_64.zip SHA256:b42491ccf90ef6ed433e465c00806b1b5a3d958b315adb7b01d1b6d232f17c14"
       ]
     },
     {
       "SPDXID": "SPDXRef-servy",
       "name": "dev-tools/servy",
-      "versionInfo": "8.6",
+      "versionInfo": "8.7",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
       "filesAnalyzed": false,
@@ -746,16 +746,16 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "f47d8856d3456b9a6c796163d64222c910d9c0a277407fc39c9f942c0612c05c"
+          "checksumValue": "45d36c935c7947a853335a0418fb656e3a234679c276c61e3b44efa1569f3da0"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "70688b1f7e4c4bba23451e3283b88906c1b50f6025ad0c016bbdc6b87ddc52d3"
+          "checksumValue": "a7f54c69f8511ca02b48ef7e5386fcc343b2d7bca132c755f6f93d0213da6807"
         }
       ],
       "attributionTexts": [
-        "windows: servy-8.6-x64-installer.exe.part-aa SHA256:f47d8856d3456b9a6c796163d64222c910d9c0a277407fc39c9f942c0612c05c",
-        "windows: servy-8.6-x64-installer.exe.part-ab SHA256:70688b1f7e4c4bba23451e3283b88906c1b50f6025ad0c016bbdc6b87ddc52d3"
+        "windows: servy-8.7-x64-installer.exe.part-aa SHA256:45d36c935c7947a853335a0418fb656e3a234679c276c61e3b44efa1569f3da0",
+        "windows: servy-8.7-x64-installer.exe.part-ab SHA256:a7f54c69f8511ca02b48ef7e5386fcc343b2d7bca132c755f6f93d0213da6807"
       ]
     },
     {
@@ -804,7 +804,7 @@
       "licenseDeclared": "Apache-2.0",
       "copyrightText": "Copyright 2015 gRPC authors.",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "gRPC v1.81.1 for Windows C++. Prebuilt .zip per MSVC toolset (v142/v143/v145), split parts.",
+      "comment": "gRPC v1.83.0 for C++. Windows prebuilt .zip per MSVC toolset (v142/v143/v145) in Release and Debug; Linux prebuilt .tar.gz for RHEL 8/9 (x86_64). Split parts.",
       "checksums": [
         {
           "algorithm": "SHA256",
@@ -1105,7 +1105,7 @@
     {
       "SPDXID": "SPDXRef-dev-tools-notepadpp",
       "name": "dev-tools/notepadpp",
-      "versionInfo": "8.9.6.4",
+      "versionInfo": "8.9.7",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
       "filesAnalyzed": false,
@@ -1117,11 +1117,11 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "cb902f8a9628324dbe5233b5202e716ea469720c9a1ac968007df2288e4ed2ea"
+          "checksumValue": "1884e093bae261c4942210334e1f2eae71354913e4ded3cc1a4a18c5320741ec"
         }
       ],
       "attributionTexts": [
-        "windows: npp.8.9.6.4.Installer.x64.exe SHA256:cb902f8a9628324dbe5233b5202e716ea469720c9a1ac968007df2288e4ed2ea"
+        "windows: npp.8.9.7.Installer.x64.exe SHA256:1884e093bae261c4942210334e1f2eae71354913e4ded3cc1a4a18c5320741ec"
       ]
     },
     {
