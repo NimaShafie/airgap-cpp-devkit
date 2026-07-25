@@ -2,7 +2,7 @@
 # scripts/internal/lib/devkit-prebuilt.sh
 # Shared helpers for airgap-devkit prebuilt management scripts.
 # Source this file; do not execute directly.
-# Compatible with: Git Bash (MINGW64) on Windows, Bash 4.x on RHEL 8 / Linux.
+# Compatible with: Git Bash (MINGW64) on Windows, Bash 4.x on RHEL/Rocky 8/9/10 / Linux.
 
 [[ -n "${_DEVKIT_PREBUILT_SH:-}" ]] && return 0
 _DEVKIT_PREBUILT_SH=1

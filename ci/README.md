@@ -59,7 +59,7 @@ ci/
 ├── lint.sh                         ← syntax-check all shell scripts
 ├── release.sh                      ← thin wrapper around scripts/internal/release.sh
 ├── smoke.sh                        ← server health check (used by ci.yml)
-├── Dockerfile.rhel8-test           ← RHEL 8 / UBI 8.10 integration test image
+├── Dockerfile.linux-test           ← RHEL/Rocky 8/9/10 (UBI) integration test image
 ├── jenkins/
 │   └── SETUP.md                    ← Jenkins setup instructions + parameter reference
 ├── gitlab/

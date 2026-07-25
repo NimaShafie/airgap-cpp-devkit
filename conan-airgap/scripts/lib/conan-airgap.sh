@@ -2,7 +2,7 @@
 # conan-airgap/scripts/lib/conan-airgap.sh
 # Shared helpers for the offline Conan porting kit.
 # Source this file; do not execute directly.
-# Portable across Git Bash (MINGW64) on Windows and Bash 4.x on RHEL 8/9.
+# Portable across Git Bash (MINGW64) on Windows and Bash 4.x on RHEL/Rocky 8/9/10.
 
 [[ -n "${_CONAN_AIRGAP_LIB:-}" ]] && return 0
 _CONAN_AIRGAP_LIB=1

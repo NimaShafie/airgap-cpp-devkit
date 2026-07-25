@@ -12,7 +12,7 @@ assignees: ""
 
 ## Platform
 
-- OS: <!-- Windows 11 / RHEL 8 / RHEL 9 -->
+- OS: <!-- Windows 11 / RHEL 8 / RHEL 9 / RHEL 10 / Rocky 8 / Rocky 9 / Rocky 10 -->
 - Shell: <!-- Git Bash (MINGW64) / Bash 4.x -->
 - DevKit version: <!-- run: grep version devkit.config.json -->
 - Install mode: <!-- Admin / User -->

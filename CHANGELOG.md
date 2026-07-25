@@ -11,6 +11,23 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+#### Linux support — RHEL/Rocky 9 & 10 added; baseline moved to 9
+- **Support matrix is now RHEL / Rocky 8, 9 and 10** (previously RHEL 8 only), with
+  **9 as the documented baseline**. glibc floors: 8 → 2.28, 9 → 2.34, 10 → 2.39.
+- **Per-distro binary variants.** `tools/lib/devkit-install.sh` gained
+  `devkit_rhel_major` / `devkit_rhel_tag` / `devkit_rhel_tag_fallbacks`, which map the
+  host glibc to the closest EL variant and fall back toward the universal
+  glibc-2.28 (rhel8) floor. `toolchains/llvm/setup.sh` now selects an
+  `LLVM-<ver>-Linux-X64-rhel{8,9,10}` archive with fallback; `dev-tools/sqlite/setup.sh`
+  resolves the distro-native system RPM per major (el8/el9/el10).
+- **CI renamed and made a matrix.** `rhel8-test.yml` → `linux-integration.yml`
+  (UBI 9 on push/PR, UBI 8 + 9 + 10 on the weekly schedule; base image parameterized).
+  `Dockerfile.rhel8-test` → `Dockerfile.linux-test` (`ARG UBI_IMAGE`, default UBI 9).
+  `build-llvm-rhel8.yml` → `build-llvm-linux.yml` (builds rhel8/rhel9/rhel10 variants
+  in a matrix). Entrypoint renamed to `ci/linux-test-entrypoint.sh`.
+- **conan-airgap** gained a `linux-gcc-rhel10-x64` profile (GCC 14 / glibc 2.39);
+  example defaults moved to `linux-gcc-rhel9-x64`.
+
 #### gRPC — updated 1.81.1 → 1.83.0, added Debug + Linux packages
 - Bumped **gRPC 1.81.1 → 1.83.0** (upstream tag `v1.83.0`). Re-imported the
   maintainer prebuilt packages into the `prebuilt/` submodule as split parts with

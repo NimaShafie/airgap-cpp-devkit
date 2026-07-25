@@ -31,7 +31,7 @@ Your contribution, once accepted, will be available to all users under the AGPL 
 ### Reporting bugs
 
 Open an issue using the [Bug Report](.github/ISSUE_TEMPLATE/bug_report.md) template. Include:
-- Platform (Windows 11 / RHEL 8 / RHEL 9) and shell (Git Bash / Bash)
+- Platform (Windows 11 / RHEL 8 / RHEL 9 / RHEL 10 / Rocky 8 / Rocky 9 / Rocky 10) and shell (Git Bash / Bash)
 - Exact commands run and full terminal output
 - Contents of any relevant `INSTALL_RECEIPT.txt` files
 
@@ -51,7 +51,7 @@ Open an issue using the [Feature Request](.github/ISSUE_TEMPLATE/feature_request
 
 ## Coding Conventions
 
-- Shell scripts target **MINGW64 (Git Bash)** on Windows and **Bash 4.x** on RHEL 8.
+- Shell scripts target **MINGW64 (Git Bash)** on Windows and **Bash 4.x** on RHEL/Rocky 8, 9, 10.
 - No compiled binaries in the main repo. Binaries belong in the `prebuilt/` submodule.
 - Versions and SHA256 checksums must be kept in sync across `manifest.json`, `devkit.json`, and `sbom.spdx.json`.
 - Run `bash scripts/internal/generate-sbom.sh` after any tool addition or version bump.

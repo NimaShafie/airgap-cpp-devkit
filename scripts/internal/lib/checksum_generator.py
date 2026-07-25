@@ -3,7 +3,7 @@
 # ==============================================================================
 # Author: Nima Shafie [DS] (N56332)
 # Script Name : checksum_generator.py
-# Target Platforms: RHEL 8/9 (bash), Windows 10/11 (Git Bash / native Python)
+# Target Platforms: RHEL/Rocky 8/9/10 (bash), Windows 10/11 (Git Bash / native Python)
 # Compatibility : Python 3.6+ (standard library only, zero pip dependencies)
 # ==============================================================================
 """Cross-platform file integrity manifest generator.

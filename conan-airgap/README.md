@@ -33,7 +33,8 @@ conan-airgap/
 │   └── profiles/           #   build profiles (compiler/OS/arch)
 │       ├── windows-msvc-x64        linux-gcc-rhel8-x64
 │       ├── windows-mingw-x64       linux-gcc-rhel9-x64
-│       ├── linux-clang-x64         linux-gcc-devkit-x64
+│       ├── linux-clang-x64         linux-gcc-rhel10-x64
+│       └── linux-gcc-devkit-x64
 ├── network/                # network-type overlays (pick one per host)
 │   ├── offline/            #   zero remotes — pure cache
 │   ├── internal-mirror/    #   internal Artifactory/Nexus
@@ -60,7 +61,7 @@ your teams build against, then:
 bash scripts/seed-export.sh
 # or narrow the targets:
 bash scripts/seed-export.sh --requirements requirements/baseline.txt \
-     --profiles linux-gcc-rhel8-x64,windows-msvc-x64
+     --profiles linux-gcc-rhel9-x64,windows-msvc-x64
 ```
 
 Produces `dist/conan-airgap-bundle-<stamp>.tar.gz` (+ `.sha256`) containing the
@@ -70,7 +71,7 @@ overlays.
 > **Cross-platform note.** The seed machine downloads prebuilt binaries that
 > ConanCenter publishes for each profile. For settings ConanCenter has no binary
 > for, `--build=missing` builds *only what the seed host itself can build*. To
-> seed binaries for a platform you can't build on (e.g. RHEL 8 binaries from a
+> seed binaries for a platform you can't build on (e.g. RHEL/Rocky 8, 9, or 10 binaries from a
 > Windows seed), run `seed-export.sh` on a matching host and merge the bundles.
 
 ### 2. Transfer
@@ -138,8 +139,8 @@ dependencies drop straight into a CMake or Eclipse CDT project. See
 
 ```bash
 cd templates
-bash build-cmake.sh   linux-gcc-rhel8-x64     # CMake presets (also CLion/VS/VS Code)
-bash build-eclipse.sh linux-gcc-rhel8-x64     # generates an Eclipse CDT project
+bash build-cmake.sh   linux-gcc-rhel9-x64     # CMake presets (also CLion/VS/VS Code)
+bash build-eclipse.sh linux-gcc-rhel9-x64     # generates an Eclipse CDT project
 ```
 
 Conan emits `CMakeUserPresets.json`; `build-eclipse.sh` additionally drives

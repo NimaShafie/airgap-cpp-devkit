@@ -21,8 +21,9 @@ assignees: ""
 ## Platform Relevance
 
 - [ ] Windows 11
-- [ ] RHEL 8
-- [ ] RHEL 9
+- [ ] RHEL/Rocky 8
+- [ ] RHEL/Rocky 9
+- [ ] RHEL/Rocky 10
 - [ ] All platforms
 
 ## Air-Gap Compatibility

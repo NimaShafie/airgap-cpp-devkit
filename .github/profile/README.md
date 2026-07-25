@@ -22,7 +22,7 @@ Bring it into a disconnected environment via `git clone` or `pip install`, and y
 | **Profiles** | `minimal` / `cpp-dev` / `devops` / `full` |
 | **Output** | Install receipts · per-tool version tracking · SBOM (SPDX) |
 | **CI/CD** | Jenkins and GitLab pipelines ship in-repo; headless installs via `--yes --profile` |
-| **Platforms** | Windows 11 (Git Bash / MINGW64) · RHEL 8 (Bash 4.x, glibc 2.28) |
+| **Platforms** | Windows 11 (Git Bash / MINGW64) · RHEL/Rocky 8, 9, 10 (Bash 4.x; baseline 9) |
 | **Team config** | Fork `teams/` for custom branding, profiles, and tool selection |
 
 ---

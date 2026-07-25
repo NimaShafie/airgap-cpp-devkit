@@ -28,7 +28,7 @@
 #   - conan              2.30.0 (Windows + Linux)
 #   - tools/dev-tools/vscode-extensions  (requires VS Code + 'code' on PATH)
 #   - winlibs-gcc-ucrt   (Windows only)
-#   - tools/frameworks/grpc    1.83.0 (Windows: per-VS toolset; Linux: RHEL 8/9)
+#   - tools/frameworks/grpc    1.83.0 (Windows: per-VS toolset; Linux: RHEL/Rocky 8/9/10)
 #   - sqlite             3.53.0 (CLI binary, Windows + Linux)
 #   - zlib               1.3.2  (gzip/DEFLATE library, source build; Windows + Linux)
 #   - matlab             (verification only — checks Database Toolbox + Compiler)
@@ -235,7 +235,7 @@ if [[ "${AUTO_YES}" == "false" ]]; then
                 INSTALL_CONAN=true
                 INSTALL_VSCODE=true; INSTALL_SQLITE=true
                 INSTALL_MATLAB=true; INSTALL_ZLIB=true
-                INSTALL_GRPC=true   # Windows: default v143 Release; Linux: RHEL 8/9 package
+                INSTALL_GRPC=true   # Windows: default v143 Release; Linux: RHEL/Rocky 8/9/10 package
                 if [[ "${OS}" == "windows" ]]; then
                     INSTALL_SERVY=true; INSTALL_WINLIBS=true
                 fi
@@ -368,7 +368,7 @@ else
             full)
                 INSTALL_CONAN=true; INSTALL_VSCODE=true
                 INSTALL_SQLITE=true; INSTALL_MATLAB=true; INSTALL_ZLIB=true
-                INSTALL_GRPC=true   # Windows: default v143 Release; Linux: RHEL 8/9 package
+                INSTALL_GRPC=true   # Windows: default v143 Release; Linux: RHEL/Rocky 8/9/10 package
                 [[ "${OS}" == "windows" ]] && { INSTALL_SERVY=true; INSTALL_WINLIBS=true; }
                 ;;
         esac
@@ -636,7 +636,7 @@ else
     echo "  [--]  winlibs-gcc-ucrt  -- skipped (Windows only)"
     SKIPPED_TOOLS+=("winlibs-gcc-ucrt (Windows only)")
 
-    # gRPC ships a RHEL 8/9 (x86_64) static-runtime package for Linux targets.
+    # gRPC ships a RHEL/Rocky 8/9/10 (x86_64) static-runtime package for Linux targets.
     if [[ "${INSTALL_GRPC}" == "true" ]]; then
         _run_bootstrap "grpc-${GRPC_VERSION}-linux" \
             "${REPO_ROOT}/tools/frameworks/grpc/setup.sh" \

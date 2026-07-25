@@ -1,0 +1,136 @@
+name: Linux Integration Test
+
+# Builds Dockerfile.linux-test and runs the full install + smoke-test suite
+# inside RHEL / Rocky UBI containers — validates glibc compatibility, the
+# no-EPEL constraint, and correct install-cli.sh behaviour across the support
+# matrix (RHEL/Rocky 8, 9 and 10; baseline 9).
+#
+# Distro coverage by trigger:
+#   - push / pull_request → UBI 9 only (fast feedback on the baseline)
+#   - weekly schedule     → UBI 8 + 9 + 10 (full matrix)
+#   - manual dispatch     → choose profile and which majors to run
+#
+# glibc floors: 8 → 2.28, 9 → 2.34, 10 → 2.39.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ci/Dockerfile.linux-test
+      - ci/linux-test-entrypoint.sh
+      - scripts/internal/install-cli.sh
+      - scripts/launch.sh
+      - tests/run-tests.sh
+      - scripts/internal/install-mode.sh
+      - tools/**
+  pull_request:
+    branches: [main]
+    paths:
+      - ci/Dockerfile.linux-test
+      - ci/linux-test-entrypoint.sh
+      - scripts/internal/install-cli.sh
+      - scripts/launch.sh
+      - tests/run-tests.sh
+      - scripts/internal/install-mode.sh
+      - tools/**
+  schedule:
+    - cron: '0 7 * * 1'
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: 'Install profile'
+        required: false
+        default: 'cpp-dev'
+        type: choice
+        options: [minimal, cpp-dev, devops, full]
+      distros:
+        description: 'Which majors to test (comma list: 8,9,10 — or "all")'
+        required: false
+        default: 'all'
+
+concurrency:
+  group: linux-integration-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # Pick the distro matrix from the trigger: baseline-only on push/PR, full
+  # matrix on the weekly schedule, and caller-selected on manual dispatch.
+  set-matrix:
+    name: Select distro matrix
+    runs-on: ubuntu-latest
+    outputs:
+      include: ${{ steps.pick.outputs.include }}
+    steps:
+      - id: pick
+        env:
+          EVENT: ${{ github.event_name }}
+          DISTROS: ${{ github.event.inputs.distros }}
+        run: |
+          u8='{"major":"8","image":"registry.access.redhat.com/ubi8/ubi:8.10"}'
+          u9='{"major":"9","image":"registry.access.redhat.com/ubi9/ubi:9.5"}'
+          u10='{"major":"10","image":"registry.access.redhat.com/ubi10/ubi:10.0"}'
+          case "$EVENT" in
+            schedule)
+              sel="$u8,$u9,$u10" ;;
+            workflow_dispatch)
+              case "${DISTROS:-all}" in
+                all|"") sel="$u8,$u9,$u10" ;;
+                *)
+                  sel=""
+                  [[ ",$DISTROS," == *",8,"*  ]] && sel="$sel${sel:+,}$u8"
+                  [[ ",$DISTROS," == *",9,"*  ]] && sel="$sel${sel:+,}$u9"
+                  [[ ",$DISTROS," == *",10,"* ]] && sel="$sel${sel:+,}$u10"
+                  [[ -z "$sel" ]] && sel="$u9" ;;
+              esac ;;
+            *)
+              # push / pull_request → baseline (9) only
+              sel="$u9" ;;
+          esac
+          echo "include=[$sel]" >> "$GITHUB_OUTPUT"
+          echo "Selected matrix: [$sel]"
+
+  test:
+    name: RHEL/Rocky ${{ matrix.major }} integration (UBI)
+    needs: set-matrix
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.set-matrix.outputs.include) }}
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+        with:
+          persist-credentials: false
+          lfs: true
+
+      - name: Init prebuilt submodule
+        run: |
+          git submodule update --init --depth 1 prebuilt
+          git -C prebuilt lfs pull 2>/dev/null || true
+
+      - name: Init tools submodule
+        run: git submodule update --init tools
+
+      - name: Build test image (UBI ${{ matrix.major }})
+        run: |
+          docker build -f ci/Dockerfile.linux-test \
+            --build-arg UBI_IMAGE=${{ matrix.image }} \
+            -t airgap-devkit-linux:${{ matrix.major }} .
+
+      - name: Run install + smoke tests
+        env:
+          PROFILE_INPUT: ${{ github.event.inputs.profile || 'cpp-dev' }}
+        run: |
+          PROFILE="$PROFILE_INPUT"
+          case "$PROFILE" in
+            minimal|cpp-dev|devops|full) ;;
+            *) echo "Invalid profile: $PROFILE"; exit 1 ;;
+          esac
+          echo "Running RHEL/Rocky ${{ matrix.major }} integration test — profile: $PROFILE"
+          docker run --rm -e DEVKIT_PROFILE="$PROFILE" airgap-devkit-linux:${{ matrix.major }}

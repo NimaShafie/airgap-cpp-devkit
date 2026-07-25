@@ -3,10 +3,10 @@
 # fully offline, on an air-gapped host.
 #
 # Usage: bash build-cmake.sh [PROFILE]
-#   PROFILE  name of a kit profile (default: linux-gcc-rhel8-x64)
+#   PROFILE  name of a kit profile (default: linux-gcc-rhel9-x64)
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROFILE="${1:-linux-gcc-rhel8-x64}"
+PROFILE="${1:-linux-gcc-rhel9-x64}"
 
 CONAN="$(command -v conan)"
 

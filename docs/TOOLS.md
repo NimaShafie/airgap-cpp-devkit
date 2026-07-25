@@ -236,7 +236,7 @@ All .zip archives use deflate level 9 compression.
 | Servy 8.7 | Yes | - | Windows only, graceful no-op on Linux |
 | Conan 2.31.1 | Yes | Yes | Self-contained, no Python required |
 | VS Code extensions | Yes | Yes | Per-platform .vsix files |
-| SQLite CLI | Yes (3.53.0) | Yes (3.26.0 RPM on RHEL 8; 3.53.0 on RHEL 9/10) | RHEL/Rocky 8 uses system RPM |
+| SQLite CLI | Yes (3.53.3) | Yes (distro-native system RPM per major: el8/el9/el10) | RHEL/Rocky 8/9/10 use the system RPM; the upstream 3.53.3 tarball needs glibc 2.38+ |
 | MATLAB verification | Yes | Yes | Checks existing install only |
 | git-bundle tool | Yes | Yes | Pure Python, no deps |
 | LLVM style formatter | Yes | Yes | Git pre-commit hook |

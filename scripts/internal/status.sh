@@ -9,7 +9,7 @@
 # USAGE:
 #   bash scripts/internal/status.sh
 #
-# Works on Windows (Git Bash / MINGW64) and Linux (RHEL 8+).
+# Works on Windows (Git Bash / MINGW64) and Linux (RHEL/Rocky 8, 9, 10).
 # =============================================================================
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"

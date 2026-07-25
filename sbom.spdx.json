@@ -27,7 +27,7 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "Air-gapped C++ developer toolkit. All tools work without internet access. Targets Windows 10/11 (Git Bash/MINGW64) and RHEL 8/9."
+      "comment": "Air-gapped C++ developer toolkit. All tools work without internet access. Targets Windows 10/11 (Git Bash/MINGW64) and RHEL/Rocky 8, 9, 10 (baseline 9)."
     },
     {
       "SPDXID": "SPDXRef-toolchains-llvm",
@@ -556,7 +556,7 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "GCC 15.2.0. Windows: WinLibs GCC 15.2.0 mingw-w64ucrt 14.0.0 r7 (.tar.xz 4 parts). Linux: gcc-toolset-15 RHEL 8 RPMs (.tar.xz 2 parts). Includes gcov.",
+      "comment": "GCC 15.2.0. Windows: WinLibs GCC 15.2.0 mingw-w64ucrt 14.0.0 r7 (.tar.xz 4 parts). Linux: gcc-toolset-15 RHEL/Rocky 8, 9, 10 RPMs (.tar.xz 2 parts). Includes gcov.",
       "checksums": [
         {
           "algorithm": "SHA256",
@@ -643,7 +643,7 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "lcov 2.4 code coverage frontend for gcov. Linux only. RPM for RHEL 8 + source tarball. Requires Perl.",
+      "comment": "lcov 2.4 code coverage frontend for gcov. Linux only. RPM for RHEL/Rocky 8 + source tarball (RHEL/Rocky 9, 10). Requires Perl.",
       "checksums": [
         {
           "algorithm": "SHA256",
@@ -769,7 +769,7 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "SQLite 3.53.0 CLI. Windows and Linux .tar.xz. RHEL 8 .rpm.",
+      "comment": "SQLite 3.53.0 CLI. Windows and Linux .tar.xz. RHEL/Rocky 8 .rpm (system package; RHEL/Rocky 9, 10 use the prebuilt CLI).",
       "checksums": [
         {
           "algorithm": "SHA256",
@@ -804,7 +804,7 @@
       "licenseDeclared": "Apache-2.0",
       "copyrightText": "Copyright 2015 gRPC authors.",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "gRPC v1.83.0 for C++. Windows prebuilt .zip per MSVC toolset (v142/v143/v145) in Release and Debug; Linux prebuilt .tar.gz for RHEL 8/9 (x86_64). Split parts.",
+      "comment": "gRPC v1.83.0 for C++. Windows prebuilt .zip per MSVC toolset (v142/v143/v145) in Release and Debug; Linux prebuilt .tar.gz for RHEL/Rocky 8/9/10 (x86_64). Split parts.",
       "checksums": [
         {
           "algorithm": "SHA256",

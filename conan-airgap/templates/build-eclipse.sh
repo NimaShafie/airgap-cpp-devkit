@@ -8,7 +8,7 @@
 # (File > Import > General > Existing Projects into Workspace).
 #
 # Usage: bash build-eclipse.sh [PROFILE] [ECLIPSE_GENERATOR]
-#   PROFILE            kit profile (default: linux-gcc-rhel8-x64)
+#   PROFILE            kit profile (default: linux-gcc-rhel9-x64)
 #   ECLIPSE_GENERATOR  CMake extra-generator string. Default "Eclipse CDT4 -
 #                      Ninja" works on both Windows and Linux (the devkit ships
 #                      Ninja) and avoids the make/sh pitfalls of the Makefiles
@@ -16,7 +16,7 @@
 #                      (Linux/RHEL), "Eclipse CDT4 - MinGW Makefiles" (Windows).
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROFILE="${1:-linux-gcc-rhel8-x64}"
+PROFILE="${1:-linux-gcc-rhel9-x64}"
 ECLIPSE_GENERATOR="${2:-Eclipse CDT4 - Ninja}"
 
 CONAN="$(command -v conan)"

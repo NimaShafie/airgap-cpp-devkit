@@ -471,7 +471,7 @@ airgap-cpp-devkit/
 |   +-- lint.sh                            <- syntax-check all shell scripts
 |   +-- release.sh                         <- thin wrapper around scripts/internal/release.sh
 |   +-- smoke.sh                           <- server health check (used by ci.yml)
-|   +-- Dockerfile.rhel8-test              <- RHEL 8 / UBI 8.10 integration test image
+|   +-- Dockerfile.linux-test             <- RHEL/Rocky 8/9/10 (UBI) integration test image
 |   +-- atlassian/
 |   |   +-- jira-update.sh                 <- post build result to Jira issue
 |   |   +-- confluence-update.sh           <- overwrite Confluence status page
@@ -483,8 +483,8 @@ airgap-cpp-devkit/
 |   +-- workflows/
 |   |   +-- ci.yml                         <- thin; calls ci/lint.sh, ci/test.sh, ci/smoke.sh
 |   |   +-- smoke-test.yml                 <- weekly + manual install regression
-|   |   +-- rhel8-test.yml                 <- RHEL 8 integration test
-|   |   +-- build-llvm-rhel8.yml           <- builds Clang/LLVM for RHEL 8
+|   |   +-- linux-integration.yml          <- RHEL/Rocky 8/9/10 integration test (matrix)
+|   |   +-- build-llvm-linux.yml           <- builds Clang/LLVM per distro (8/9/10)
 |   +-- ISSUE_TEMPLATE/
 |   +-- PULL_REQUEST_TEMPLATE.md
 |   +-- CODEOWNERS

@@ -47,8 +47,8 @@ command -v python3 >/dev/null 2>&1 || fail "python3 is required"
 is_linux_name() {
     local n="${1,,}"
     [[ "$n" == *linux*  || "$n" == *ubuntu* || "$n" == *debian* || "$n" == *rhel* \
-    || "$n" == *el8*    || "$n" == *el9*    || "$n" == *musl*   || "$n" == *-gnu* \
-    || "$n" == *.rpm    || "$n" == *.deb ]]
+    || "$n" == *el8*    || "$n" == *el9*    || "$n" == *el10*   || "$n" == *musl* \
+    || "$n" == *-gnu*   || "$n" == *.rpm    || "$n" == *.deb ]]
 }
 
 process_dir() {

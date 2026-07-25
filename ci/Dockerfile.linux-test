@@ -1,25 +1,36 @@
-# RHEL 8 integration test container
+# RHEL / Rocky integration test container
 #
-# Validates that install-cli.sh, setup.sh scripts, and run-tests.sh all work
-# on a RHEL 8 / glibc 2.28 baseline with no EPEL and no internet access
-# (once the image is built with the repo COPY'd in).
+# Validates that install-cli.sh, setup.sh scripts, and run-tests.sh all work on
+# a RHEL / Rocky baseline with no EPEL and no internet access (once the image is
+# built with the repo COPY'd in). The base image is parameterized so the same
+# Dockerfile covers the whole support matrix — RHEL/Rocky 8, 9 and 10 — with 9
+# as the default. glibc floors: 8 → 2.28, 9 → 2.34, 10 → 2.39.
 #
-# Build:
-#   docker build -f ci/Dockerfile.rhel8-test -t airgap-devkit-rhel8 .
+# Build (default, UBI 9):
+#   docker build -f ci/Dockerfile.linux-test -t airgap-devkit-linux .
+#
+# Build for a specific major:
+#   docker build -f ci/Dockerfile.linux-test \
+#     --build-arg UBI_IMAGE=registry.access.redhat.com/ubi8/ubi:8.10 \
+#     -t airgap-devkit-linux:8 .
 #
 # Run full install + tests:
-#   docker run --rm airgap-devkit-rhel8
+#   docker run --rm airgap-devkit-linux
 #
 # Run only script syntax validation (no actual installs):
-#   docker run --rm airgap-devkit-rhel8 bash /workspace/tests/lint-scripts.sh
+#   docker run --rm airgap-devkit-linux bash /workspace/tests/lint-scripts.sh
 #
 # Run with a custom profile:
-#   docker run --rm -e DEVKIT_PROFILE=minimal airgap-devkit-rhel8
+#   docker run --rm -e DEVKIT_PROFILE=minimal airgap-devkit-linux
 
-FROM registry.access.redhat.com/ubi8/ubi:8.10
+# Default to UBI 9 (the documented baseline). The CI matrix overrides this with
+# ubi8/ubi:8.10 and ubi10/ubi:10.0 to cover the full support matrix.
+ARG UBI_IMAGE=registry.access.redhat.com/ubi9/ubi:9.5
+FROM ${UBI_IMAGE}
 
-# Install only packages available in UBI8 base — no EPEL.
-# tar/xz/bzip2: needed by many setup.sh archives
+# Install only packages available in the UBI base — no EPEL.
+# tar/xz/bzip2/gzip: needed by many setup.sh archives
+# cpio: non-root RPM payload extraction (rpm2cpio | cpio), e.g. sqlite
 # findutils/which/file: standard tooling used by setup.sh guards
 # sudo: lets the test user do privilege escalation for /opt installs
 # A single layer: install base packages, then create a non-root user that
@@ -33,6 +44,7 @@ RUN dnf install -y \
       xz \
       bzip2 \
       gzip \
+      cpio \
       findutils \
       which \
       file \
@@ -64,4 +76,4 @@ USER devkit
 # Override DEVKIT_PROFILE to test a different profile (minimal, devops, full).
 ENV DEVKIT_PROFILE=cpp-dev
 
-CMD ["bash", "/workspace/ci/rhel8-test-entrypoint.sh"]
+CMD ["bash", "/workspace/ci/linux-test-entrypoint.sh"]

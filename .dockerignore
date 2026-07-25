@@ -1,4 +1,4 @@
-# Build-context exclusions for `docker build .` (ci/Dockerfile.rhel8-test).
+# Build-context exclusions for `docker build .` (ci/Dockerfile.linux-test).
 # Keeps credentials, runtime state, and large artifacts out of image layers.
 .git
 .gitleaks.toml

@@ -1,14 +1,17 @@
-name: Build LLVM tools for RHEL 8
+name: Build LLVM tools (Linux, per-distro)
 
 # Builds clang, clang++, clang-format, clang-tidy, lld, llvm-ar, and llvm-nm
-# inside a UBI 8.10 container (glibc 2.28) and commits the result to the
-# prebuilt/ submodule as 50 MB split parts — matching the existing archive format.
+# inside RHEL / Rocky UBI containers — one variant per major (8/9/10) — and
+# commits the result to the prebuilt/ submodule as 50 MB split parts, matching
+# the existing archive format. Each variant is linked against its own glibc
+# (8 → 2.28, 9 → 2.34, 10 → 2.39), so setup.sh can pick the closest match.
 #
-# Two-job design:
-#   build  (~90 min) — compiles LLVM, uploads archive as a workflow artifact
-#   commit (~10 sec) — downloads artifact, clones prebuilt on main, commits, pushes
+# Two-stage design:
+#   build  (~90 min each, run in parallel) — compiles LLVM per major, uploads
+#                                            each archive as a workflow artifact
+#   commit (~30 sec) — downloads all artifacts, splits, commits, pushes
 #
-# If only the commit step fails, use "Re-run failed jobs" — it skips the build.
+# If only the commit step fails, use "Re-run failed jobs" — it skips the builds.
 #
 # Run manually once per LLVM version bump whenever VERSION changes in
 # tools/toolchains/llvm/setup.sh.
@@ -23,18 +26,26 @@ on:
       llvm_version:
         description: 'LLVM version — must match VERSION in tools/toolchains/llvm/setup.sh'
         required: true
-        default: '22.1.4'
+        default: '22.1.8'
 
-# ── Job 1: Build ──────────────────────────────────────────────────────────────
+# ── Job 1: Build (matrix: one variant per RHEL/Rocky major) ───────────────────
 jobs:
   build:
-    name: Build LLVM ${{ inputs.llvm_version }} (UBI 8.10 / glibc 2.28)
+    name: Build LLVM ${{ inputs.llvm_version }} (UBI ${{ matrix.major }} / glibc ${{ matrix.glibc }})
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { major: "8",  glibc: "2.28", image: "registry.access.redhat.com/ubi8/ubi:8.10" }
+          - { major: "9",  glibc: "2.34", image: "registry.access.redhat.com/ubi9/ubi:9.5" }
+          - { major: "10", glibc: "2.39", image: "registry.access.redhat.com/ubi10/ubi:10.0" }
 
     env:
       LLVM_VERSION: ${{ inputs.llvm_version }}
+      RHEL_TAG: rhel${{ matrix.major }}
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
@@ -43,30 +54,32 @@ jobs:
         with:
           persist-credentials: false
 
-      # Everything below runs inside the UBI 8.10 container via docker run so
-      # the resulting binaries are linked against glibc 2.28 and GCC 8's
-      # libstdc++, making them compatible with any RHEL 8+ system.
+      # Everything below runs inside the matrix UBI container via docker run so
+      # the resulting binaries are linked against that major's glibc and
+      # libstdc++, making them compatible with that RHEL/Rocky major and newer.
       #
       # BUILD_SHARED_LIBS=OFF → each tool is self-contained; no libLLVM.so
       # shipped, no RPATH complexity. Runtime deps are the standard system libs
-      # already present on RHEL 8 (glibc, libstdc++, zlib).
+      # already present on the target (glibc, libstdc++, zlib).
       #
-      # cmake 3.11 (UBI 8 default) is too old for LLVM 17+; we download a
-      # modern cmake binary from cmake.org.
+      # The UBI default cmake is too old for LLVM 17+; we download a modern
+      # cmake binary from cmake.org inside the container.
       #
       # Estimated time: 80-100 minutes on a 2-CPU GitHub Actions runner.
-      - name: Build LLVM inside UBI 8.10 container
+      - name: Build LLVM inside UBI ${{ matrix.major }} container
         run: |
           mkdir -p /tmp/llvm-output
           docker run --rm \
             --memory=6g \
             --cpus="$(nproc)" \
             -e LLVM_VERSION \
+            -e RHEL_TAG \
             -v /tmp/llvm-output:/output \
-            registry.access.redhat.com/ubi8/ubi:8.10 \
+            ${{ matrix.image }} \
             bash -euo pipefail -c '
-              echo "==> System : $(cat /etc/redhat-release)"
+              echo "==> System : $(cat /etc/redhat-release 2>/dev/null || cat /etc/os-release | head -1)"
               echo "==> glibc  : $(ldd --version | head -1)"
+              echo "==> Variant: ${RHEL_TAG}"
 
               # ── system packages ────────────────────────────────────────────
               dnf install -y --nodocs \
@@ -149,29 +162,29 @@ jobs:
               ls -lh /tmp/llvm-install/bin/
 
               # ── verify ────────────────────────────────────────────────────
-              echo "==> Verifying binaries execute on glibc 2.28..."
+              echo "==> Verifying binaries execute on this glibc..."
               /tmp/llvm-install/bin/clang-format --version
               /tmp/llvm-install/bin/clang         --version
 
               # ── package ───────────────────────────────────────────────────
               echo "==> Packaging..."
               cd /tmp/llvm-install
-              tar -cJf "/output/LLVM-${LLVM_VERSION}-Linux-X64-rhel8.tar.xz" \
-                --transform "s|^\.|LLVM-${LLVM_VERSION}-Linux-X64-rhel8|" \
+              tar -cJf "/output/LLVM-${LLVM_VERSION}-Linux-X64-${RHEL_TAG}.tar.xz" \
+                --transform "s|^\.|LLVM-${LLVM_VERSION}-Linux-X64-${RHEL_TAG}|" \
                 .
-              echo "==> Archive size: $(du -sh /output/LLVM-${LLVM_VERSION}-Linux-X64-rhel8.tar.xz | cut -f1)"
+              echo "==> Archive size: $(du -sh /output/LLVM-${LLVM_VERSION}-Linux-X64-${RHEL_TAG}.tar.xz | cut -f1)"
             '
 
       - name: Upload archive as workflow artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
-          name: llvm-rhel8-${{ inputs.llvm_version }}
-          path: /tmp/llvm-output/LLVM-${{ inputs.llvm_version }}-Linux-X64-rhel8.tar.xz
+          name: llvm-rhel${{ matrix.major }}-${{ inputs.llvm_version }}
+          path: /tmp/llvm-output/LLVM-${{ inputs.llvm_version }}-Linux-X64-rhel${{ matrix.major }}.tar.xz
           retention-days: 3
 
 # ── Job 2: Commit ─────────────────────────────────────────────────────────────
 # Separate job so a commit/push failure can be re-run in seconds without
-# repeating the 90-minute build.
+# repeating the 90-minute builds.
 #
 # Clones prebuilt directly (not via git submodule update) so it is always
 # on the main branch — no detached HEAD, no push ambiguity.
@@ -202,22 +215,30 @@ jobs:
           echo "prebuilt HEAD: $(git -C prebuilt-wr rev-parse HEAD)"
           echo "prebuilt branch: $(git -C prebuilt-wr branch --show-current)"
 
-      - name: Download LLVM archive artifact
+      - name: Download all LLVM archive artifacts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
         with:
-          name: llvm-rhel8-${{ inputs.llvm_version }}
+          pattern: llvm-rhel*-${{ inputs.llvm_version }}
+          merge-multiple: true
           path: /tmp/llvm-output/
 
-      - name: Split archive into 50 MB parts
+      - name: Split each variant into 50 MB parts
         run: |
           DEST="prebuilt-wr/toolchains/llvm/${LLVM_VERSION}"
           mkdir -p "${DEST}"
-          rm -f "${DEST}/LLVM-${LLVM_VERSION}-Linux-X64-rhel8.tar.xz.part-"*
-          split -b 50m \
-            /tmp/llvm-output/LLVM-${LLVM_VERSION}-Linux-X64-rhel8.tar.xz \
-            "${DEST}/LLVM-${LLVM_VERSION}-Linux-X64-rhel8.tar.xz.part-"
-          echo "Parts:"
-          ls -lh "${DEST}/LLVM-${LLVM_VERSION}-Linux-X64-rhel8.tar.xz.part-"*
+          for tag in rhel8 rhel9 rhel10; do
+            SRC="/tmp/llvm-output/LLVM-${LLVM_VERSION}-Linux-X64-${tag}.tar.xz"
+            if [[ ! -f "${SRC}" ]]; then
+              echo "  [--] ${tag}: no artifact (build skipped or failed) — leaving existing parts untouched."
+              continue
+            fi
+            echo "  [OK] ${tag}: splitting $(du -sh "${SRC}" | cut -f1)"
+            rm -f "${DEST}/LLVM-${LLVM_VERSION}-Linux-X64-${tag}.tar.xz.part-"*
+            split -b 50m "${SRC}" \
+              "${DEST}/LLVM-${LLVM_VERSION}-Linux-X64-${tag}.tar.xz.part-"
+          done
+          echo "Parts staged:"
+          ls -lh "${DEST}/" | grep -E 'part-aa|\.json' || true
 
       - name: Commit and push prebuilt
         working-directory: prebuilt-wr
@@ -226,7 +247,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add "toolchains/llvm/${LLVM_VERSION}/"
           git diff --cached --stat
-          git commit -m "build: LLVM ${LLVM_VERSION} tools for RHEL 8 (glibc 2.28 / UBI 8.10)"
+          git commit -m "build: LLVM ${LLVM_VERSION} tools for RHEL/Rocky 8/9/10 (per-distro glibc builds)"
           git push
 
       - name: Update submodule pointer in main repo
@@ -237,5 +258,5 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git pull --rebase origin main
           git update-index --cacheinfo "160000,${PREBUILT_SHA},prebuilt"
-          git commit -m "chore: update prebuilt — LLVM ${LLVM_VERSION} RHEL 8 build"
+          git commit -m "chore: update prebuilt — LLVM ${LLVM_VERSION} RHEL/Rocky 8/9/10 builds"
           git push

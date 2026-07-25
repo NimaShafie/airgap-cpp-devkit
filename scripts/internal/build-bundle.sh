@@ -118,7 +118,7 @@ Windows:
   2. Open Git Bash in the extracted ${BUNDLE_NAME}\\ folder.
   3. bash scripts/internal/install-cli.sh --yes --profile cpp-dev
 
-Linux (RHEL 8+):
+Linux (RHEL/Rocky 8, 9, 10):
   1. tar -xzf ${BUNDLE_NAME}.tar.gz
   2. cd ${BUNDLE_NAME}
   3. bash scripts/internal/install-cli.sh --yes --profile cpp-dev

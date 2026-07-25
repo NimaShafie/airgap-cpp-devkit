@@ -11,7 +11,7 @@ devkit). `fmt/10.2.1` must have been seeded for your target profile.
 ## CMake (command line / any IDE that reads CMakePresets)
 
 ```bash
-bash build-cmake.sh linux-gcc-rhel8-x64      # or windows-msvc-x64, etc.
+bash build-cmake.sh linux-gcc-rhel9-x64      # or windows-msvc-x64, etc.
 ```
 
 What it does:
@@ -25,7 +25,7 @@ Because Conan emits `CMakeUserPresets.json`, this also works in **CLion**,
 ## Eclipse CDT
 
 ```bash
-bash build-eclipse.sh linux-gcc-rhel8-x64     # Linux/RHEL
+bash build-eclipse.sh linux-gcc-rhel9-x64     # Linux/RHEL
 bash build-eclipse.sh windows-mingw-x64       # Windows
 ```
 
