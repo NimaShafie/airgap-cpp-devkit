@@ -32,6 +32,9 @@ FROM ${UBI_IMAGE}
 # tar/xz/bzip2/gzip: needed by many setup.sh archives
 # cpio: non-root RPM payload extraction (rpm2cpio | cpio), e.g. sqlite
 # findutils/which/file: standard tooling used by setup.sh guards
+# gcc/gcc-c++: the system C/C++ compiler a real RHEL dev box provides — the
+#   devkit ships no Linux compiler (winlibs is Windows-only), so source builds
+#   such as zlib rely on it. Both live in BaseOS/AppStream (no EPEL needed).
 # sudo: lets the test user do privilege escalation for /opt installs
 # A single layer: install base packages, then create a non-root user that
 # mirrors a typical developer account. Pre-create the install prefix owned by
@@ -49,6 +52,8 @@ RUN dnf install -y \
       which \
       file \
       make \
+      gcc \
+      gcc-c++ \
       perl \
       sudo \
       shadow-utils \

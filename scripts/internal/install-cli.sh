@@ -519,6 +519,9 @@ echo "  [3/13] Installing cmake 4.3.1 (required)..."
 _run_bootstrap "cmake" \
     "${REPO_ROOT}/tools/build-tools/cmake/setup.sh"
 
+# Make cmake available for subsequent steps (e.g. the zlib source build needs it)
+export PATH="${INSTALL_PREFIX_OVERRIDE}/cmake/bin:${PATH}"
+
 # ---------------------------------------------------------------------------
 # Step 4: python
 # ---------------------------------------------------------------------------
@@ -526,6 +529,9 @@ echo ""
 echo "  [4/13] Installing python 3.14.4 (required)..."
 _run_bootstrap "python" \
     "${REPO_ROOT}/tools/languages/python/setup.sh"
+
+# Make python available for subsequent steps (e.g. lcov's genhtml tooling)
+export PATH="${INSTALL_PREFIX_OVERRIDE}/python/bin:${PATH}"
 
 # ---------------------------------------------------------------------------
 # Step 5: lcov (Linux only)
@@ -550,6 +556,12 @@ _CLANG_FORMAT="${INSTALL_PREFIX_OVERRIDE}/clang-llvm/bin/clang-format"
 if [[ ! -x "${_CLANG_FORMAT}" ]] || ! "${_CLANG_FORMAT}" --version &>/dev/null; then
     echo "  [--]  Skipped: style-formatter (clang-format not compatible with this system's runtime libraries)"
     SKIPPED_TOOLS+=("style-formatter (runtime library incompatible)")
+elif ! git -C "${REPO_ROOT}" rev-parse --git-dir &>/dev/null; then
+    # The style formatter installs a git pre-commit hook, which only makes sense
+    # inside a git repository. Skip cleanly when run outside one (e.g. an
+    # unpacked source tarball or a container with .git excluded).
+    echo "  [--]  Skipped: style-formatter (not inside a git repository)"
+    SKIPPED_TOOLS+=("style-formatter (no git repository)")
 else
     _run_bootstrap_no_prefix "style-formatter" \
         "${REPO_ROOT}/tools/toolchains/llvm/style-formatter/bootstrap.sh"
