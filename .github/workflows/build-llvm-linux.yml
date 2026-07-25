@@ -82,7 +82,9 @@ jobs:
               echo "==> Variant: ${RHEL_TAG}"
 
               # ── system packages ────────────────────────────────────────────
-              dnf install -y --nodocs \
+              # --allowerasing: UBI 9 ships curl-minimal, which conflicts with the
+              # full curl we request; let dnf swap it instead of failing.
+              dnf install -y --nodocs --allowerasing \
                 gcc gcc-c++ \
                 make \
                 python3 \
@@ -191,6 +193,9 @@ jobs:
   commit:
     name: Commit to prebuilt/ and update submodule pointer
     needs: build
+    # Run even if one matrix leg (distro) failed, so the variants that DID build
+    # still get staged. The steps below no-op cleanly when nothing is new.
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -246,17 +251,26 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add "toolchains/llvm/${LLVM_VERSION}/"
+          if git diff --cached --quiet; then
+            echo "No new/changed LLVM parts to commit — nothing to do."
+            exit 0
+          fi
           git diff --cached --stat
-          git commit -m "build: LLVM ${LLVM_VERSION} tools for RHEL/Rocky 8/9/10 (per-distro glibc builds)"
+          git commit -m "build: LLVM ${LLVM_VERSION} tools for RHEL/Rocky (per-distro glibc builds)"
           git push
 
       - name: Update submodule pointer in main repo
         run: |
           PREBUILT_SHA=$(git -C prebuilt-wr rev-parse HEAD)
-          echo "Pointing prebuilt submodule → ${PREBUILT_SHA}"
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git pull --rebase origin main
+          CURRENT=$(git ls-tree HEAD prebuilt | awk '{print $3}')
+          if [[ "${PREBUILT_SHA}" == "${CURRENT}" ]]; then
+            echo "prebuilt pointer already at ${PREBUILT_SHA} — nothing to update."
+            exit 0
+          fi
+          echo "Pointing prebuilt submodule → ${PREBUILT_SHA}"
           git update-index --cacheinfo "160000,${PREBUILT_SHA},prebuilt"
-          git commit -m "chore: update prebuilt — LLVM ${LLVM_VERSION} RHEL/Rocky 8/9/10 builds"
+          git commit -m "chore: update prebuilt — LLVM ${LLVM_VERSION} RHEL/Rocky builds"
           git push
