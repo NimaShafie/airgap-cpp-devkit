@@ -73,15 +73,18 @@ def candidates(pkg_name):
     return [d for parts, d in manifests if parts[:len(n)] == n]
 
 def newest_per_tool(cands):
-    """Group candidate manifests by their `tool` field; keep the newest of each.
-    (Different tool identities under one path — e.g. gcc's winlibs vs
-    gcc-toolset — are complementary and all kept; version dupes collapse.)"""
+    """Group candidate manifests by their `tool` field; keep the newest version of
+    each. (Different tool identities under one path — e.g. gcc's winlibs vs
+    gcc-toolset — are complementary and all kept; older versions collapse.) When a
+    tool ships several manifests at the SAME newest version — e.g. gRPC's Windows
+    and Linux platform manifests — keep all of them so every artifact is listed."""
     groups = defaultdict(list)
     for d in cands:
         groups[d.get("tool", "?")].append(d)
     picked = []
     for _, lst in groups.items():
-        picked.append(max(lst, key=lambda d: vkey(d.get("version", ""))))
+        newest = max(vkey(d.get("version", "")) for d in lst)
+        picked.extend(d for d in lst if vkey(d.get("version", "")) == newest)
     return picked
 
 def collect(man):

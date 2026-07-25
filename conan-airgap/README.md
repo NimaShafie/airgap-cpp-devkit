@@ -159,9 +159,9 @@ Three ABI-matched profiles ship for exactly this, one per gRPC toolset:
 
 | Conan profile | gRPC package | Visual Studio |
 |---------------|--------------|---------------|
-| `windows-msvc-v142-grpc` | `grpc-1.81.1-msvc142` | Visual Studio 2019 |
-| `windows-msvc-v143-grpc` | `grpc-1.81.1-msvc143` | Visual Studio 2022 (default) |
-| `windows-msvc-v145-grpc` | `grpc-1.81.1-msvc145` | Visual Studio 2026 |
+| `windows-msvc-v142-grpc` | `grpc-1.83.0-msvc142-release` | Visual Studio 2019 |
+| `windows-msvc-v143-grpc` | `grpc-1.83.0-msvc143-release` | Visual Studio 2022 (default) |
+| `windows-msvc-v145-grpc` | `grpc-1.83.0-msvc145-release` | Visual Studio 2026 |
 
 Seed and build with the profile that matches the gRPC toolset you installed:
 

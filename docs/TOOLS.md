@@ -18,11 +18,11 @@ All tools work without internet access. All dependencies are vendored.
 | **clang-tidy** | 22.1.3 | Windows + Linux | Yes | `tools/toolchains/clang/source-build/` |
 | **LLVM source** | 22.1.3 | Windows + Linux | - (source only) | `tools/toolchains/clang/source-build/llvm-src/` |
 | **llvm-mingw** | 20260407 | Windows + Linux | Yes | `prebuilt/toolchains/clang/mingw/` |
-| **Clang RPMs** | 20.1.8 | RHEL 8 | Yes | `prebuilt/toolchains/clang/rhel8/` |
+| **Clang RPMs** | 20.1.8 | RHEL/Rocky 8, 9, 10 | Yes | `prebuilt/toolchains/clang/rhel8/` |
 | **GCC + MinGW-w64** | 15.2.0 + 13.0.0 UCRT | Windows | Yes | `tools/toolchains/gcc/windows/` |
-| **gcc-toolset** | 15 | RHEL 8 | Yes | `prebuilt/toolchains/gcc/linux/` |
+| **gcc-toolset** | 15 | RHEL/Rocky 8, 9, 10 | Yes | `prebuilt/toolchains/gcc/linux/` |
 | **GCC cross (x86_64-bionic)** | 15 | Linux | Yes | `tools/toolchains/gcc/linux/cross/` |
-| **GCC native (RHEL 8)** | 15 | RHEL 8 | Yes | `tools/toolchains/gcc/linux/native/` |
+| **GCC native (RHEL/Rocky)** | 15 | RHEL/Rocky 8, 9, 10 | Yes | `tools/toolchains/gcc/linux/native/` |
 
 ---
 
@@ -32,7 +32,7 @@ All tools work without internet access. All dependencies are vendored.
 |------|---------|----------|-----------|----------|
 | **CMake** | 4.3.1 | Windows + Linux | Yes | `tools/build-tools/cmake/` |
 | **Ninja** | 1.13.2 | Windows + Linux | Yes | `prebuilt/toolchains/clang/source-build/` |
-| **lcov** | 2.5 | Linux / RHEL 8 | Yes (vendored tarball) | `tools/toolchains/lcov/` |
+| **lcov** | 2.5 | Linux / RHEL/Rocky 8, 9, 10 | Yes (vendored tarball) | `tools/toolchains/lcov/` |
 
 ---
 
@@ -40,11 +40,11 @@ All tools work without internet access. All dependencies are vendored.
 
 | Tool | Version | Platform | Prebuilt? | Location |
 |------|---------|----------|-----------|----------|
-| **gRPC** | 1.83.0 | Windows + Linux | Yes (Windows .zip per MSVC toolset v142/v143/v145 × Release/Debug; Linux .tar.gz RHEL 8/9 x86_64) | `tools/frameworks/grpc/` |
+| **gRPC** | 1.83.0 | Windows + Linux | Yes (Windows .zip per MSVC toolset v142/v143/v145 × Release/Debug; Linux .tar.gz RHEL/Rocky 8/9/10 x86_64) | `tools/frameworks/grpc/` |
 | **zlib** | 1.3.2 | Windows + Linux | - (vendored source, CMake build ~30s) | `tools/lib/zlib/` |
 | **Conan Air-Gap Kit** | 1.0.0 (Conan 2.30.0) | Windows + Linux | - (scripts) | `conan-airgap/` · tool: `tools/frameworks/conan-airgap/` |
 
-gRPC ships one prebuilt package per Visual Studio toolset (ABI-locked static libs): `v142` = VS 2019, `v143` = VS 2022 (default), `v145` = VS 2026 — each in **Release** and **Debug**. It also ships a Linux RHEL 8/9 (x86_64) package. Choose the matching one in devkit-ui or with `setup.sh --toolset <v142|v143|v145> --config <release|debug>` (Windows) / `setup.sh --platform linux` (Linux).
+gRPC ships one prebuilt package per Visual Studio toolset (ABI-locked static libs): `v142` = VS 2019, `v143` = VS 2022 (default), `v145` = VS 2026 — each in **Release** and **Debug**. It also ships a Linux RHEL/Rocky 8/9/10 (x86_64) package. Choose the matching one in devkit-ui or with `setup.sh --toolset <v142|v143|v145> --config <release|debug>` (Windows) / `setup.sh --platform linux` (Linux).
 
 gRPC prebuilt includes: `bin/` (protoc, grpc_cpp_plugin, all plugins), `include/`, `lib/` (static), `share/` (cmake config).
 
@@ -73,7 +73,7 @@ gRPC prebuilt includes: `bin/` (protoc, grpc_cpp_plugin, all plugins), `include/
 | **Servy** | 8.7 | Windows | Yes (single file ~80 MB) | `tools/dev-tools/servy/` |
 | **Conan** | 2.31.1 | Windows + Linux | Yes (self-contained) | `tools/dev-tools/conan/` |
 | **VS Code extensions** | Various | Windows + Linux | Yes (.vsix) | `tools/dev-tools/vscode-extensions/` |
-| **SQLite CLI** | 3.53.0 (Win) / 3.26.0 RPM (RHEL 8) | Windows + Linux | Yes | `tools/dev-tools/sqlite/` |
+| **SQLite CLI** | 3.53.0 (Win) / 3.26.0 RPM (RHEL/Rocky 8) | Windows + Linux | Yes | `tools/dev-tools/sqlite/` |
 | **MATLAB verification** | - | Windows + Linux | - (checks existing install) | `tools/dev-tools/matlab/` |
 | **git-bundle transfer tool** | - | Windows + Linux | - (Python scripts) | `tools/dev-tools/git-bundle/` |
 | **devkit-ui** | - | Windows + Linux | - (Python web app) | `tools/dev-tools/devkit-ui/` |
@@ -166,8 +166,9 @@ tornado, typing-extensions, typing-inspection, tzdata, watchdog
 ## SQLite Notes
 
 On **Windows** and modern Linux: prebuilt CLI binary from sqlite.org (version 3.53.0).
-On **RHEL 8**: system RPM (sqlite-3.26.0) installed via `rpm -i` — the sqlite.org
+On **RHEL/Rocky 8**: system RPM (sqlite-3.26.0) installed via `rpm -i` — the sqlite.org
 prebuilt requires GLIBC 2.29+ which RHEL 8 does not provide (ships GLIBC 2.28).
+On **RHEL/Rocky 9 and 10**: the sqlite.org prebuilt CLI (3.53.0) is used directly.
 
 ---
 
@@ -190,7 +191,7 @@ All .zip archives use deflate level 9 compression.
 |---------|------|-------|----------|
 | gRPC 1.83.0 Windows Release (.zip, ×3 toolsets v142/v143/v145) | ~180MB each | 4 each | 45MB |
 | gRPC 1.83.0 Windows Debug (.zip, ×3 toolsets v142/v143/v145) | ~490MB each | 11 each | 45MB |
-| gRPC 1.83.0 Linux RHEL 8/9 (.tar.gz, x86_64) | ~91MB | 2 | 45MB |
+| gRPC 1.83.0 Linux RHEL/Rocky 8/9/10 (.tar.gz, x86_64) | ~91MB | 2 | 45MB |
 | WinLibs GCC 15.2.0 Windows (.zip) | 264MB | 6 | 49MB |
 | llvm-mingw 20260407 Windows (.zip) | 179MB | 4 | 49MB |
 | llvm-mingw 20260407 Linux (.tar.xz) | 82MB | 2 | 50MB |
@@ -215,16 +216,16 @@ All .zip archives use deflate level 9 compression.
 
 ## Platform Support Matrix
 
-| Tool | Windows 11 | RHEL 8 | Notes |
-|------|-----------|--------|-------|
+| Tool | Windows 11 | RHEL/Rocky 8, 9, 10 | Notes |
+|------|-----------|---------------------|-------|
 | clang-format / clang-tidy | Yes | Yes | Prebuilt for both |
 | llvm-mingw | Yes | Yes | Cross-compile toolchain |
 | GCC + MinGW-w64 | Yes | - | Windows native toolchain |
-| gcc-toolset 15 | - | Yes | RHEL 8 RPMs |
+| gcc-toolset 15 | - | Yes | RHEL/Rocky RPMs |
 | GCC cross/native | - | Yes | Linux only |
 | CMake 4.3.1 | Yes | Yes | Prebuilt for both |
 | Ninja | Yes | Yes | Prebuilt for both |
-| gRPC 1.83.0 | Yes | Yes | Windows: per MSVC toolset (v142/v143/v145) × Release/Debug. Linux: RHEL 8/9 x86_64 static-runtime package |
+| gRPC 1.83.0 | Yes | Yes | Windows: per MSVC toolset (v142/v143/v145) × Release/Debug. Linux: RHEL/Rocky 8/9/10 x86_64 static-runtime package |
 | Python 3.14.4 | Yes | Yes | Different packages per platform |
 | .NET SDK 10.0.202 | Yes | Yes | Portable, no installer |
 | FileZilla 3.70.4 | Yes | Yes | Prebuilt installer (Win) + binary tarball (Linux) |
@@ -235,12 +236,12 @@ All .zip archives use deflate level 9 compression.
 | Servy 8.7 | Yes | - | Windows only, graceful no-op on Linux |
 | Conan 2.31.1 | Yes | Yes | Self-contained, no Python required |
 | VS Code extensions | Yes | Yes | Per-platform .vsix files |
-| SQLite CLI | Yes (3.53.0) | Yes (3.26.0 RPM) | RHEL 8 uses system RPM |
+| SQLite CLI | Yes (3.53.0) | Yes (3.26.0 RPM on RHEL 8; 3.53.0 on RHEL 9/10) | RHEL/Rocky 8 uses system RPM |
 | MATLAB verification | Yes | Yes | Checks existing install only |
 | git-bundle tool | Yes | Yes | Pure Python, no deps |
 | LLVM style formatter | Yes | Yes | Git pre-commit hook |
 | devkit-ui | Yes | Yes | Python 3.8+, auto-installs FastAPI + uvicorn |
-| lcov 2.4 | - | Yes | Linux/RHEL 8 only |
+| lcov 2.4 | - | Yes | Linux/RHEL/Rocky 8, 9, 10 only |
 
 ---
 

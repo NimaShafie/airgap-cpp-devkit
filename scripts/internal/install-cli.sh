@@ -5,7 +5,7 @@
 #
 # CLI installer for airgap-cpp-devkit.
 # No Python required — pure Bash, works on Windows (Git Bash / MINGW64) and
-# Linux (RHEL 8 / Rocky 8+).
+# Linux (RHEL/Rocky 8, 9, 10).
 #
 # PREFERRED entry point (visual UI):
 #   bash scripts/launch.sh
@@ -28,7 +28,7 @@
 #   - conan              2.30.0 (Windows + Linux)
 #   - tools/dev-tools/vscode-extensions  (requires VS Code + 'code' on PATH)
 #   - winlibs-gcc-ucrt   (Windows only)
-#   - tools/frameworks/grpc    (Windows only, requires Visual Studio)
+#   - tools/frameworks/grpc    1.83.0 (Windows: per-VS toolset; Linux: RHEL 8/9)
 #   - sqlite             3.53.0 (CLI binary, Windows + Linux)
 #   - zlib               1.3.2  (gzip/DEFLATE library, source build; Windows + Linux)
 #   - matlab             (verification only — checks Database Toolbox + Compiler)
@@ -157,7 +157,7 @@ if [[ "${AUTO_YES}" == "false" ]]; then
     echo "  Windows-only:"
     echo "   [11] servy          7.9      Windows service manager          [~3s]"
     echo "   [12] winlibs-gcc   15.2.0   GCC + MinGW-w64                [~8min]"
-    echo "   [13] grpc           1.81.1   C++ framework (prebuilt, per-VS)  [~1min]"
+    echo "   [13] grpc           1.83.0   C++ framework (prebuilt, per-VS)  [~1min]"
     fi
     echo ""
     echo "  Tip: use --profile <name> to skip prompts"
@@ -209,7 +209,7 @@ if [[ "${AUTO_YES}" == "false" ]]; then
     INSTALL_SQLITE=false
     INSTALL_MATLAB=false
     INSTALL_ZLIB=false
-    GRPC_VERSION="1.81.1"
+    GRPC_VERSION="1.83.0"
     GRPC_TOOLSET="v143"   # default: Visual Studio 2022
 
     # Apply profile pre-selections if specified.
@@ -235,8 +235,9 @@ if [[ "${AUTO_YES}" == "false" ]]; then
                 INSTALL_CONAN=true
                 INSTALL_VSCODE=true; INSTALL_SQLITE=true
                 INSTALL_MATLAB=true; INSTALL_ZLIB=true
+                INSTALL_GRPC=true   # Windows: default v143 Release; Linux: RHEL 8/9 package
                 if [[ "${OS}" == "windows" ]]; then
-                    INSTALL_SERVY=true; INSTALL_WINLIBS=true; INSTALL_GRPC=true
+                    INSTALL_SERVY=true; INSTALL_WINLIBS=true
                 fi
                 echo "  [OK] Profile: full (all optional tools)"
                 ;;
@@ -285,13 +286,14 @@ if [[ "${AUTO_YES}" == "false" ]]; then
             read -r reply
             [[ "${reply^^}" == "Y" ]] && INSTALL_WINLIBS=true
 
-            printf "  Install tools/frameworks/grpc 1.81.1? Prebuilt, needs VS toolchain  [~1min] [y/N]: "
+            printf "  Install tools/frameworks/grpc 1.83.0? Prebuilt, needs VS toolchain  [~1min] [y/N]: "
             read -r reply
             if [[ "${reply^^}" == "Y" ]]; then
                 INSTALL_GRPC=true
                 echo ""
-                echo "  gRPC ships one prebuilt package per MSVC toolset — pick the one"
-                echo "  matching your installed Visual Studio (ABI-locked static libs):"
+                echo "  gRPC ships one prebuilt package per MSVC toolset (Release; Debug"
+                echo "  packages also ship — install via devkit-ui). Pick the one matching"
+                echo "  your installed Visual Studio (ABI-locked static libs):"
                 echo "    [1] Visual Studio 2022  (MSVC v143)   (default)"
                 echo "    [2] Visual Studio 2026  (MSVC v145)"
                 echo "    [3] Visual Studio 2019  (MSVC v142)"
@@ -321,7 +323,13 @@ if [[ "${AUTO_YES}" == "false" ]]; then
     [[ "${INSTALL_CONAN}"   == "true" ]]  && echo "    [OK] conan 2.30.0"
     [[ "${INSTALL_VSCODE}"  == "true" ]]  && echo "    [OK] tools/dev-tools/vscode-extensions"
     [[ "${INSTALL_WINLIBS}" == "true" ]]  && echo "    [OK] winlibs-gcc-ucrt"
-    [[ "${INSTALL_GRPC}"    == "true" ]]  && echo "    [OK] tools/frameworks/grpc ${GRPC_VERSION} (${GRPC_TOOLSET})"
+    if [[ "${INSTALL_GRPC}" == "true" ]]; then
+        if [[ "${OS}" == "windows" ]]; then
+            echo "    [OK] tools/frameworks/grpc ${GRPC_VERSION} (${GRPC_TOOLSET} Release)"
+        else
+            echo "    [OK] tools/frameworks/grpc ${GRPC_VERSION} (Linux x86_64)"
+        fi
+    fi
     [[ "${INSTALL_SQLITE}"  == "true" ]]  && echo "    [OK] sqlite 3.53.0"
     [[ "${INSTALL_ZLIB}"    == "true" ]]  && echo "    [OK] zlib 1.3.2"
     [[ "${INSTALL_MATLAB}"  == "true" ]]  && echo "    [OK] matlab (verification only)"
@@ -348,7 +356,7 @@ else
     INSTALL_SQLITE=false
     INSTALL_MATLAB=false
     INSTALL_ZLIB=false
-    GRPC_VERSION="1.81.1"
+    GRPC_VERSION="1.83.0"
     GRPC_TOOLSET="v143"
 
     # Apply profile if given with --yes
@@ -360,7 +368,8 @@ else
             full)
                 INSTALL_CONAN=true; INSTALL_VSCODE=true
                 INSTALL_SQLITE=true; INSTALL_MATLAB=true; INSTALL_ZLIB=true
-                [[ "${OS}" == "windows" ]] && { INSTALL_SERVY=true; INSTALL_WINLIBS=true; INSTALL_GRPC=true; }
+                INSTALL_GRPC=true   # Windows: default v143 Release; Linux: RHEL 8/9 package
+                [[ "${OS}" == "windows" ]] && { INSTALL_SERVY=true; INSTALL_WINLIBS=true; }
                 ;;
         esac
     fi
@@ -625,8 +634,17 @@ if [[ "${OS}" == "windows" ]]; then
     fi
 else
     echo "  [--]  winlibs-gcc-ucrt  -- skipped (Windows only)"
-    echo "  [--]  tools/frameworks/grpc  -- skipped (Windows only)"
-    SKIPPED_TOOLS+=("winlibs-gcc-ucrt (Windows only)" "tools/frameworks/grpc (Windows only)")
+    SKIPPED_TOOLS+=("winlibs-gcc-ucrt (Windows only)")
+
+    # gRPC ships a RHEL 8/9 (x86_64) static-runtime package for Linux targets.
+    if [[ "${INSTALL_GRPC}" == "true" ]]; then
+        _run_bootstrap "grpc-${GRPC_VERSION}-linux" \
+            "${REPO_ROOT}/tools/frameworks/grpc/setup.sh" \
+            "--platform" "linux"
+    else
+        echo "  [--]  Skipped: tools/frameworks/grpc"
+        SKIPPED_TOOLS+=("tools/frameworks/grpc")
+    fi
 fi
 
 # ---------------------------------------------------------------------------

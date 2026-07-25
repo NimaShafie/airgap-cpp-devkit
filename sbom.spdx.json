@@ -2,7 +2,7 @@
   "SPDXID": "SPDXRef-DOCUMENT",
   "spdxVersion": "SPDX-2.3",
   "creationInfo": {
-    "created": "2026-07-25T16:57:34Z",
+    "created": "2026-07-25T16:59:27Z",
     "creators": [
       "Organization: airgap-cpp-devkit",
       "Tool: airgap-cpp-devkit/scripts/internal/generate-sbom.sh"
@@ -796,7 +796,7 @@
     {
       "SPDXID": "SPDXRef-frameworks-grpc",
       "name": "frameworks/grpc",
-      "versionInfo": "1.81.1",
+      "versionInfo": "1.83.0",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
       "filesAnalyzed": false,
@@ -808,96 +808,276 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "0229b40f72975efb30d2b625654b1a5622274eda2a7d6a384e27572fe01734d8"
+          "checksumValue": "a6df87ad0e101ca1f04c7f15fc5bed5f7460c1b4cb25ea34a70567dc7ab2d634"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "c00e7d3dafc99656bc729e0394f2b041ec0bf76de4ff5529796fdc318bc37b1b"
+          "checksumValue": "b9a9aabf7aa7b837088bd9f582a6dcfaf1bbebcc47eb76d81abab01f7c1895b6"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "ec3ddc072721007541aec8756d6e65db47f272cd6cf4b56bdedad0b0348b506e"
+          "checksumValue": "1ce7bcc089d1ad30c8b6b5a45d8097cfdae616aa14ec52cb7553db5b804ca342"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "a313ffde182e245f956b495fab8ffeb8e73559781b053e38d3de65ba1ee44fbf"
+          "checksumValue": "9d886e0250ca4a2660c2b338a02e95affc96927767cd6d365b036f8edc5941db"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "1be2eb587916790972f4e819f5c935c32eeb40f91928daa48c1abcd3aec6ab64"
+          "checksumValue": "5245590e5d52efe4859750ee72844630ead470c87b8d0661805eb5bc5947921c"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "b99e5342aa2645f6b4f22c5123ad37fc462b48243144ebaac53afafb32f645b9"
+          "checksumValue": "f83e640ceb6edabdeeecdd893c88e28ae904258d0482e68711b0a52eb0bfe622"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "1b248828798126d4283b07f4cab520970cef93778fb941e5acb5bb91f68d27e2"
+          "checksumValue": "cff7a1832c2e057962526d6388988c287cbfa08b36897fcddf0e7457a23f858a"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "050bfbafcd9e05bc2a47b429394406c3e2ffbccc5fb58d68070475771b3f4856"
+          "checksumValue": "5a921f161cb86fa6936cdaa876e3efdddbf1219982bbbccfb90bcb9bf60389c7"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "aa8af21062b7d984086a9d9e51e2364d3b65d25484a96b575c2f3c88b822377e"
+          "checksumValue": "20df20f9ac5ac7b0237f420367e8e057899edb1dadb8a19b2cfcbca53cf7213c"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "b7886485dea2fac8a9756e68dff7f5a0cc5f235b4846dbfa3348a94fcb37e8c7"
+          "checksumValue": "447d5cf992c8b17b12d9cab64217f94c027ab1810d549a235bfed1672cfef959"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "81c00e5c4d6bacb04741af1a468cf346d47ff6934cde3015806d50f35d9748e6"
+          "checksumValue": "d7d888105860ae1cde8010913c9ae7ee88752c160b80d24ab46d34bedfcda14b"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "dcb5ccc36ee9b642b199234304141c2f4f8f2be1e9a6932c6fb5678fe2a30ee7"
+          "checksumValue": "145804c9ae8ac25cc1a8b3995dceb2fdae4a9549c47e712b16440ee59c084658"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "2c1b5d31635f1e9bb5760d78d9b3987b38008e8a97b8dbb08f6e152607c1d1ba"
+          "checksumValue": "d3b9b9cb9507a5f5251f993e94122b29d762c457b22658771d13679a9cfc9626"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "32f4ac2f80dd70a12b12fe0108e83a0419c688895a891492d8774cb2cba4323c"
+          "checksumValue": "6687d582edff6f1795ae06a27d039954b14ce183dcaf976d0e5d3231942c9b3f"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "cdb9042e7d45285deb08eabbadabf42d93ad890c4e8ecb604f81d2e9d74c93bf"
+          "checksumValue": "387773616ebf6f7a44dc631d6a24c5f4ec1aed811c977ea55ad157770b52fa9f"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "c87d7c37226f4addb275df7e70734df6631b2d99a5ad4ef2f9c714483860f838"
+          "checksumValue": "d9e3550d4905960786e8b0a4bae7686288fc771bb9b48ba281c2f2b86709d830"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "f54e0eb13cf739f279fa2b7eb29ed65371e2399454f893d4422574059eab09fd"
+          "checksumValue": "e332ede56d2fea025f930cb0ccf55eaf9a4a4d7f489be94be43539be684e6af9"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "17c9cf56d9d896f647645a239725fc5b281ae7a6a23fc7616fb3a756f9b87090"
+          "checksumValue": "9b279dcc28e472995a03ee9333f173aee9ed07004a3533acf1aee30a060026db"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "a5a5ed0838e9299fbe7c9f585ad67fd9455d852596cbe3070c5181c5d26097f6"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "4f99eaeeed0eb277ebe86e50dc8767c478270425228d95a04af3526b1450cf53"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "50c335566aed17a310e64efbd05da9485ff8bf2797db8ef3adb8f27df93a8e81"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "09aba7c96b6414079435ea859337328bee96ce8a9688157b243eb655a7f97925"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "d518c91c64d9f31fade3e6c40697e4383f5e57013865ff07d6f4ea3d21e79e93"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "73dfdf0abff907cec77d9bcc604716e0faf01f552417d48dfb1e2d035a551e4d"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "4f0d24a3a145b4559a34339e8300b8fe1859f221f0c26d687046ec0677545540"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "7cd6e947f1519f636cc9781dba38c775ff44131e45f7b1112b7880125c3eb8de"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "80fec0d82b661e7212065e6ab74295ad6c8a5af4837ea34975976ef9bd6955ee"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "8a1151c202c82d60784b2cad90e41df3773aa40a2f1daa977b57d1d50140af18"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "1a4cc0f1a393a86f9a0105668bf8d29f92f1897d08fb5682d4dffd9f2bdc1398"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "8d3e5509fb1aa7b06d8739d7cd6851084717a7d8d0e2f7962657eb2f5e75c53b"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "686e59fd314acf72959b6dec85cb85628acdf0b7a6ce551d3583a23e17430936"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "542865e81a45f4ee8ed93b346beed4580ba9ec9904bea0de2decec06807b38ba"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "b9ce612f2318dc41432cd911397204b130982df49fcb42941b882c5d74db54f8"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "f809281d5ded78ecd570f75c3253a9a7b0a6077bcb0d0d51f3ff5b5f0f1aa78d"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "043d3e733d39e138f422ac74f237460da9135fd1f4f894c6d379a49ff4b21def"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "f50e46455ace56139e9bb423e9ba09bc4110f575d71ab2841e33af453e95c2f9"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "f71e157876ce67f0157a4407ecd1ce8acf4217173e62edb779ec79794003e401"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "428b80a7eaf8c491446228f73b454949b355b9f9ad0d0b7c075f8292fc107d1b"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "5fae2bca888038c709218b9f4a936d64e90ed1a60861693d7519b2f930b0498f"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "e83036eb64c21ab48026aa49749e8782023b8db5366124e96923773fb5d3556f"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "44e2c0e67827381d0389565ffa69cafe32cfa9bd68c3bbd023537d8625767ae6"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "fdee82a9354ca0f33ad671e79c1856522bb6cd472831029c5d623832c030d217"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "e423327d4486d1562b1be03b2fc920f96c5402ae50d08fe2516a87528e56cd7f"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "df77f6c73ade65299155d55031ac2d41caadf20e245f4b215370a83f6ac271ca"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "0e4d8804a537c9f9ccaa02e36a0cb3ebebd8c9e01147ca1283508b5e148d1ed1"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "c8e0d3a81c4171a0ce8beeebf875b47f6533dbe01e5d94cf7ae65fee42c05aae"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "625d8ca4ca6037427359ab425d06843389468bc6471ff26ada27e191ac948d5c"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "c8016946b80382e5a332020c02fd9df60f26c4f5241d6f8c815fd9b2d48e5f90"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "1ae5fdcd0dcf2c4b1592f673e6213d28fa816ef95906ffc9177e8a308b0502fd"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "a4aea025e7c7f6088978c90e0e60e1d63c1efd055519268982c6c749dd960bad"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "a413f3222aea98b45b422b2c1c174973e38e619ed00817e3096d0062efdbb50b"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "7f534db3167afbd678850caba0852f1c15662ee8cb4486eea425cfb6b53aa3a6"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "4567af4d04acdccea3d5e490e35011a51530b2fe692695405a5947037e224f6d"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "29ed32a877eb438f93908a3d4036d4e24f422006b12c85f264c84f122ac0a8d0"
         }
       ],
       "attributionTexts": [
-        "windows-msvc143: grpc-1.81.1-msvc143-x64-release.zip SHA256:0229b40f72975efb30d2b625654b1a5622274eda2a7d6a384e27572fe01734d8",
-        "windows-msvc143: grpc-1.81.1-msvc143-x64-release.zip.part-aa SHA256:c00e7d3dafc99656bc729e0394f2b041ec0bf76de4ff5529796fdc318bc37b1b",
-        "windows-msvc143: grpc-1.81.1-msvc143-x64-release.zip.part-ab SHA256:ec3ddc072721007541aec8756d6e65db47f272cd6cf4b56bdedad0b0348b506e",
-        "windows-msvc143: grpc-1.81.1-msvc143-x64-release.zip.part-ac SHA256:a313ffde182e245f956b495fab8ffeb8e73559781b053e38d3de65ba1ee44fbf",
-        "windows-msvc143: grpc-1.81.1-msvc143-x64-release.zip.part-ad SHA256:1be2eb587916790972f4e819f5c935c32eeb40f91928daa48c1abcd3aec6ab64",
-        "windows-msvc143: grpc-1.81.1-msvc143-x64-release.zip.part-ae SHA256:b99e5342aa2645f6b4f22c5123ad37fc462b48243144ebaac53afafb32f645b9",
-        "windows-msvc145: grpc-1.81.1-msvc145-x64-release.zip SHA256:1b248828798126d4283b07f4cab520970cef93778fb941e5acb5bb91f68d27e2",
-        "windows-msvc145: grpc-1.81.1-msvc145-x64-release.zip.part-aa SHA256:050bfbafcd9e05bc2a47b429394406c3e2ffbccc5fb58d68070475771b3f4856",
-        "windows-msvc145: grpc-1.81.1-msvc145-x64-release.zip.part-ab SHA256:aa8af21062b7d984086a9d9e51e2364d3b65d25484a96b575c2f3c88b822377e",
-        "windows-msvc145: grpc-1.81.1-msvc145-x64-release.zip.part-ac SHA256:b7886485dea2fac8a9756e68dff7f5a0cc5f235b4846dbfa3348a94fcb37e8c7",
-        "windows-msvc145: grpc-1.81.1-msvc145-x64-release.zip.part-ad SHA256:81c00e5c4d6bacb04741af1a468cf346d47ff6934cde3015806d50f35d9748e6",
-        "windows-msvc145: grpc-1.81.1-msvc145-x64-release.zip.part-ae SHA256:dcb5ccc36ee9b642b199234304141c2f4f8f2be1e9a6932c6fb5678fe2a30ee7",
-        "windows-msvc142: grpc-1.81.1-msvc142-x64-release.zip SHA256:2c1b5d31635f1e9bb5760d78d9b3987b38008e8a97b8dbb08f6e152607c1d1ba",
-        "windows-msvc142: grpc-1.81.1-msvc142-x64-release.zip.part-aa SHA256:32f4ac2f80dd70a12b12fe0108e83a0419c688895a891492d8774cb2cba4323c",
-        "windows-msvc142: grpc-1.81.1-msvc142-x64-release.zip.part-ab SHA256:cdb9042e7d45285deb08eabbadabf42d93ad890c4e8ecb604f81d2e9d74c93bf",
-        "windows-msvc142: grpc-1.81.1-msvc142-x64-release.zip.part-ac SHA256:c87d7c37226f4addb275df7e70734df6631b2d99a5ad4ef2f9c714483860f838",
-        "windows-msvc142: grpc-1.81.1-msvc142-x64-release.zip.part-ad SHA256:f54e0eb13cf739f279fa2b7eb29ed65371e2399454f893d4422574059eab09fd",
-        "windows-msvc142: grpc-1.81.1-msvc142-x64-release.zip.part-ae SHA256:17c9cf56d9d896f647645a239725fc5b281ae7a6a23fc7616fb3a756f9b87090"
+        "linux-x86_64: grpc-1.83.0-linux-x86_64.tar.gz SHA256:a6df87ad0e101ca1f04c7f15fc5bed5f7460c1b4cb25ea34a70567dc7ab2d634",
+        "linux-x86_64: grpc-1.83.0-linux-x86_64.tar.gz.part-aa SHA256:b9a9aabf7aa7b837088bd9f582a6dcfaf1bbebcc47eb76d81abab01f7c1895b6",
+        "linux-x86_64: grpc-1.83.0-linux-x86_64.tar.gz.part-ab SHA256:1ce7bcc089d1ad30c8b6b5a45d8097cfdae616aa14ec52cb7553db5b804ca342",
+        "windows-msvc143-release: grpc-1.83.0-msvc143-x64-release.zip SHA256:9d886e0250ca4a2660c2b338a02e95affc96927767cd6d365b036f8edc5941db",
+        "windows-msvc143-release: grpc-1.83.0-msvc143-x64-release.zip.part-aa SHA256:5245590e5d52efe4859750ee72844630ead470c87b8d0661805eb5bc5947921c",
+        "windows-msvc143-release: grpc-1.83.0-msvc143-x64-release.zip.part-ab SHA256:f83e640ceb6edabdeeecdd893c88e28ae904258d0482e68711b0a52eb0bfe622",
+        "windows-msvc143-release: grpc-1.83.0-msvc143-x64-release.zip.part-ac SHA256:cff7a1832c2e057962526d6388988c287cbfa08b36897fcddf0e7457a23f858a",
+        "windows-msvc143-release: grpc-1.83.0-msvc143-x64-release.zip.part-ad SHA256:5a921f161cb86fa6936cdaa876e3efdddbf1219982bbbccfb90bcb9bf60389c7",
+        "windows-msvc145-release: grpc-1.83.0-msvc145-x64-release.zip SHA256:20df20f9ac5ac7b0237f420367e8e057899edb1dadb8a19b2cfcbca53cf7213c",
+        "windows-msvc145-release: grpc-1.83.0-msvc145-x64-release.zip.part-aa SHA256:447d5cf992c8b17b12d9cab64217f94c027ab1810d549a235bfed1672cfef959",
+        "windows-msvc145-release: grpc-1.83.0-msvc145-x64-release.zip.part-ab SHA256:d7d888105860ae1cde8010913c9ae7ee88752c160b80d24ab46d34bedfcda14b",
+        "windows-msvc145-release: grpc-1.83.0-msvc145-x64-release.zip.part-ac SHA256:145804c9ae8ac25cc1a8b3995dceb2fdae4a9549c47e712b16440ee59c084658",
+        "windows-msvc145-release: grpc-1.83.0-msvc145-x64-release.zip.part-ad SHA256:d3b9b9cb9507a5f5251f993e94122b29d762c457b22658771d13679a9cfc9626",
+        "windows-msvc142-release: grpc-1.83.0-msvc142-x64-release.zip SHA256:6687d582edff6f1795ae06a27d039954b14ce183dcaf976d0e5d3231942c9b3f",
+        "windows-msvc142-release: grpc-1.83.0-msvc142-x64-release.zip.part-aa SHA256:387773616ebf6f7a44dc631d6a24c5f4ec1aed811c977ea55ad157770b52fa9f",
+        "windows-msvc142-release: grpc-1.83.0-msvc142-x64-release.zip.part-ab SHA256:d9e3550d4905960786e8b0a4bae7686288fc771bb9b48ba281c2f2b86709d830",
+        "windows-msvc142-release: grpc-1.83.0-msvc142-x64-release.zip.part-ac SHA256:e332ede56d2fea025f930cb0ccf55eaf9a4a4d7f489be94be43539be684e6af9",
+        "windows-msvc142-release: grpc-1.83.0-msvc142-x64-release.zip.part-ad SHA256:9b279dcc28e472995a03ee9333f173aee9ed07004a3533acf1aee30a060026db",
+        "windows-msvc143-debug: grpc-1.83.0-msvc143-x64-debug.zip SHA256:a5a5ed0838e9299fbe7c9f585ad67fd9455d852596cbe3070c5181c5d26097f6",
+        "windows-msvc143-debug: grpc-1.83.0-msvc143-x64-debug.zip.part-aa SHA256:4f99eaeeed0eb277ebe86e50dc8767c478270425228d95a04af3526b1450cf53",
+        "windows-msvc143-debug: grpc-1.83.0-msvc143-x64-debug.zip.part-ab SHA256:50c335566aed17a310e64efbd05da9485ff8bf2797db8ef3adb8f27df93a8e81",
+        "windows-msvc143-debug: grpc-1.83.0-msvc143-x64-debug.zip.part-ac SHA256:09aba7c96b6414079435ea859337328bee96ce8a9688157b243eb655a7f97925",
+        "windows-msvc143-debug: grpc-1.83.0-msvc143-x64-debug.zip.part-ad SHA256:d518c91c64d9f31fade3e6c40697e4383f5e57013865ff07d6f4ea3d21e79e93",
+        "windows-msvc143-debug: grpc-1.83.0-msvc143-x64-debug.zip.part-ae SHA256:73dfdf0abff907cec77d9bcc604716e0faf01f552417d48dfb1e2d035a551e4d",
+        "windows-msvc143-debug: grpc-1.83.0-msvc143-x64-debug.zip.part-af SHA256:4f0d24a3a145b4559a34339e8300b8fe1859f221f0c26d687046ec0677545540",
+        "windows-msvc143-debug: grpc-1.83.0-msvc143-x64-debug.zip.part-ag SHA256:7cd6e947f1519f636cc9781dba38c775ff44131e45f7b1112b7880125c3eb8de",
+        "windows-msvc143-debug: grpc-1.83.0-msvc143-x64-debug.zip.part-ah SHA256:80fec0d82b661e7212065e6ab74295ad6c8a5af4837ea34975976ef9bd6955ee",
+        "windows-msvc143-debug: grpc-1.83.0-msvc143-x64-debug.zip.part-ai SHA256:8a1151c202c82d60784b2cad90e41df3773aa40a2f1daa977b57d1d50140af18",
+        "windows-msvc143-debug: grpc-1.83.0-msvc143-x64-debug.zip.part-aj SHA256:1a4cc0f1a393a86f9a0105668bf8d29f92f1897d08fb5682d4dffd9f2bdc1398",
+        "windows-msvc143-debug: grpc-1.83.0-msvc143-x64-debug.zip.part-ak SHA256:8d3e5509fb1aa7b06d8739d7cd6851084717a7d8d0e2f7962657eb2f5e75c53b",
+        "windows-msvc145-debug: grpc-1.83.0-msvc145-x64-debug.zip SHA256:686e59fd314acf72959b6dec85cb85628acdf0b7a6ce551d3583a23e17430936",
+        "windows-msvc145-debug: grpc-1.83.0-msvc145-x64-debug.zip.part-aa SHA256:542865e81a45f4ee8ed93b346beed4580ba9ec9904bea0de2decec06807b38ba",
+        "windows-msvc145-debug: grpc-1.83.0-msvc145-x64-debug.zip.part-ab SHA256:b9ce612f2318dc41432cd911397204b130982df49fcb42941b882c5d74db54f8",
+        "windows-msvc145-debug: grpc-1.83.0-msvc145-x64-debug.zip.part-ac SHA256:f809281d5ded78ecd570f75c3253a9a7b0a6077bcb0d0d51f3ff5b5f0f1aa78d",
+        "windows-msvc145-debug: grpc-1.83.0-msvc145-x64-debug.zip.part-ad SHA256:043d3e733d39e138f422ac74f237460da9135fd1f4f894c6d379a49ff4b21def",
+        "windows-msvc145-debug: grpc-1.83.0-msvc145-x64-debug.zip.part-ae SHA256:f50e46455ace56139e9bb423e9ba09bc4110f575d71ab2841e33af453e95c2f9",
+        "windows-msvc145-debug: grpc-1.83.0-msvc145-x64-debug.zip.part-af SHA256:f71e157876ce67f0157a4407ecd1ce8acf4217173e62edb779ec79794003e401",
+        "windows-msvc145-debug: grpc-1.83.0-msvc145-x64-debug.zip.part-ag SHA256:428b80a7eaf8c491446228f73b454949b355b9f9ad0d0b7c075f8292fc107d1b",
+        "windows-msvc145-debug: grpc-1.83.0-msvc145-x64-debug.zip.part-ah SHA256:5fae2bca888038c709218b9f4a936d64e90ed1a60861693d7519b2f930b0498f",
+        "windows-msvc145-debug: grpc-1.83.0-msvc145-x64-debug.zip.part-ai SHA256:e83036eb64c21ab48026aa49749e8782023b8db5366124e96923773fb5d3556f",
+        "windows-msvc145-debug: grpc-1.83.0-msvc145-x64-debug.zip.part-aj SHA256:44e2c0e67827381d0389565ffa69cafe32cfa9bd68c3bbd023537d8625767ae6",
+        "windows-msvc145-debug: grpc-1.83.0-msvc145-x64-debug.zip.part-ak SHA256:fdee82a9354ca0f33ad671e79c1856522bb6cd472831029c5d623832c030d217",
+        "windows-msvc142-debug: grpc-1.83.0-msvc142-x64-debug.zip SHA256:e423327d4486d1562b1be03b2fc920f96c5402ae50d08fe2516a87528e56cd7f",
+        "windows-msvc142-debug: grpc-1.83.0-msvc142-x64-debug.zip.part-aa SHA256:df77f6c73ade65299155d55031ac2d41caadf20e245f4b215370a83f6ac271ca",
+        "windows-msvc142-debug: grpc-1.83.0-msvc142-x64-debug.zip.part-ab SHA256:0e4d8804a537c9f9ccaa02e36a0cb3ebebd8c9e01147ca1283508b5e148d1ed1",
+        "windows-msvc142-debug: grpc-1.83.0-msvc142-x64-debug.zip.part-ac SHA256:c8e0d3a81c4171a0ce8beeebf875b47f6533dbe01e5d94cf7ae65fee42c05aae",
+        "windows-msvc142-debug: grpc-1.83.0-msvc142-x64-debug.zip.part-ad SHA256:625d8ca4ca6037427359ab425d06843389468bc6471ff26ada27e191ac948d5c",
+        "windows-msvc142-debug: grpc-1.83.0-msvc142-x64-debug.zip.part-ae SHA256:c8016946b80382e5a332020c02fd9df60f26c4f5241d6f8c815fd9b2d48e5f90",
+        "windows-msvc142-debug: grpc-1.83.0-msvc142-x64-debug.zip.part-af SHA256:1ae5fdcd0dcf2c4b1592f673e6213d28fa816ef95906ffc9177e8a308b0502fd",
+        "windows-msvc142-debug: grpc-1.83.0-msvc142-x64-debug.zip.part-ag SHA256:a4aea025e7c7f6088978c90e0e60e1d63c1efd055519268982c6c749dd960bad",
+        "windows-msvc142-debug: grpc-1.83.0-msvc142-x64-debug.zip.part-ah SHA256:a413f3222aea98b45b422b2c1c174973e38e619ed00817e3096d0062efdbb50b",
+        "windows-msvc142-debug: grpc-1.83.0-msvc142-x64-debug.zip.part-ai SHA256:7f534db3167afbd678850caba0852f1c15662ee8cb4486eea425cfb6b53aa3a6",
+        "windows-msvc142-debug: grpc-1.83.0-msvc142-x64-debug.zip.part-aj SHA256:4567af4d04acdccea3d5e490e35011a51530b2fe692695405a5947037e224f6d",
+        "windows-msvc142-debug: grpc-1.83.0-msvc142-x64-debug.zip.part-ak SHA256:29ed32a877eb438f93908a3d4036d4e24f422006b12c85f264c84f122ac0a8d0"
       ]
     },
     {

@@ -9,6 +9,32 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+#### gRPC — updated 1.81.1 → 1.83.0, added Debug + Linux packages
+- Bumped **gRPC 1.81.1 → 1.83.0** (upstream tag `v1.83.0`). Re-imported the
+  maintainer prebuilt packages into the `prebuilt/` submodule as split parts with
+  a fresh SHA256 manifest.
+- **Windows now ships both Release and Debug** per MSVC toolset (v142/v143/v145).
+  Previously only Release shipped. Select the configuration in devkit-ui or via
+  `setup.sh --config release|debug`.
+- **New Linux target.** gRPC now ships a RHEL/Rocky 8/9/10 (x86_64) package built with
+  `gcc-toolset-13` and a statically linked C++ runtime, so it installs offline on
+  RHEL/Rocky 8, 9, and 10 with no gcc-toolset runtime present. Install with
+  `setup.sh --platform linux`, or the "Linux x86_64 (RHEL/Rocky 8/9/10)" variant in
+  devkit-ui. gRPC is now enabled on the Linux path of the `full` install profile.
+- `setup.sh` gained `--config` and `--platform` flags and a Linux install branch;
+  each package installs into its own sibling prefix
+  (`grpc-1.83.0-msvc<NNN>-<config>` / `grpc-1.83.0-linux`) so toolsets, configs,
+  and platforms coexist. `import-grpc-prebuilt.sh` gained `--configs` and Linux
+  import. The example project pulls in the updated client/server (optional TLS via
+  `GRPC_TLS_ROOT_CERT`) and Release/Debug CMake presets for v142/v143/v145.
+
+#### SBOM generator — list every artifact at the newest version
+- `generate-sbom.sh` now keeps **all** prebuilt manifests a tool ships at its
+  newest version (e.g. gRPC's Windows and Linux platform manifests), instead of
+  collapsing to a single one. Older versions still collapse as before.
+
 ---
 
 ## [1.3.62] — 2026-07-06

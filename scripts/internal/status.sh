@@ -219,20 +219,28 @@ _check_winlibs() {
     fi
 }
 _check_grpc() {
-    if [[ "${OS}" != "windows" ]]; then
-        _print_platform_only "frameworks/grpc" "Windows"
-        return
+    local found=false plugin_ext="" install_hint versions=()
+    if [[ "${OS}" == "windows" ]]; then
+        plugin_ext=".exe"
+        install_hint="bash tools/frameworks/grpc/setup.sh --toolset v143 --config release"
+        # Current per-toolset, per-config dirs + a few legacy names.
+        versions=(
+            "grpc-1.83.0-msvc142-release" "grpc-1.83.0-msvc143-release" "grpc-1.83.0-msvc145-release"
+            "grpc-1.83.0-msvc142-debug"   "grpc-1.83.0-msvc143-debug"   "grpc-1.83.0-msvc145-debug"
+            "grpc-1.81.1-msvc142" "grpc-1.81.1-msvc143" "grpc-1.81.1-msvc145"
+        )
+    else
+        install_hint="bash tools/frameworks/grpc/setup.sh --platform linux"
+        versions=("grpc-1.83.0-linux")
     fi
-    local found=false
     for base in "${ADMIN_PREFIX}" "${USER_PREFIX}"; do
-        for ver in "grpc-1.81.1-msvc142" "grpc-1.81.1-msvc143" "grpc-1.81.1-msvc145" \
-                   "grpc-1.76.0" "grpc-1.78.1" "grpc-1.80.0"; do
+        for ver in "${versions[@]}"; do
             local grpc_dir="${base}/${ver}"
-            local plugin="${grpc_dir}/bin/grpc_cpp_plugin.exe"
+            local plugin="${grpc_dir}/bin/grpc_cpp_plugin${plugin_ext}"
             if [[ -d "${grpc_dir}" ]]; then
                 local plugin_status
                 plugin_status="$(_check_bin "${plugin}")"
-                printf "  ${GREEN}[✓]${RESET} ${BOLD}%-22s${RESET} %-8s  %s\n" \
+                printf "  ${GREEN}[✓]${RESET} ${BOLD}%-28s${RESET} %-8s  %s\n" \
                     "${ver}" "" "${grpc_dir}"
                 printf "       grpc_cpp_plugin: %b  %s\n\n" \
                     "${plugin_status}" "${plugin}"
@@ -241,8 +249,7 @@ _check_grpc() {
         done
     done
     if [[ "${found}" == false ]]; then
-        _print_not_installed "frameworks/grpc" \
-            "bash tools/frameworks/grpc/setup.sh --toolset v143"
+        _print_not_installed "frameworks/grpc" "${install_hint}"
     fi
 }
 # ---------------------------------------------------------------------------

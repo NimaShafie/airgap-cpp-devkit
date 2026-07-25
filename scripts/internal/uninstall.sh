@@ -96,6 +96,8 @@ ALL_TOOL_PATHS=(
     "clang-source-build:toolchains/clang/source-build"
     "clang-style-formatter:toolchains/clang/style-formatter"
     "clang-rhel8:toolchains/clang/rhel8"
+    "clang-rhel9:toolchains/clang/rhel9"
+    "clang-rhel10:toolchains/clang/rhel10"
     "clang-mingw:toolchains/clang/mingw"
     "gcc-windows:toolchains/gcc/windows"
     "gcc-linux-native:toolchains/gcc/linux/native"
@@ -133,6 +135,14 @@ _find_tools() {
         if [[ -f "${dir}/INSTALL_RECEIPT.txt" ]]; then
             found+=("${label}:${dir}")
         fi
+    done
+    # gRPC installs into versioned, per-toolset/config (or per-platform) sibling
+    # dirs — grpc-<ver>-msvc<NNN>-<config> and grpc-<ver>-linux — rather than a
+    # single fixed path, so match them by glob.
+    local gd
+    for gd in "${base}"/grpc-*; do
+        [[ -d "${gd}" && -f "${gd}/INSTALL_RECEIPT.txt" ]] || continue
+        found+=("grpc:${gd}")
     done
     printf '%s\n' "${found[@]}"
 }
