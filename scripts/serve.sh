@@ -12,9 +12,12 @@
 # (localhost, per-user install). See docs/DEPLOYMENT.md Mode 2.
 #
 # USAGE:
-#   bash scripts/serve.sh                       # bind 0.0.0.0, auto-detect URL
-#   bash scripts/serve.sh --port 9090 --tls     # HTTPS on a custom port
-#   bash scripts/serve.sh --advertise devbox.corp.local
+#   bash scripts/serve.sh --tls                  # HTTPS on all interfaces
+#   bash scripts/serve.sh --port 9090 --tls      # HTTPS on a custom port
+#   bash scripts/serve.sh --advertise devbox.corp.local --tls
+#
+# Binding to a network interface without --tls is refused unless you pass
+# --insecure, so the access token is never sent in the clear by default.
 #
 # OPTIONS:
 #   --host <addr>       Interface to bind (default: 0.0.0.0 = all interfaces)
@@ -22,6 +25,7 @@
 #                       (default: auto-detected LAN address)
 #   --port <n>          Port (default: devkit.config.json port, else 9090)
 #   --tls               Serve HTTPS with an auto-generated self-signed cert
+#   --insecure          Allow plaintext HTTP on a network interface (trusted LAN)
 # =============================================================================
 set -euo pipefail
 
@@ -32,6 +36,7 @@ BIND_HOST="0.0.0.0"
 ADVERTISE=""
 PORT=""
 TLS=false
+INSECURE=false
 PASS_ARGS=()
 
 while [[ $# -gt 0 ]]; do
@@ -40,6 +45,7 @@ while [[ $# -gt 0 ]]; do
         --advertise) ADVERTISE="$2"; shift 2 ;;
         --port)      PORT="$2"; shift 2 ;;
         --tls)       TLS=true; shift ;;
+        --insecure)  INSECURE=true; shift ;;
         -h|--help)   grep '^#' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
         *)           PASS_ARGS+=("$1"); shift ;;
     esac
@@ -82,21 +88,48 @@ detect_ip() {
 [[ -z "$ADVERTISE" ]] && ADVERTISE="$(detect_ip)"
 
 SCHEME="http"; $TLS && SCHEME="https"
+
+# Refuse to expose the UI unencrypted on a network interface unless the operator
+# explicitly opts in. A team server binds beyond loopback, so plaintext there
+# would put the access token on the wire for anyone on the segment.
+case "$BIND_HOST" in
+    127.0.0.1|localhost|::1|"") LOOPBACK=true ;;
+    *)                          LOOPBACK=false ;;
+esac
+if ! $TLS && ! $LOOPBACK && ! $INSECURE; then
+    echo "ERROR: refusing to serve unencrypted HTTP on ${BIND_HOST} (a network interface)." >&2
+    echo "       Add --tls to enable HTTPS, or --insecure to override on a trusted network." >&2
+    exit 1
+fi
+
 ACCESS_URL="${SCHEME}://${ADVERTISE}:${PORT}/auth/bootstrap?devkit_token=${TOKEN}&next=/"
+
+# The access URL embeds the token, so never emit it where a log collector would
+# capture it (e.g. the systemd journal). Write it to an owner-only file, and
+# print it to the console only when attached to an interactive terminal.
+URL_FILE="${REPO_ROOT}/.devkit-access-url"
+( umask 077; printf '%s\n' "$ACCESS_URL" > "$URL_FILE" )
+chmod 600 "$URL_FILE" 2>/dev/null || true
 
 echo ""
 echo "================================================================================"
 echo "  airgap-cpp-devkit -- Team Server (Mode 1)"
 echo "================================================================================"
 echo "  Binding    : ${BIND_HOST}:${PORT}   (${SCHEME})"
-echo "  Share this with your team (token-authenticated, one click):"
-echo ""
-echo "      ${ACCESS_URL}"
+if [[ -t 1 ]]; then
+    echo "  Share this with your team (token-authenticated, one click):"
+    echo ""
+    echo "      ${ACCESS_URL}"
+else
+    echo "  Access URL (contains the token) written to an owner-only file:"
+    echo "      ${URL_FILE}"
+    echo "  Reveal it with:  cat ${URL_FILE}"
+fi
 echo ""
 echo "  Notes:"
 echo "   - Tools installed via this UI land on THIS host (shared-host model)."
-echo "   - The token above grants access. Rotate by deleting .devkit-token."
-$TLS || echo "   - Unencrypted HTTP. Add --tls for HTTPS on untrusted networks."
+echo "   - The token grants access. Rotate by deleting .devkit-token."
+$TLS || echo "   - Serving unencrypted HTTP (--insecure). Add --tls for HTTPS on untrusted networks."
 echo "   - Ctrl+C to stop."
 echo "================================================================================"
 echo ""

@@ -64,6 +64,9 @@ CLAUDE.md
 # Auth token (generated at runtime)
 .devkit-token
 
+# Access URL with embedded token (written by serve.sh at runtime)
+.devkit-access-url
+
 # Cloned team config repo (runtime artifact — teams define this in devkit.config.json)
 .devkit-team-config/
 

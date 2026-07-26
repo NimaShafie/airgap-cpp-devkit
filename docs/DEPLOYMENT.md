@@ -72,17 +72,26 @@ Non-privileged server accounts install to the running user's prefix instead.
 ### 3. Start the server
 
 ```bash
-bash scripts/serve.sh                 # binds 0.0.0.0, prints a shareable URL
-bash scripts/serve.sh --port 9090 --tls           # HTTPS (self-signed)
-bash scripts/serve.sh --advertise devbox.corp.local   # nicer URL for the team
+bash scripts/serve.sh --tls                       # HTTPS on 0.0.0.0 (self-signed)
+bash scripts/serve.sh --port 9090 --tls           # HTTPS on a custom port
+bash scripts/serve.sh --advertise devbox.corp.local --tls   # nicer URL for the team
+bash scripts/serve.sh --insecure                  # plaintext HTTP (trusted LAN only)
 ```
+
+Binding to a network interface without `--tls` is refused unless you pass
+`--insecure`, so the access token is never sent in the clear by default.
 
 `serve.sh` creates a stable auth token (`.devkit-token`) and prints the
 one-click access URL, e.g.:
 
 ```
-http://devbox.corp.local:9090/auth/bootstrap?devkit_token=<token>&next=/
+https://devbox.corp.local:9090/auth/bootstrap?devkit_token=<token>&next=/
 ```
+
+When `serve.sh` runs non-interactively (e.g. under systemd, where stdout goes to
+the journal) it does **not** print the token. It writes the access URL to the
+owner-only file `.devkit-access-url` instead; reveal it with `cat
+.devkit-access-url`.
 
 ### 4. Team access
 
@@ -103,7 +112,7 @@ After=network.target
 Type=simple
 User=devkit
 WorkingDirectory=/opt/airgap-cpp-devkit
-ExecStart=/bin/bash /opt/airgap-cpp-devkit/scripts/serve.sh --port 9090
+ExecStart=/bin/bash /opt/airgap-cpp-devkit/scripts/serve.sh --port 9090 --tls
 Restart=on-failure
 
 [Install]
@@ -116,7 +125,7 @@ sudo systemctl enable --now devkit.service
 
 **Windows** — register the launch command to run at startup with **Task
 Scheduler** ("At startup", highest privileges), running:
-`"C:\Program Files\Git\bin\bash.exe" C:\airgap-cpp-devkit\scripts\serve.sh --port 9090`.
+`"C:\Program Files\Git\bin\bash.exe" C:\airgap-cpp-devkit\scripts\serve.sh --port 9090 --tls`.
 The devkit also ships **Servy** (a Windows service manager) which can wrap the
 same command as a service.
 
