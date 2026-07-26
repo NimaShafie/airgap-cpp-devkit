@@ -66,9 +66,14 @@ jobs:
               unzip -q amalg.zip
               cd "sqlite-amalgamation-${AMALG_NUM}"
 
-              # Fully static CLI. Omit load_extension so no runtime dlopen is
-              # needed (keeps the static binary self-contained and portable).
-              cc -O2 -static \
+              # musl: fully static (-static) -> runs on any host with zero deps.
+              # glibc: dynamic against the UBI8 glibc-2.28 floor -> runs on every
+              # glibc distro at or above 2.28 (fully-static glibc is avoided;
+              # libc.a/libm.a are not in the UBI8 base repos). Omit load_extension
+              # so neither binary needs a runtime dlopen.
+              STATIC=""
+              [ "$FAMILY" = musl ] && STATIC="-static"
+              cc -O2 $STATIC \
                 -DSQLITE_OMIT_LOAD_EXTENSION=1 \
                 -DSQLITE_THREADSAFE=1 \
                 -DSQLITE_ENABLE_FTS5 \
