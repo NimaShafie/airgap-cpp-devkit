@@ -353,6 +353,37 @@ jobs:
           echo "Parts staged:"
           ls -lh "${DEST}/" | grep -E 'part-aa|\.json' || true
 
+      - name: Regenerate LLVM manifest from staged parts
+        run: |
+          python3 - "${LLVM_VERSION}" <<'PY'
+          import json, hashlib, os, sys, glob
+          ver = sys.argv[1]
+          d = f"prebuilt-wr/toolchains/llvm/{ver}"
+          mp = os.path.join(d, "manifest.json")
+          man = json.load(open(mp)) if os.path.exists(mp) else {
+              "tool": "llvm", "version": ver, "source": "", "platforms": {},
+              "compression": "tar.gz+zip", "part_size_mb": 50}
+          def sha(p):
+              h = hashlib.sha256()
+              with open(p, "rb") as f:
+                  for b in iter(lambda: f.read(1 << 20), b""):
+                      h.update(b)
+              return h.hexdigest()
+          # Rebuild a linux-<tag> entry for every staged Linux variant part-set.
+          for aa in sorted(glob.glob(os.path.join(d, "LLVM-*-Linux-X64-*.tar.xz.part-aa"))):
+              base = os.path.basename(aa)[:-len(".part-aa")]        # LLVM-<ver>-Linux-X64-<tag>.tar.xz
+              tag = base.split("-Linux-X64-")[1].split(".tar")[0]   # rhel8/rhel9/rhel10/musl
+              parts = sorted(glob.glob(os.path.join(d, base + ".part-*")))
+              man["platforms"][f"linux-{tag}"] = {
+                  "archive": base,
+                  "part_sha256": {os.path.basename(p): sha(p) for p in parts},
+                  "reassemble": f"cat {base}.part-* | tar -xJ",
+              }
+          json.dump(man, open(mp, "w"), indent=2)
+          open(mp, "a").write("\n")
+          print("manifest platforms:", list(man["platforms"].keys()))
+          PY
+
       - name: Commit and push prebuilt
         working-directory: prebuilt-wr
         run: |
