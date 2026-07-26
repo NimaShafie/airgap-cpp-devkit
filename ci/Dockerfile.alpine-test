@@ -1,0 +1,44 @@
+# Alpine (musl) integration test container.
+#
+# Proves the musl-family artifacts install on a musl distro with no per-distro
+# code: the static-musl LLVM, the fully-static musl sqlite3, the musl python
+# standalone, and the zlib source build all run here.
+#
+# Build (default Alpine 3.21):
+#   docker build -f ci/Dockerfile.alpine-test -t airgap-devkit-alpine .
+
+ARG BASE_IMAGE=alpine:3.21
+FROM ${BASE_IMAGE}
+
+# musl userland. bash: the scripts require it (Alpine defaults to ash). GNU
+# tar/findutils/file replace the busybox applets the setup.sh guards assume.
+# build-base = gcc/g++/make/musl-dev for the zlib source build. sudo for the
+# narrow privilege-escalation allowlist (installs target the pre-created prefix).
+RUN apk add --no-cache \
+      bash \
+      git \
+      tar \
+      xz \
+      bzip2 \
+      gzip \
+      cpio \
+      findutils \
+      file \
+      make \
+      build-base \
+      zlib \
+      perl \
+      sudo \
+ && adduser -D -s /bin/bash devkit \
+ && mkdir -p /opt/airgap-cpp-devkit \
+ && chown -R devkit:devkit /opt/airgap-cpp-devkit \
+ && echo "devkit ALL=(ALL) NOPASSWD: /usr/bin/install, /bin/mkdir, /bin/cp, /bin/chown, /bin/chmod" \
+    > /etc/sudoers.d/devkit \
+ && chmod 0440 /etc/sudoers.d/devkit
+
+COPY . /workspace
+WORKDIR /workspace
+USER devkit
+
+ENV DEVKIT_PROFILE=cpp-dev
+CMD ["bash", "/workspace/ci/linux-test-entrypoint.sh"]

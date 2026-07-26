@@ -1,22 +1,23 @@
 name: Linux Integration Test
 
-# Builds Dockerfile.linux-test and runs the full install + smoke-test suite
-# inside RHEL / Rocky UBI containers — validates glibc compatibility, the
-# no-EPEL constraint, and correct install-cli.sh behaviour across the support
-# matrix (RHEL/Rocky 8, 9 and 10; baseline 9).
+# Runs the full install + smoke-test suite inside per-distro containers to prove
+# the two-family model (glibc floor + static musl) covers all mainstream Linux:
+#   RHEL/Rocky 8/9/10 (UBI, dnf) · Debian/Ubuntu (apt) · Alpine (apk, musl)
+# Selection keys off libc, not distro name, so glibc distros share one artifact
+# set and Alpine uses the musl one.
 #
-# Distro coverage by trigger:
-#   - push / pull_request → UBI 9 only (fast feedback on the baseline)
-#   - weekly schedule     → UBI 8 + 9 + 10 (full matrix)
-#   - manual dispatch     → choose profile and which majors to run
-#
-# glibc floors: 8 → 2.28, 9 → 2.34, 10 → 2.39.
+# Coverage by trigger:
+#   - push / pull_request → rhel-9 + debian-12 (fast glibc baseline)
+#   - weekly schedule     → all: rhel 8/9/10 + debian + alpine
+#   - manual dispatch     → choose profile + distros (8,9,10,debian,alpine,all)
 
 on:
   push:
     branches: [main]
     paths:
       - ci/Dockerfile.linux-test
+      - ci/Dockerfile.debian-test
+      - ci/Dockerfile.alpine-test
       - ci/linux-test-entrypoint.sh
       - scripts/internal/install-cli.sh
       - scripts/launch.sh
@@ -27,6 +28,8 @@ on:
     branches: [main]
     paths:
       - ci/Dockerfile.linux-test
+      - ci/Dockerfile.debian-test
+      - ci/Dockerfile.alpine-test
       - ci/linux-test-entrypoint.sh
       - scripts/internal/install-cli.sh
       - scripts/launch.sh
@@ -44,7 +47,7 @@ on:
         type: choice
         options: [minimal, cpp-dev, devops, full]
       distros:
-        description: 'Which majors to test (comma list: 8,9,10 — or "all")'
+        description: 'Which distros (comma list: 8,9,10,debian,alpine — or "all")'
         required: false
         default: 'all'
 
@@ -53,8 +56,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Pick the distro matrix from the trigger: baseline-only on push/PR, full
-  # matrix on the weekly schedule, and caller-selected on manual dispatch.
+  # Pick the distro matrix from the trigger. Each entry carries the base image
+  # and the Dockerfile that knows that distro's package manager.
   set-matrix:
     name: Select distro matrix
     runs-on: ubuntu-latest
@@ -66,31 +69,35 @@ jobs:
           EVENT: ${{ github.event_name }}
           DISTROS: ${{ github.event.inputs.distros }}
         run: |
-          u8='{"major":"8","image":"registry.access.redhat.com/ubi8/ubi:8.10"}'
-          u9='{"major":"9","image":"registry.access.redhat.com/ubi9/ubi:9.5"}'
-          u10='{"major":"10","image":"registry.access.redhat.com/ubi10/ubi:10.0"}'
+          r8='{"distro":"rhel-8","image":"registry.access.redhat.com/ubi8/ubi:8.10","dockerfile":"ci/Dockerfile.linux-test"}'
+          r9='{"distro":"rhel-9","image":"registry.access.redhat.com/ubi9/ubi:9.5","dockerfile":"ci/Dockerfile.linux-test"}'
+          r10='{"distro":"rhel-10","image":"registry.access.redhat.com/ubi10/ubi:10.0","dockerfile":"ci/Dockerfile.linux-test"}'
+          deb='{"distro":"debian-12","image":"debian:12","dockerfile":"ci/Dockerfile.debian-test"}'
+          alp='{"distro":"alpine-3.21","image":"alpine:3.21","dockerfile":"ci/Dockerfile.alpine-test"}'
           case "$EVENT" in
             schedule)
-              sel="$u8,$u9,$u10" ;;
+              sel="$r8,$r9,$r10,$deb,$alp" ;;
             workflow_dispatch)
               case "${DISTROS:-all}" in
-                all|"") sel="$u8,$u9,$u10" ;;
+                all|"") sel="$r8,$r9,$r10,$deb,$alp" ;;
                 *)
                   sel=""
-                  [[ ",$DISTROS," == *",8,"*  ]] && sel="$sel${sel:+,}$u8"
-                  [[ ",$DISTROS," == *",9,"*  ]] && sel="$sel${sel:+,}$u9"
-                  [[ ",$DISTROS," == *",10,"* ]] && sel="$sel${sel:+,}$u10"
-                  [[ -z "$sel" ]] && sel="$u9" ;;
+                  [[ ",$DISTROS," == *",8,"*      ]] && sel="$sel${sel:+,}$r8"
+                  [[ ",$DISTROS," == *",9,"*      ]] && sel="$sel${sel:+,}$r9"
+                  [[ ",$DISTROS," == *",10,"*     ]] && sel="$sel${sel:+,}$r10"
+                  [[ ",$DISTROS," == *",debian,"* ]] && sel="$sel${sel:+,}$deb"
+                  [[ ",$DISTROS," == *",alpine,"* ]] && sel="$sel${sel:+,}$alp"
+                  [[ -z "$sel" ]] && sel="$r9" ;;
               esac ;;
             *)
-              # push / pull_request → baseline (9) only
-              sel="$u9" ;;
+              # push / pull_request → glibc baseline: rhel-9 + debian-12
+              sel="$r9,$deb" ;;
           esac
           echo "include=[$sel]" >> "$GITHUB_OUTPUT"
           echo "Selected matrix: [$sel]"
 
   test:
-    name: RHEL/Rocky ${{ matrix.major }} integration (UBI)
+    name: ${{ matrix.distro }} integration
     needs: set-matrix
     runs-on: ubuntu-latest
     permissions:
@@ -117,11 +124,14 @@ jobs:
       - name: Init tools submodule
         run: git submodule update --init tools
 
-      - name: Build test image (UBI ${{ matrix.major }})
+      - name: Build test image (${{ matrix.distro }})
         run: |
-          docker build -f ci/Dockerfile.linux-test \
+          # Pass both ARG names; each Dockerfile reads the one it declares
+          # (UBI_IMAGE for the RHEL image, BASE_IMAGE for debian/alpine).
+          docker build -f ${{ matrix.dockerfile }} \
             --build-arg UBI_IMAGE=${{ matrix.image }} \
-            -t airgap-devkit-linux:${{ matrix.major }} .
+            --build-arg BASE_IMAGE=${{ matrix.image }} \
+            -t airgap-devkit-test:${{ matrix.distro }} .
 
       - name: Run install + smoke tests
         env:
@@ -132,5 +142,5 @@ jobs:
             minimal|cpp-dev|devops|full) ;;
             *) echo "Invalid profile: $PROFILE"; exit 1 ;;
           esac
-          echo "Running RHEL/Rocky ${{ matrix.major }} integration test — profile: $PROFILE"
-          docker run --rm -e DEVKIT_PROFILE="$PROFILE" airgap-devkit-linux:${{ matrix.major }}
+          echo "Running ${{ matrix.distro }} integration test — profile: $PROFILE"
+          docker run --rm -e DEVKIT_PROFILE="$PROFILE" airgap-devkit-test:${{ matrix.distro }}
