@@ -6,6 +6,21 @@ import (
 	"testing"
 )
 
+// RunInstall must refuse a Tool whose resolved setup path lands outside the
+// repo, even if such a Tool were somehow constructed past discovery's guard.
+func TestRunInstallRefusesEscapingSetup(t *testing.T) {
+	repo := t.TempDir()
+	var out strings.Builder
+	tool := Tool{Name: "Evil", Setup: "../../../../tmp/evil.sh"}
+	rc := RunInstall("bash", repo, tool, nil, nil, &out)
+	if rc == 0 {
+		t.Fatal("RunInstall executed a setup script resolving outside the repo")
+	}
+	if !strings.Contains(out.String(), "refusing to run setup script outside the repository") {
+		t.Fatalf("expected refusal message, got: %q", out.String())
+	}
+}
+
 func TestToBashPath(t *testing.T) {
 	// Paths without a drive letter are returned unchanged on every platform.
 	for _, p := range []string{"/already/posix", "relative/dir"} {

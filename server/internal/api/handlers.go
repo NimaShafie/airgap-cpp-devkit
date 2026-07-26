@@ -55,12 +55,12 @@ const (
 	errLinePrefix     = "✗ ERROR: "
 )
 
-func generateNonce() string {
+func generateNonce() (string, error) {
 	b := make([]byte, 16)
 	if _, err := rand.Read(b); err != nil {
-		return "fallback-nonce"
+		return "", err
 	}
-	return base64.StdEncoding.EncodeToString(b)
+	return base64.StdEncoding.EncodeToString(b), nil
 }
 
 func nonceFromCtx(ctx context.Context) string {
@@ -163,23 +163,36 @@ func (s *Server) Token() string { return s.token }
 
 func responseHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		nonce := generateNonce()
+		// Fail closed: without a fresh unpredictable nonce the CSP would have to
+		// fall back to a static value that injected inline scripts could reuse.
+		nonce, err := generateNonce()
+		if err != nil {
+			http.Error(w, "internal error", http.StatusInternalServerError)
+			return
+		}
 		ctx := context.WithValue(r.Context(), nonceKey, nonce)
 		r = r.WithContext(ctx)
 
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("X-Frame-Options", "DENY")
 		w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
+		// The UI is entirely first-party: isolate its browsing context and turn off
+		// browser features it never uses, so injected content has nothing to reach for.
+		w.Header().Set("Permissions-Policy", "geolocation=(), camera=(), microphone=(), payment=(), usb=()")
+		w.Header().Set("Cross-Origin-Opener-Policy", "same-origin")
+		w.Header().Set("Cross-Origin-Resource-Policy", "same-origin")
 		if r.TLS != nil {
 			w.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
 		}
 		// Inline <script> blocks carry this per-request nonce; script-src-attr keeps
 		// existing inline event handlers working without a blanket unsafe-inline for
 		// script blocks. Inline style attributes still need unsafe-inline in style-src.
+		// form-action and frame-src are pinned explicitly because they do not inherit default-src.
 		w.Header().Set("Content-Security-Policy",
 			"default-src 'self'; script-src 'self' 'nonce-"+nonce+"'; "+
 				"script-src-attr 'unsafe-inline'; style-src 'self' 'unsafe-inline'; "+
-				"img-src 'self' data:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'")
+				"img-src 'self' data:; object-src 'none'; base-uri 'self'; "+
+				"form-action 'self'; frame-src 'none'; frame-ancestors 'none'")
 		next.ServeHTTP(w, r)
 	})
 }

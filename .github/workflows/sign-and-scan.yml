@@ -1,5 +1,9 @@
 name: Sign & Scan
 
+# Least-privilege default; jobs override this where they need more.
+permissions:
+  contents: read
+
 on:
   workflow_dispatch:
     inputs:

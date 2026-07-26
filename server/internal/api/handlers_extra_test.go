@@ -506,7 +506,14 @@ func TestOSLabelUnknown(t *testing.T) {
 }
 
 func TestGenerateNonce(t *testing.T) {
-	a, b := generateNonce(), generateNonce()
+	a, err := generateNonce()
+	if err != nil {
+		t.Fatalf("generateNonce: %v", err)
+	}
+	b, err := generateNonce()
+	if err != nil {
+		t.Fatalf("generateNonce: %v", err)
+	}
 	if a == "" || a == b {
 		t.Errorf("nonce not unique/non-empty: %q %q", a, b)
 	}

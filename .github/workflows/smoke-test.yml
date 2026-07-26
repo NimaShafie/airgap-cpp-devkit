@@ -13,6 +13,10 @@ name: Smoke Test
 #   - Weekly (Monday 06:00 UTC) -- automated regression check
 #   - workflow_dispatch          -- manual trigger with profile selection
 
+# Least-privilege default; jobs override this where they need more.
+permissions:
+  contents: read
+
 on:
   schedule:
     - cron: '0 6 * * 1'

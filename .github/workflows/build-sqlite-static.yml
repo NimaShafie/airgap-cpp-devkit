@@ -9,6 +9,10 @@ name: Build static sqlite3 (glibc + musl)
 #
 # Fast (~2 min). Run whenever the sqlite VERSION changes.
 
+# Least-privilege default; jobs override this where they need more.
+permissions:
+  contents: read
+
 on:
   workflow_dispatch:
     inputs:

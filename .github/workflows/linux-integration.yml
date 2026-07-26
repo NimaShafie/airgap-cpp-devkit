@@ -11,6 +11,10 @@ name: Linux Integration Test
 #   - weekly schedule     → all: rhel 8/9/10 + debian + alpine
 #   - manual dispatch     → choose profile + distros (8,9,10,debian,alpine,all)
 
+# Least-privilege default; jobs override this where they need more.
+permissions:
+  contents: read
+
 on:
   push:
     branches: [main]

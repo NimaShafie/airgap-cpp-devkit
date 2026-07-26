@@ -82,6 +82,13 @@ var scanPatterns = []struct {
 	{"user-packages/*/devkit.json", "user"},
 }
 
+// withinRoot reports whether a path expressed relative to the repo root stays
+// inside it. rel is the output of filepath.Rel(repoRoot, target); anything that
+// climbs above the root ("." excepted) begins with ".." and is rejected.
+func withinRoot(rel string) bool {
+	return rel != ".." && !strings.HasPrefix(rel, ".."+string(os.PathSeparator))
+}
+
 func Load(repoRoot string) ([]Tool, error) {
 	var tools []Tool
 	seen := map[string]bool{}
@@ -122,12 +129,18 @@ func loadToolFromFile(repoRoot, path, source string, seen map[string]bool) (Tool
 	}
 	seen[t.ID] = true
 
-	// Resolve setup path relative to the devkit.json directory
+	// Resolve setup path relative to the devkit.json directory, and require the
+	// result to stay within the repo root. A manifest whose setup field escapes
+	// the repo (e.g. "../../etc/evil.sh") is rejected outright — otherwise the
+	// resolved path would later be handed to bash for execution.
 	if t.Setup != "" {
 		abs := filepath.Join(filepath.Dir(path), t.Setup)
-		if rel, err := filepath.Rel(repoRoot, abs); err == nil {
-			t.Setup = filepath.ToSlash(rel)
+		rel, err := filepath.Rel(repoRoot, abs)
+		if err != nil || !withinRoot(rel) {
+			fmt.Fprintf(os.Stderr, "[devkit] warning: setup path escapes repo root in %s: %q\n", path, t.Setup)
+			return Tool{}, false
 		}
+		t.Setup = filepath.ToSlash(rel)
 	}
 	t.Source = source
 	applyToolDefaults(&t)

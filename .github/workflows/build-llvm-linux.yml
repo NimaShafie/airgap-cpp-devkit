@@ -20,6 +20,10 @@ name: Build LLVM tools (Linux, per-distro)
 #   PREBUILT_TOKEN secret — GitHub PAT (classic) with repo scope on
 #   airgap-devkit/prebuilt.  Settings → Secrets and variables → Actions.
 
+# Least-privilege default; the commit job requests contents: write explicitly.
+permissions:
+  contents: read
+
 on:
   workflow_dispatch:
     inputs:

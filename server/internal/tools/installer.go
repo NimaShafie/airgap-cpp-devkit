@@ -68,6 +68,13 @@ func BuildEnv(t Tool, prefix, prebuiltDir, currentOS string) []string {
 
 func RunInstall(bash, repoRoot string, t Tool, args []string, env []string, w io.Writer) int {
 	setupPath := filepath.Join(repoRoot, filepath.FromSlash(t.Setup))
+	// Defense in depth: discovery already refuses manifests whose setup escapes
+	// the repo, but never hand bash a script resolving outside the tree even if a
+	// malformed Tool reached this far.
+	if rel, err := filepath.Rel(repoRoot, setupPath); err != nil || !withinRoot(rel) {
+		fmt.Fprintf(w, "ERROR: refusing to run setup script outside the repository: %s\n", t.Setup)
+		return 1
+	}
 	cmdArgs := append([]string{setupPath}, args...)
 	cmd := exec.Command(bash, cmdArgs...)
 	cmd.Dir = repoRoot

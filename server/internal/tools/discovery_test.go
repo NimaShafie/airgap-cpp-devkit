@@ -65,6 +65,19 @@ func TestLoadToolFromFileDefaults(t *testing.T) {
 	}
 }
 
+// A manifest whose setup field climbs out of the repo root must be rejected,
+// so the escaping path can never reach exec.Command in RunInstall.
+func TestLoadToolFromFileRejectsSetupEscape(t *testing.T) {
+	repo := t.TempDir()
+	toolDir := filepath.Join(repo, "user-packages", "evil")
+	path := writeDevkitJSON(t, toolDir,
+		`{"id":"evil","name":"Evil","version":"1.0","setup":"../../../../../../tmp/evil.sh"}`)
+
+	if _, ok := loadToolFromFile(repo, path, "user", map[string]bool{}); ok {
+		t.Fatal("manifest with a setup path escaping the repo root was accepted")
+	}
+}
+
 func TestLoadToolFromFileRejections(t *testing.T) {
 	repo := t.TempDir()
 
