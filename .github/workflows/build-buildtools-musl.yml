@@ -1,0 +1,102 @@
+name: Build musl CMake + Ninja (Alpine)
+
+# CMake and Ninja ship glibc-only upstream binaries, so on musl hosts (Alpine)
+# they cannot execute. This builds both from source in an Alpine (musl) container
+# and uploads them for staging as the musl-family variants:
+#   cmake-<ver>-linux-x86_64-musl.tar.gz   ninja-<ver>-linux-musl.tar.gz
+# Run whenever the cmake/ninja VERSION changes.
+
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+    inputs:
+      cmake_version:
+        description: 'CMake version (matches tools/build-tools/cmake/setup.sh)'
+        required: true
+        default: '4.3.3'
+      ninja_version:
+        description: 'Ninja version (matches tools/toolchains/ninja/setup.sh)'
+        required: true
+        default: '1.13.2'
+
+jobs:
+  cmake:
+    name: Build CMake ${{ inputs.cmake_version }} (Alpine / musl)
+    runs-on: ubuntu-latest
+    env:
+      CMAKE_VERSION: ${{ inputs.cmake_version }}
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    steps:
+      - name: Build CMake in Alpine (musl)
+        run: |
+          mkdir -p /tmp/out
+          docker run --rm --memory=6g --cpus="$(nproc)" \
+            -e CMAKE_VERSION -v /tmp/out:/out \
+            alpine:3.21 \
+            sh -euo pipefail -c '
+              apk add --no-cache build-base make git curl xz tar ncurses-dev
+              echo "==> gcc: $(gcc --version | head -1)"
+              cd /tmp
+              curl -fL --retry 3 \
+                "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}.tar.gz" \
+                -o cmake-src.tar.gz
+              tar xzf cmake-src.tar.gz
+              cd "cmake-${CMAKE_VERSION}"
+              # Static C++ runtime so it runs on any musl host; musl stays dynamic
+              # (present on Alpine). OpenSSL off to avoid the extra dep.
+              ./bootstrap --parallel="$(nproc)" --prefix=/tmp/cmi -- \
+                -DCMAKE_BUILD_TYPE=Release \
+                -DCMAKE_USE_OPENSSL=OFF \
+                -DCMAKE_EXE_LINKER_FLAGS="-static-libstdc++ -static-libgcc"
+              make -j"$(nproc)"
+              make install
+              /tmp/cmi/bin/cmake --version
+              # Package under the wrapper dir the installer expects to strip.
+              PKG="cmake-${CMAKE_VERSION}-linux-x86_64-musl"
+              mkdir -p "/tmp/pkg/${PKG}"
+              cp -a /tmp/cmi/. "/tmp/pkg/${PKG}/"
+              tar -czf "/out/${PKG}.tar.gz" -C /tmp/pkg "${PKG}"
+              echo "==> $(du -sh /out/${PKG}.tar.gz | cut -f1)"
+            '
+      - name: Upload CMake musl archive
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: cmake-musl-${{ inputs.cmake_version }}
+          path: /tmp/out/cmake-${{ inputs.cmake_version }}-linux-x86_64-musl.tar.gz
+          retention-days: 3
+
+  ninja:
+    name: Build Ninja ${{ inputs.ninja_version }} (Alpine / musl)
+    runs-on: ubuntu-latest
+    env:
+      NINJA_VERSION: ${{ inputs.ninja_version }}
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    steps:
+      - name: Build Ninja in Alpine (musl)
+        run: |
+          mkdir -p /tmp/out
+          docker run --rm -e NINJA_VERSION -v /tmp/out:/out \
+            alpine:3.21 \
+            sh -euo pipefail -c '
+              apk add --no-cache build-base python3 git curl tar
+              cd /tmp
+              curl -fL --retry 3 \
+                "https://github.com/ninja-build/ninja/archive/refs/tags/v${NINJA_VERSION}.tar.gz" \
+                -o ninja-src.tar.gz
+              tar xzf ninja-src.tar.gz
+              cd "ninja-${NINJA_VERSION}"
+              # Fully static musl ninja (small, links cleanly) — runs anywhere.
+              LDFLAGS="-static" python3 configure.py --bootstrap
+              strip ninja
+              ./ninja --version
+              tar -czf "/out/ninja-${NINJA_VERSION}-linux-musl.tar.gz" ninja
+              echo "==> $(du -sh /out/ninja-${NINJA_VERSION}-linux-musl.tar.gz | cut -f1)"
+            '
+      - name: Upload Ninja musl archive
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: ninja-musl-${{ inputs.ninja_version }}
+          path: /tmp/out/ninja-${{ inputs.ninja_version }}-linux-musl.tar.gz
+          retention-days: 3
