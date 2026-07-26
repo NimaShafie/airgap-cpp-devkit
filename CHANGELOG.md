@@ -9,6 +9,16 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+#### Two-family Linux model — musl/Alpine support
+- **Linux support is now expressed as two libc families** selected automatically from the host libc (glibc vs musl), so new distros require no new code.
+- **glibc family** — one build against the glibc 2.28 floor (RHEL 8 / UBI 8) covers all glibc distros at or above it: RHEL/Rocky 8/9/10, Debian 10+, Ubuntu 20.04+, openSUSE/SLES 15+, Arch, Fedora. Native rhel9/rhel10 LLVM variants remain preferred when the host matches.
+- **musl family (new)** — static musl builds added for Alpine 3.21+: LLVM is built static-libstdc++ on Alpine; sqlite3 is a fully-static musl binary; python uses the python-build-standalone musl tarball (python 3.14.6).
+- **sqlite3** now ships a static per-libc binary (glibc-floor dynamic + fully-static musl). RHEL/Rocky falls back to the distro-native RPM per major (el8/el9/el10) as before.
+- **New helpers** in `tools/lib/devkit-install.sh`: `devkit_libc`, `devkit_distro_id`, `devkit_linux_family`, `devkit_linux_tag_fallbacks`.
+- **CI** (`linux-integration.yml`) extended to a five-distro matrix: RHEL/Rocky 8/9/10 (UBI), Debian 12 (apt), Alpine 3.21 (apk/musl). push/PR runs rhel-9 + debian-12; the weekly schedule runs all five. New Dockerfiles: `ci/Dockerfile.debian-test`, `ci/Dockerfile.alpine-test`. `build-llvm-linux.yml` gained an Alpine/musl leg.
+
 ### Changed
 
 #### Linux support — RHEL/Rocky 9 & 10 added; baseline moved to 9

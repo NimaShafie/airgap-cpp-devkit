@@ -165,10 +165,20 @@ tornado, typing-extensions, typing-inspection, tzdata, watchdog
 
 ## SQLite Notes
 
-On **Windows** and modern Linux: prebuilt CLI binary from sqlite.org (version 3.53.0).
-On **RHEL/Rocky 8**: system RPM (sqlite-3.26.0) installed via `rpm -i` — the sqlite.org
-prebuilt requires GLIBC 2.29+ which RHEL 8 does not provide (ships GLIBC 2.28).
-On **RHEL/Rocky 9 and 10**: the sqlite.org prebuilt CLI (3.53.0) is used directly.
+sqlite3 ships a static per-libc binary on Linux, selected by `devkit_libc`:
+
+- **Windows**: prebuilt CLI binary from sqlite.org (3.53.3).
+- **glibc distros (non-RHEL)**: static glibc-floor binary (built against glibc 2.28), runs on Debian/Ubuntu/SUSE/Arch/Fedora and RHEL/Rocky 9+.
+- **RHEL/Rocky 8**: falls back to the distro-native system RPM (`sqlite-3.26.0` via `rpm -i`) because the sqlite.org prebuilt requires glibc 2.38+, which RHEL 8 does not provide.
+- **RHEL/Rocky 9 and 10**: prefers the static glibc-floor binary (3.53.3); distro RPM available as a secondary fallback.
+- **Alpine / musl**: fully-static musl sqlite3 binary — no glibc dependency at all.
+
+## LLVM / Clang Notes
+
+LLVM prebuilts are produced per libc family:
+
+- **glibc**: floor build (glibc 2.28 / rhel8) runs on all glibc distros; native rhel9 and rhel10 variants are preferred when the host matches. `devkit_linux_tag_fallbacks` drives the selection order.
+- **musl (Alpine)**: built static-libstdc++ on Alpine so it carries no external C++ runtime dependency.
 
 ---
 
@@ -216,32 +226,35 @@ All .zip archives use deflate level 9 compression.
 
 ## Platform Support Matrix
 
-| Tool | Windows 11 | RHEL/Rocky 8, 9, 10 | Notes |
-|------|-----------|---------------------|-------|
-| clang-format / clang-tidy | Yes | Yes | Prebuilt for both |
-| llvm-mingw | Yes | Yes | Cross-compile toolchain |
-| GCC + MinGW-w64 | Yes | - | Windows native toolchain |
-| gcc-toolset 15 | - | Yes | RHEL/Rocky RPMs |
-| GCC cross/native | - | Yes | Linux only |
-| CMake 4.3.1 | Yes | Yes | Prebuilt for both |
-| Ninja | Yes | Yes | Prebuilt for both |
-| gRPC 1.83.0 | Yes | Yes | Windows: per MSVC toolset (v142/v143/v145) × Release/Debug. Linux: RHEL/Rocky 8/9/10 x86_64 static-runtime package |
-| Python 3.14.4 | Yes | Yes | Different packages per platform |
-| .NET SDK 10.0.202 | Yes | Yes | Portable, no installer |
-| FileZilla 3.70.4 | Yes | Yes | Prebuilt installer (Win) + binary tarball (Linux) |
-| GDB 17.1 | - | Yes | Linux source build; requires gcc, make, readline-devel |
-| Notepad++ 8.9.7 | Yes | - | Windows only; portable zip (no admin) + installer available |
-| PuTTY 0.83 | Yes (MSI) | Yes (source) | Linux builds CLI tools only; requires cmake + gcc |
-| SourceTree 3.4.30 | Yes | - | Windows only; Squirrel installer targets %LocalAppData%\SourceTree |
-| Servy 8.7 | Yes | - | Windows only, graceful no-op on Linux |
-| Conan 2.31.1 | Yes | Yes | Self-contained, no Python required |
-| VS Code extensions | Yes | Yes | Per-platform .vsix files |
-| SQLite CLI | Yes (3.53.3) | Yes (distro-native system RPM per major: el8/el9/el10) | RHEL/Rocky 8/9/10 use the system RPM; the upstream 3.53.3 tarball needs glibc 2.38+ |
-| MATLAB verification | Yes | Yes | Checks existing install only |
-| git-bundle tool | Yes | Yes | Pure Python, no deps |
-| LLVM style formatter | Yes | Yes | Git pre-commit hook |
-| devkit-ui | Yes | Yes | Python 3.8+, auto-installs FastAPI + uvicorn |
-| lcov 2.4 | - | Yes | Linux/RHEL/Rocky 8, 9, 10 only |
+Linux support uses a **two libc family** model: a glibc 2.28 floor build covers all glibc distros (RHEL/Rocky 8/9/10, Debian 10+, Ubuntu 20.04+, openSUSE/SLES 15+, Arch, Fedora); a static musl build covers Alpine 3.21+ and other musl hosts. Selection is automatic via `devkit_libc` — no per-distro code needed.
+
+| Tool | Windows 11 | Linux — glibc distros | Linux — Alpine (musl) | Notes |
+|------|-----------|----------------------|----------------------|-------|
+| clang-format / clang-tidy | Yes | Yes (glibc floor + native rhel9/10) | Yes (static musl) | Per-family prebuilt; `devkit_linux_tag_fallbacks` selects |
+| llvm-mingw | Yes | Yes | Yes | Cross-compile toolchain |
+| GCC + MinGW-w64 | Yes | - | - | Windows native toolchain |
+| gcc-toolset 15 | - | Yes (RHEL/Rocky) | - | RHEL/Rocky RPMs only |
+| GCC cross/native | - | Yes | - | Linux only |
+| CMake 4.3.1 | Yes | Yes | Yes | Prebuilt for all |
+| Ninja | Yes | Yes | Yes | Prebuilt for all |
+| gRPC 1.83.0 | Yes | Yes (RHEL/Rocky 8/9/10 x86_64) | - | Windows: per MSVC toolset (v142/v143/v145) × Release/Debug |
+| Python 3.14.6 | Yes | Yes (glibc standalone) | Yes (musl standalone) | python-build-standalone per libc family |
+| .NET SDK 10.0.202 | Yes | Yes | - | Portable, no installer |
+| FileZilla 3.70.4 | Yes | Yes | Yes | Prebuilt installer (Win) + binary tarball (Linux) |
+| GDB 17.1 | - | Yes | Yes | Linux source build; requires gcc, make, readline-devel |
+| Notepad++ 8.9.7 | Yes | - | - | Windows only; portable zip (no admin) + installer available |
+| PuTTY 0.83 | Yes (MSI) | Yes (source) | Yes (source) | Linux builds CLI tools only; requires cmake + gcc |
+| SourceTree 3.4.30 | Yes | - | - | Windows only; Squirrel installer targets %LocalAppData%\SourceTree |
+| Servy 8.7 | Yes | - | - | Windows only, graceful no-op on Linux |
+| Conan 2.31.1 | Yes | Yes | Yes | Self-contained, no Python required |
+| VS Code extensions | Yes | Yes | Yes | Per-platform .vsix files |
+| SQLite CLI 3.53.3 | Yes | Yes (static glibc-floor binary; RHEL/Rocky fall back to distro RPM per el8/el9/el10) | Yes (fully-static musl binary) | Static per-libc binary preferred; RPM fallback on RHEL/Rocky only |
+| zlib 1.3.2 | Yes | Yes | Yes | Source build using host cc/gcc/clang; works on any distro |
+| MATLAB verification | Yes | Yes | Yes | Checks existing install only |
+| git-bundle tool | Yes | Yes | Yes | Pure Python, no deps |
+| LLVM style formatter | Yes | Yes | Yes | Git pre-commit hook |
+| devkit-ui | Yes | Yes | Yes | Python 3.8+, auto-installs FastAPI + uvicorn |
+| lcov 2.5 | - | Yes | - | Linux/RHEL/Rocky 8, 9, 10 only |
 
 ---
 

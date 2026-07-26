@@ -3,7 +3,7 @@
 **Author: Nima Shafie**
 
 [![CI](https://github.com/airgap-devkit/devkit/actions/workflows/ci.yml/badge.svg)](https://github.com/airgap-devkit/devkit/actions/workflows/ci.yml)
-[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20RHEL%2FRocky%208%2C%209%2C%2010-informational)](docs/DEPLOYMENT.md)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20(glibc%20%2B%20musl)-informational)](docs/DEPLOYMENT.md)
 [![Air-gapped](https://img.shields.io/badge/air--gapped-offline--first-success)](docs/DEPLOYMENT.md)
 [![Latest Release](https://badgen.net/github/release/airgap-devkit/devkit?label=release&color=blue)](https://github.com/airgap-devkit/devkit/releases/latest)
 [![PyPI](https://img.shields.io/pypi/v/airgap-devkit?label=pypi&color=orange)](https://pypi.org/project/airgap-devkit/)
@@ -334,6 +334,10 @@ or via the API (`GET /api/prefix`, `POST /api/prefix`).
 |----------|----------------|--------------|
 | Windows 11 | Git Bash (MINGW64) | Git Bash (MINGW64) |
 | RHEL/Rocky 8, 9, 10 | Bash 4.x | Bash 4.x |
+| Debian 10+ / Ubuntu 20.04+ / openSUSE·SLES 15+ / Arch / Fedora | Bash 4.x | Bash 4.x |
+| Alpine 3.21+ (musl) | Bash / ash | Bash / ash |
+
+Linux tool selection is keyed off the **host libc** (glibc vs musl), not the distro name. The glibc 2.28 floor build (from RHEL 8) runs on every glibc distro listed above; a fully-static musl build covers Alpine and other musl hosts. New distros that use one of these two libc families require no new code.
 
 The DevKit Manager binary (`prebuilt/bin/`) has no runtime dependencies.
 Python is not required to run the UI. It is bundled as an optional installable
@@ -442,7 +446,7 @@ Done. Every subsequent `git commit` enforces LLVM style.
 | No runtime dependencies | DevKit Manager is a single static Go binary |
 | Admin + user install | Admin detection at runtime; system-wide or per-user paths |
 | Install transparency | Install receipt + timestamped log file written on every bootstrap |
-| Cross-platform | Windows 11 (Git Bash / MINGW64) + RHEL/Rocky 8, 9, 10 |
+| Cross-platform | Windows 11 (Git Bash / MINGW64) + Linux: glibc distros (RHEL/Rocky 8/9/10, Debian/Ubuntu, SUSE, Arch, Fedora) + Alpine/musl |
 | Integrity verification | SHA256 pinned in `manifest.json` for all vendored archives |
 | Team/CI ready | Jenkins + GitLab pipelines; Jira + Confluence integration |
 
@@ -472,6 +476,8 @@ airgap-cpp-devkit/
 |   +-- release.sh                         <- thin wrapper around scripts/internal/release.sh
 |   +-- smoke.sh                           <- server health check (used by ci.yml)
 |   +-- Dockerfile.linux-test             <- RHEL/Rocky 8/9/10 (UBI) integration test image
+|   +-- Dockerfile.debian-test           <- Debian 12 (apt/glibc) integration test image
+|   +-- Dockerfile.alpine-test           <- Alpine 3.21 (apk/musl) integration test image
 |   +-- atlassian/
 |   |   +-- jira-update.sh                 <- post build result to Jira issue
 |   |   +-- confluence-update.sh           <- overwrite Confluence status page
@@ -483,7 +489,7 @@ airgap-cpp-devkit/
 |   +-- workflows/
 |   |   +-- ci.yml                         <- thin; calls ci/lint.sh, ci/test.sh, ci/smoke.sh
 |   |   +-- smoke-test.yml                 <- weekly + manual install regression
-|   |   +-- linux-integration.yml          <- RHEL/Rocky 8/9/10 integration test (matrix)
+|   |   +-- linux-integration.yml          <- multi-distro integration test matrix (RHEL/Rocky 8/9/10, Debian 12, Alpine 3.21); push/PR runs rhel-9 + debian-12; weekly schedule runs all five
 |   |   +-- build-llvm-linux.yml           <- builds Clang/LLVM per distro (8/9/10)
 |   +-- ISSUE_TEMPLATE/
 |   +-- PULL_REQUEST_TEMPLATE.md
