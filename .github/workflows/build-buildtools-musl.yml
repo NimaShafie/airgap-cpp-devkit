@@ -36,7 +36,7 @@ jobs:
             -e CMAKE_VERSION -v /tmp/out:/out \
             alpine:3.21 \
             sh -euo pipefail -c '
-              apk add --no-cache build-base make git curl xz tar ncurses-dev
+              apk add --no-cache build-base make git curl xz tar ncurses-dev linux-headers
               echo "==> gcc: $(gcc --version | head -1)"
               cd /tmp
               curl -fL --retry 3 \
