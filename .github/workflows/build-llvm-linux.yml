@@ -184,6 +184,102 @@ jobs:
           path: /tmp/llvm-output/LLVM-${{ inputs.llvm_version }}-Linux-X64-rhel${{ matrix.major }}.tar.xz
           retention-days: 3
 
+# ── Job 1b: Build musl (Alpine) ───────────────────────────────────────────────
+# The static-libstdc++ musl build runs on Alpine (and any musl host); combined
+# with the glibc-floor build it covers essentially all of Linux. Kept as its own
+# job so its Alpine/apk recipe never touches the working UBI/dnf legs.
+  build-musl:
+    name: Build LLVM ${{ inputs.llvm_version }} (Alpine / musl)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      LLVM_VERSION: ${{ inputs.llvm_version }}
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Build LLVM inside Alpine (musl) container
+        run: |
+          mkdir -p /tmp/llvm-output
+          docker run --rm \
+            --memory=6g \
+            --cpus="$(nproc)" \
+            -e LLVM_VERSION \
+            -v /tmp/llvm-output:/output \
+            alpine:3.21 \
+            sh -euo pipefail -c '
+              echo "==> System : $(cat /etc/os-release | head -1)"
+              echo "==> libc   : musl ($(ls /lib/ld-musl-*.so.1 2>/dev/null))"
+
+              # musl toolchain + build deps. build-base = gcc/g++/make/musl-dev;
+              # samurai = ninja. Static C++ runtime archives come with g++.
+              apk add --no-cache \
+                build-base cmake samurai git curl xz bash python3 \
+                zlib-dev zlib-static libxml2-dev
+              echo "==> GCC    : $(gcc --version | head -1)"
+              echo "==> cmake  : $(cmake --version | head -1)"
+
+              echo "==> Downloading llvm-project-${LLVM_VERSION}.src.tar.xz..."
+              curl -fL --retry 3 \
+                "https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}/llvm-project-${LLVM_VERSION}.src.tar.xz" \
+                -o /tmp/llvm-src.tar.xz
+              mkdir -p /tmp/llvm-src
+              tar -xJf /tmp/llvm-src.tar.xz --strip-components=1 -C /tmp/llvm-src
+
+              mkdir -p /tmp/llvm-build && cd /tmp/llvm-build
+              echo "==> Configuring (musl, static libstdc++)..."
+              # -static-libstdc++/-static-libgcc make the binary self-contained
+              # w.r.t. the C++ runtime; musl itself stays dynamic (present on
+              # every Alpine host). BUILD_SHARED_LIBS=OFF keeps LLVMs own libs in.
+              cmake -G Ninja \
+                -DCMAKE_BUILD_TYPE=MinSizeRel \
+                -DCMAKE_INSTALL_PREFIX=/tmp/llvm-install \
+                -DCMAKE_EXE_LINKER_FLAGS="-static-libstdc++ -static-libgcc" \
+                -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;lld" \
+                -DLLVM_TARGETS_TO_BUILD="X86" \
+                -DBUILD_SHARED_LIBS=OFF \
+                -DLLVM_INCLUDE_TESTS=OFF \
+                -DLLVM_INCLUDE_EXAMPLES=OFF \
+                -DLLVM_INCLUDE_BENCHMARKS=OFF \
+                -DLLVM_BUILD_DOCS=OFF \
+                -DLLVM_ENABLE_DOXYGEN=OFF \
+                -DLLVM_ENABLE_SPHINX=OFF \
+                -DCLANG_INCLUDE_DOCS=OFF \
+                -DCLANG_INCLUDE_TESTS=OFF \
+                /tmp/llvm-src/llvm
+
+              echo "==> Building (80-100 minutes on a 2-CPU runner)..."
+              ninja -j"$(nproc)" clang clang-format clang-tidy lld llvm-ar llvm-nm
+
+              mkdir -p /tmp/llvm-install/bin
+              for t in clang clang++ clang-format clang-tidy lld llvm-ar llvm-nm; do
+                [ -f "bin/$t" ] && cp "bin/$t" /tmp/llvm-install/bin/ || true
+              done
+              [ -f /tmp/llvm-install/bin/clang++ ] || ln -sf clang /tmp/llvm-install/bin/clang++
+              strip /tmp/llvm-install/bin/* 2>/dev/null || true
+              ls -lh /tmp/llvm-install/bin/
+
+              echo "==> Verifying binaries execute on musl..."
+              /tmp/llvm-install/bin/clang-format --version
+              /tmp/llvm-install/bin/clang         --version
+
+              cd /tmp/llvm-install
+              tar -cJf "/output/LLVM-${LLVM_VERSION}-Linux-X64-musl.tar.xz" \
+                --transform "s|^\.|LLVM-${LLVM_VERSION}-Linux-X64-musl|" .
+              echo "==> Archive size: $(du -sh /output/LLVM-${LLVM_VERSION}-Linux-X64-musl.tar.xz | cut -f1)"
+            '
+
+      - name: Upload musl archive as workflow artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: llvm-musl-${{ inputs.llvm_version }}
+          path: /tmp/llvm-output/LLVM-${{ inputs.llvm_version }}-Linux-X64-musl.tar.xz
+          retention-days: 3
+
 # ── Job 2: Commit ─────────────────────────────────────────────────────────────
 # Separate job so a commit/push failure can be re-run in seconds without
 # repeating the 90-minute builds.
@@ -192,9 +288,9 @@ jobs:
 # on the main branch — no detached HEAD, no push ambiguity.
   commit:
     name: Commit to prebuilt/ and update submodule pointer
-    needs: build
-    # Run even if one matrix leg (distro) failed, so the variants that DID build
-    # still get staged. The steps below no-op cleanly when nothing is new.
+    needs: [build, build-musl]
+    # Run even if one leg (a distro or musl) failed, so the variants that DID
+    # build still get staged. The steps below no-op cleanly when nothing is new.
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     permissions:
@@ -223,7 +319,7 @@ jobs:
       - name: Download all LLVM archive artifacts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
         with:
-          pattern: llvm-rhel*-${{ inputs.llvm_version }}
+          pattern: llvm-*-${{ inputs.llvm_version }}
           merge-multiple: true
           path: /tmp/llvm-output/
 
@@ -231,7 +327,7 @@ jobs:
         run: |
           DEST="prebuilt-wr/toolchains/llvm/${LLVM_VERSION}"
           mkdir -p "${DEST}"
-          for tag in rhel8 rhel9 rhel10; do
+          for tag in rhel8 rhel9 rhel10 musl; do
             SRC="/tmp/llvm-output/LLVM-${LLVM_VERSION}-Linux-X64-${tag}.tar.xz"
             if [[ ! -f "${SRC}" ]]; then
               echo "  [--] ${tag}: no artifact (build skipped or failed) — leaving existing parts untouched."
