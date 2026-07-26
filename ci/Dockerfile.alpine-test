@@ -21,6 +21,7 @@ RUN apk add --no-cache \
       xz \
       bzip2 \
       gzip \
+      unzip \
       cpio \
       findutils \
       file \
