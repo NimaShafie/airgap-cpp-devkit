@@ -27,11 +27,18 @@ on:
         description: 'LLVM version — must match VERSION in tools/toolchains/llvm/setup.sh'
         required: true
         default: '22.1.8'
+      legs:
+        description: 'Which legs to build'
+        required: false
+        default: 'all'
+        type: choice
+        options: [all, rhel, musl]
 
 # ── Job 1: Build (matrix: one variant per RHEL/Rocky major) ───────────────────
 jobs:
   build:
     name: Build LLVM ${{ inputs.llvm_version }} (UBI ${{ matrix.major }} / glibc ${{ matrix.glibc }})
+    if: ${{ inputs.legs != 'musl' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -190,6 +197,7 @@ jobs:
 # job so its Alpine/apk recipe never touches the working UBI/dnf legs.
   build-musl:
     name: Build LLVM ${{ inputs.llvm_version }} (Alpine / musl)
+    if: ${{ inputs.legs != 'rhel' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -216,9 +224,9 @@ jobs:
               echo "==> libc   : musl ($(ls /lib/ld-musl-*.so.1 2>/dev/null))"
 
               # musl toolchain + build deps. build-base = gcc/g++/make/musl-dev;
-              # samurai = ninja. Static C++ runtime archives come with g++.
+              # samurai = ninja; tar = GNU tar (Alpine defaults to busybox tar).
               apk add --no-cache \
-                build-base cmake samurai git curl xz bash python3 \
+                build-base cmake samurai git curl xz tar bash python3 \
                 zlib-dev zlib-static libxml2-dev
               echo "==> GCC    : $(gcc --version | head -1)"
               echo "==> cmake  : $(cmake --version | head -1)"
@@ -267,10 +275,14 @@ jobs:
               /tmp/llvm-install/bin/clang-format --version
               /tmp/llvm-install/bin/clang         --version
 
-              cd /tmp/llvm-install
-              tar -cJf "/output/LLVM-${LLVM_VERSION}-Linux-X64-musl.tar.xz" \
-                --transform "s|^\.|LLVM-${LLVM_VERSION}-Linux-X64-musl|" .
-              echo "==> Archive size: $(du -sh /output/LLVM-${LLVM_VERSION}-Linux-X64-musl.tar.xz | cut -f1)"
+              # Package under a top-level wrapper dir without relying on GNU tar
+              # --transform (busybox tar lacks it): stage into a named dir, then
+              # tar that dir with -C. Works with any tar.
+              PKG="LLVM-${LLVM_VERSION}-Linux-X64-musl"
+              mkdir -p "/tmp/pkg/${PKG}"
+              cp -a /tmp/llvm-install/. "/tmp/pkg/${PKG}/"
+              tar -cJf "/output/${PKG}.tar.xz" -C /tmp/pkg "${PKG}"
+              echo "==> Archive size: $(du -sh /output/${PKG}.tar.xz | cut -f1)"
             '
 
       - name: Upload musl archive as workflow artifact
