@@ -120,9 +120,31 @@ jobs:
           persist-credentials: false
           lfs: true
 
-      - name: Init prebuilt submodule
+      - name: Init prebuilt submodule (sparse + blobless)
         run: |
-          git submodule update --init --depth 1 prebuilt
+          set -uo pipefail
+          # prebuilt is ~10 GB (all OS variants: grpc Windows, dotnet, every
+          # LLVM build, ...). A Linux integration run only needs a handful of
+          # tool dirs, so do a blobless partial clone + cone sparse-checkout of
+          # just those. Falls back to a full submodule checkout on any error so
+          # this optimization can never wedge the run.
+          URL=$(git config -f .gitmodules submodule.prebuilt.url)
+          SHA=$(git ls-tree HEAD prebuilt | awk '{print $3}')
+          echo "prebuilt ${SHA} (sparse) from ${URL}"
+          rm -rf prebuilt .git/modules/prebuilt
+          if git clone --filter=blob:none --no-checkout "${URL}" prebuilt \
+             && git -C prebuilt sparse-checkout set --cone \
+                  bin \
+                  toolchains/llvm toolchains/lcov toolchains/ninja \
+                  build-tools/cmake languages/python lib/zlib \
+                  dev-tools/conan dev-tools/sqlite frameworks/grpc \
+             && git -C prebuilt checkout -q "${SHA}"; then
+            echo "sparse prebuilt OK ($(du -sh prebuilt | cut -f1))"
+          else
+            echo "sparse checkout failed — falling back to full submodule update" >&2
+            rm -rf prebuilt .git/modules/prebuilt
+            git submodule update --init --depth 1 prebuilt
+          fi
           git -C prebuilt lfs pull 2>/dev/null || true
 
       - name: Init tools submodule
