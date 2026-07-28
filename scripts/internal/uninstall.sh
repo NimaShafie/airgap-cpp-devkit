@@ -106,6 +106,8 @@ ALL_TOOL_PATHS=(
     "lcov:toolchains/lcov"
     "python:languages/python"
     "servy:dev-tools/servy"
+    "vscode:dev-tools/vscode"
+    "vscode-editor:vscode"
     "vscode-extensions:dev-tools/vscode-extensions"
     "git-bundle:dev-tools/git-bundle"
     "grpc:frameworks/grpc"

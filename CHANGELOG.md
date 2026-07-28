@@ -64,6 +64,50 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [1.3.64] — 2026-07-28
+
+Second-round hardening from a deeper validation pass. Includes a **critical**
+integrity fix.
+
+### Security
+- **Integrity gate could be bypassed for split archives.** The verifier hashed
+  the split parts but the installer could hand the extractor a *different*,
+  unverified whole file — a cached in-place assembly or a planted file at the
+  assembled path. Resolution now **always assembles from the verified parts into
+  a temp file** and never trusts a co-located whole file, so the bytes extracted
+  are exactly the bytes verified (`devkit_assemble_parts`, `devkit_resolve_archive`,
+  `devkit_resolve_named` in `tools/lib/devkit-install.sh`). Affected every
+  split-archive tool (llvm, cmake, python, vscode).
+- **VS Code extension bundle was installed with no integrity check at all.** Added
+  a `manifest.json` (whole-file `sha256` + split `part_sha256`) and a fail-closed
+  gate in `vscode-extensions/setup.sh`.
+
+### Fixed
+- **VS Code artifact selection was locale-dependent.** `devkit_find_file` picked
+  the platform artifact by `head -1` when no filename carried the platform
+  keyword, so `LC_ALL=C` vs `en_US` could install a Windows `.exe` on Linux.
+  Selection is now manifest-driven (`platforms.<plat>.archive`) and deterministic;
+  an ambiguous directory errors instead of guessing.
+- **Shipped server binaries were stale** (embedded 1.3.61 while source was newer)
+  and built from a dirty tree. Binaries rebuilt; `ci/smoke.sh` now asserts the
+  binary's `--version` equals the source `AppVersion`, and uses a non-Cockpit port.
+- **CLI `cpp-dev` advertised "vscode" but installed neither editor nor extensions**
+  on a clean host. The CLI now installs the VS Code editor before the extension
+  bundle and puts `code` on PATH for it.
+- **VS Code extension bundle reported installed with zero extensions present.**
+  Dropped the misleading `code --version` check; the bundle attests success only
+  when at least one extension installed (per-package status remains the source of truth).
+- **Windows `/DIR` was passed unquoted** to the VS Code installer — a profile path
+  with a space would word-split. Now quoted.
+- **Non-root VS Code RPM install** now requires `rpm2cpio`/`cpio` explicitly and
+  scrubs a partial prefix on a failed extraction (distinguishes a rejected payload
+  from a missing tool).
+- **`~/.bashrc` env.sh line is now guarded** (`[[ -f … ]] && source …`) so a
+  deleted prefix can't break every future shell.
+- **Uninstaller** now removes the VS Code editor (`<prefix>/vscode`), previously orphaned.
+
+---
+
 ## [1.3.63] — 2026-07-27
 
 Cross-environment validation hardening (LAN / air-gapped / no-admin, RHEL 8/9/10,

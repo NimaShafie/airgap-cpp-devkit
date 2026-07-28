@@ -636,13 +636,32 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# Step 10: tools/dev-tools/vscode-extensions (optional)
+# Step 10a: VS Code editor (optional)
+#
+# Install the editor BEFORE the extension bundle. The extensions need `code` on
+# PATH; on a clean air-gapped host it won't exist yet, so without this the CLI
+# would silently deliver neither the editor nor the extensions the profile
+# advertised. The UI installs the editor as its own tool; mirror that here.
+# ---------------------------------------------------------------------------
+echo ""
+echo "  [10/13] Visual Studio Code editor (optional)..."
+if [[ "${INSTALL_VSCODE}" == "true" ]]; then
+    _run_bootstrap "vscode" "${REPO_ROOT}/tools/dev-tools/vscode/setup.sh"
+    # Make `code` discoverable for the extension step that follows.
+    export PATH="${INSTALL_PREFIX_OVERRIDE}/vscode/bin:${PATH}"
+else
+    echo "  [--]  Skipped: vscode editor"
+    SKIPPED_TOOLS+=("vscode")
+fi
+
+# ---------------------------------------------------------------------------
+# Step 10b: tools/dev-tools/vscode-extensions (optional)
 # ---------------------------------------------------------------------------
 echo ""
 echo "  [10/13] VS Code extensions (optional)..."
 if [[ "${INSTALL_VSCODE}" == "true" ]]; then
     if ! command -v code &>/dev/null; then
-        echo "  [--]  Skipped: dev-tools/vscode-extensions (VS Code not installed)"
+        echo "  [--]  Skipped: dev-tools/vscode-extensions (VS Code 'code' not on PATH)"
         SKIPPED_TOOLS+=("dev-tools/vscode-extensions (code not found)")
     else
         _run_bootstrap_no_prefix "dev-tools/vscode-extensions" \
@@ -754,7 +773,9 @@ echo "  Wiring env.sh into ~/.bashrc..."
 BASHRC="${HOME}/.bashrc"
 
 if [[ -f "${ENV_FILE}" ]]; then
-    SOURCE_LINE="source \"${ENV_FILE}\""
+    # Guard the source so a deleted prefix (e.g. an uninstall that didn't scrub
+    # ~/.bashrc, or a removed test prefix) can't make every future shell error.
+    SOURCE_LINE="[[ -f \"${ENV_FILE}\" ]] && source \"${ENV_FILE}\""
     if grep -qF "${ENV_FILE}" "${BASHRC}" 2>/dev/null; then
         echo "  [OK]  env.sh already wired into ${BASHRC}"
     else
