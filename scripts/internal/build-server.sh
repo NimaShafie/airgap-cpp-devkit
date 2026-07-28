@@ -43,16 +43,25 @@ else
   go mod download
 fi
 
+# Build into a temp dir, then move into place. Writing directly into
+# prebuilt/bin would dirty the working tree between the two builds, so the second
+# binary's embedded vcs stamp would read modified=true even from a clean commit.
+# Staging keeps both builds reading the same clean tree → reproducible stamps.
+TMP_OUT="$(mktemp -d)"
+trap 'rm -rf "$TMP_OUT"' EXIT
+
 echo ""
 echo "Building devkit-server-linux-amd64 ..."
 GOOS=linux GOARCH=amd64 CGO_ENABLED=0 \
-  go build "${BUILD_FLAGS[@]}" -o "$OUT_DIR/devkit-server-linux-amd64" .
-echo "  → $OUT_DIR/devkit-server-linux-amd64"
+  go build "${BUILD_FLAGS[@]}" -o "$TMP_OUT/devkit-server-linux-amd64" .
 
-echo ""
 echo "Building devkit-server-windows-amd64.exe ..."
 GOOS=windows GOARCH=amd64 CGO_ENABLED=0 \
-  go build "${BUILD_FLAGS[@]}" -o "$OUT_DIR/devkit-server-windows-amd64.exe" .
+  go build "${BUILD_FLAGS[@]}" -o "$TMP_OUT/devkit-server-windows-amd64.exe" .
+
+mkdir -p "$OUT_DIR"
+mv "$TMP_OUT"/devkit-server-linux-amd64 "$TMP_OUT"/devkit-server-windows-amd64.exe "$OUT_DIR/"
+echo "  → $OUT_DIR/devkit-server-linux-amd64"
 echo "  → $OUT_DIR/devkit-server-windows-amd64.exe"
 
 echo ""
