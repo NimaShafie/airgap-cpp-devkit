@@ -86,8 +86,10 @@ integrity fix.
 - **VS Code artifact selection was locale-dependent.** `devkit_find_file` picked
   the platform artifact by `head -1` when no filename carried the platform
   keyword, so `LC_ALL=C` vs `en_US` could install a Windows `.exe` on Linux.
-  Selection is now manifest-driven (`platforms.<plat>.archive`) and deterministic;
-  an ambiguous directory errors instead of guessing.
+  Selection is now manifest-driven (`platforms.<plat>.archive` or `.installer`)
+  and deterministic; an ambiguous directory errors instead of guessing. Applies
+  to every `devkit_find_file` tool (vscode, 7zip, filezilla, notepadpp,
+  sourcetree, putty, git, servy, osslsigncode).
 - **Shipped server binaries were stale** (embedded 1.3.61 while source was newer)
   and built from a dirty tree. Binaries rebuilt; `ci/smoke.sh` now asserts the
   binary's `--version` equals the source `AppVersion`, and uses a non-Cockpit port.
