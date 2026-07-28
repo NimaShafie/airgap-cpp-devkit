@@ -334,6 +334,17 @@ if [[ "${FAIL}" -gt 0 ]]; then
   exit 1
 fi
 
+# A run where nothing passed and everything was skipped is NOT a pass: it means
+# no tool was installed (or the whole install failed), which is exactly the
+# worst-case a CI gate must catch. Zero-FAIL with zero-PASS would otherwise be
+# indistinguishable from a clean install, so treat it as a failure.
+if [[ "${PASS}" -eq 0 ]]; then
+  echo "  [!!] No tests passed — nothing appears to be installed."
+  echo "       Run the installer first:  bash scripts/internal/install-cli.sh --yes --profile minimal"
+  echo ""
+  exit 1
+fi
+
 echo "  All tests passed."
 echo ""
 exit 0

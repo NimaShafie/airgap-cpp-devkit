@@ -824,7 +824,15 @@ func currentOSUsername() string {
 // ─── route handlers ──────────────────────────────────────────────────────────
 
 func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
-	jsonOK(w, map[string]string{"status": "ok", "version": AppVersion})
+	// /health is intentionally reachable without a token (liveness probes, load
+	// balancers). In team-server mode that means anyone who can reach the port
+	// hits it pre-authentication, so the version is disclosed only to a caller
+	// that already holds the token — an unauthenticated probe gets liveness only.
+	resp := map[string]string{"status": "ok"}
+	if s.tokenMatches(s.requestToken(r)) {
+		resp["version"] = AppVersion
+	}
+	jsonOK(w, resp)
 }
 
 // detectPrivilege reports "admin" when the process appears to have

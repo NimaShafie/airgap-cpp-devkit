@@ -35,6 +35,20 @@ func (s *Server) tokenMatches(got string) bool {
 	return subtle.ConstantTimeCompare([]byte(got), []byte(s.token)) == 1
 }
 
+// requestToken extracts the presented token from the request header or the
+// session cookie — the only two sources the server accepts. It is deliberately
+// not read from the query string, which would persist in browser history,
+// referrer headers and access logs.
+func (s *Server) requestToken(r *http.Request) string {
+	if got := r.Header.Get("X-DevKit-Token"); got != "" {
+		return got
+	}
+	if c, err := r.Cookie("devkit_token"); err == nil {
+		return c.Value
+	}
+	return ""
+}
+
 func (s *Server) tokenAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		p := r.URL.Path
@@ -43,15 +57,7 @@ func (s *Server) tokenAuth(next http.Handler) http.Handler {
 			return
 		}
 
-		// The token is accepted only from the request header or the session
-		// cookie. It is deliberately not read from the query string, which would
-		// otherwise persist in browser history, referrer headers and access logs.
-		got := r.Header.Get("X-DevKit-Token")
-		if got == "" {
-			if c, err := r.Cookie("devkit_token"); err == nil {
-				got = c.Value
-			}
-		}
+		got := s.requestToken(r)
 
 		if !s.tokenMatches(got) {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)

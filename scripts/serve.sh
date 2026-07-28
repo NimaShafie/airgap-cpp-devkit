@@ -134,6 +134,39 @@ echo "   - Ctrl+C to stop."
 echo "================================================================================"
 echo ""
 
+# --- Best-effort firewall reachability check --------------------------------
+# A team server binds beyond loopback, but the host firewall may still drop the
+# port — so the shareable URL just printed can be unreachable from a LAN/VLAN
+# peer with no hint as to why. Probe the common Linux firewalls and warn (never
+# fail: the check is advisory and cannot see upstream network ACLs).
+_warn_firewall() {
+    $LOOPBACK && return 0            # loopback bind is never firewalled
+    case "$BIND_HOST" in *:*) return 0 ;; esac  # skip IPv6 literal parsing
+
+    local blocked=""
+    if command -v firewall-cmd &>/dev/null && firewall-cmd --state &>/dev/null; then
+        if ! firewall-cmd --query-port="${PORT}/tcp" &>/dev/null; then
+            blocked="firewalld"
+        fi
+    elif command -v ufw &>/dev/null && ufw status 2>/dev/null | grep -qi 'Status: active'; then
+        if ! ufw status 2>/dev/null | grep -qE "(^|[[:space:]])${PORT}(/tcp)?[[:space:]]+(ALLOW|ACCEPT)"; then
+            blocked="ufw"
+        fi
+    fi
+
+    if [[ -n "$blocked" ]]; then
+        echo "  [!!] ${blocked} appears to be active and port ${PORT}/tcp is not open."
+        echo "       Team members on the LAN may not be able to reach the URL above."
+        if [[ "$blocked" == "firewalld" ]]; then
+            echo "       Open it (as admin):  firewall-cmd --add-port=${PORT}/tcp   (add --permanent to persist)"
+        else
+            echo "       Open it (as admin):  ufw allow ${PORT}/tcp"
+        fi
+        echo ""
+    fi
+}
+_warn_firewall
+
 LAUNCH_ARGS=(--host "$BIND_HOST" --port "$PORT" --no-browser)
 $TLS && LAUNCH_ARGS+=(--tls)
 exec bash "${SCRIPT_DIR}/launch.sh" "${LAUNCH_ARGS[@]}" "${PASS_ARGS[@]+"${PASS_ARGS[@]}"}"

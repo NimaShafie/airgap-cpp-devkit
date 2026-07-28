@@ -472,6 +472,37 @@ echo "  Platform : ${OS}   Prefix : ${INSTALL_PREFIX_OVERRIDE}"
 echo ""
 
 # ---------------------------------------------------------------------------
+# Host prerequisite preflight
+#
+# Prebuilt payloads are shipped as .tar.xz / .tar.gz / .zip and unpacked with
+# the host's own tools. A stripped RHEL 8 (or minimal container) can be missing
+# xz / unzip / tar, which otherwise surfaces as a cryptic mid-extract error like
+# "xz: Cannot exec: No such file or directory". Name the gap up front instead.
+# This warns and continues (an air-gapped host often cannot `dnf install` the
+# missing package, and not every payload needs every decompressor).
+# ---------------------------------------------------------------------------
+_preflight_host_tools() {
+    [[ "${OS}" != "linux" ]] && return 0
+    local missing=()
+    command -v tar  &>/dev/null || missing+=("tar")
+    command -v xz   &>/dev/null || missing+=("xz (needed to unpack .tar.xz payloads, e.g. LLVM/Clang)")
+    if ! command -v unzip &>/dev/null && ! command -v python3 &>/dev/null; then
+        missing+=("unzip or python3 (needed to unpack .zip payloads)")
+    fi
+    [[ ${#missing[@]} -eq 0 ]] && return 0
+    echo ""
+    echo "  [!!] Missing host tools that some installs need:"
+    local m
+    for m in "${missing[@]}"; do
+        echo "        - ${m}"
+    done
+    echo "       Tools whose payload needs a missing decompressor will fail; others continue."
+    echo "       On RHEL/Rocky these live in the 'xz', 'unzip' and 'tar' packages."
+    echo ""
+}
+_preflight_host_tools
+
+# ---------------------------------------------------------------------------
 # Step 1: prebuilt submodule
 # ---------------------------------------------------------------------------
 echo "  [1/13] Checking prebuilt submodule..."
@@ -693,13 +724,23 @@ mkdir -p "${ENV_DIR}"
 cat > "${ENV_FILE}" << 'ENVSH'
 #!/usr/bin/env bash
 # airgap-cpp-devkit — source this file or add to ~/.bashrc
+# Idempotent: it is wired into ~/.bashrc, so nested/re-sourced shells must not
+# stack duplicate PATH/PERL5LIB entries. Each dir is added only if absent.
 _devkit_prefix="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 for _d in "$_devkit_prefix"/*/bin "$_devkit_prefix"/*/*/bin; do
-    [[ -d "$_d" ]] && export PATH="$_d:$PATH"
+    [[ -d "$_d" ]] || continue
+    case ":$PATH:" in
+        *":$_d:"*) ;;                      # already present — skip
+        *) export PATH="$_d:$PATH" ;;
+    esac
 done
 # Expose vendored Perl libs so lcov/genhtml can load their modules
 for _plib in "$_devkit_prefix/lcov/lib" "$_devkit_prefix/lcov/lib/lcov"; do
-    [[ -d "$_plib" ]] && export PERL5LIB="${_plib}${PERL5LIB:+:${PERL5LIB}}"
+    [[ -d "$_plib" ]] || continue
+    case ":${PERL5LIB:-}:" in
+        *":$_plib:"*) ;;                   # already present — skip
+        *) export PERL5LIB="${_plib}${PERL5LIB:+:${PERL5LIB}}" ;;
+    esac
 done
 unset _devkit_prefix _d _plib
 ENVSH

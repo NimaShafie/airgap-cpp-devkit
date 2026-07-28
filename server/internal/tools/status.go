@@ -25,8 +25,15 @@ type Receipt struct {
 
 type ToolStatus struct {
 	Tool
-	Installed       bool    `json:"installed"`
-	Available       bool    `json:"available"`
+	Installed bool `json:"installed"`
+	Available bool `json:"available"`
+	// Source distinguishes how the tool was found: "devkit" when an
+	// INSTALL_RECEIPT.txt under the prefix proves the devkit installed it,
+	// "system" when it was only detected on the ambient PATH via check_cmd (not
+	// managed by the devkit), and "" when not installed. Without this, a host
+	// with a pre-existing toolchain makes /api/tools report tools as installed
+	// that the devkit does not actually manage.
+	Source          string  `json:"source"`
 	Receipt         Receipt `json:"receipt"`
 	UpdateAvailable bool    `json:"update_available"`
 }
@@ -154,10 +161,16 @@ func GetStatus(t Tool, prefix, currentOS string) ToolStatus {
 	installed := receipt.Status == "success"
 	available := t.Platform == "both" || t.Platform == currentOS
 
+	source := ""
+	if installed {
+		source = "devkit"
+	}
+
 	// If no receipt, probe system PATH via check_cmd
 	if !installed && t.CheckCmd != "" {
 		if ver := probeSystemInstall(t.CheckCmd, runtime.GOOS); ver != "" {
 			installed = true
+			source = "system"
 			receipt = Receipt{
 				Exists:  true,
 				Status:  "success",
@@ -178,6 +191,7 @@ func GetStatus(t Tool, prefix, currentOS string) ToolStatus {
 		Tool:            t,
 		Installed:       installed,
 		Available:       available,
+		Source:          source,
 		Receipt:         receipt,
 		UpdateAvailable: updateAvailable,
 	}

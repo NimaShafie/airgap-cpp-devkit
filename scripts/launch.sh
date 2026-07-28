@@ -166,6 +166,32 @@ _free_port() {
 }
 
 # ---------------------------------------------------------------------------
+# Report whether a port has a listener, WITHOUT needing to identify its owner.
+# `ss -ltnp` only reveals the PID of a socket the caller owns, so a standard
+# user cannot see (and _free_port cannot act on) a root-owned listener such as
+# Cockpit on :9090. This check keys off the listening state alone, so we can
+# fail fast with a clear message instead of letting the server bind and die.
+# ---------------------------------------------------------------------------
+_port_in_use() {
+    local port="$1"
+    if [[ "$PLATFORM" == "windows" ]]; then
+        netstat -ano 2>/dev/null \
+            | grep -E "[:.]${port}[[:space:]].*LISTEN" -q && return 0
+        return 1
+    fi
+    if command -v ss &>/dev/null; then
+        ss -ltn "sport = :${port}" 2>/dev/null | grep -q "LISTEN" && return 0
+        return 1
+    fi
+    if command -v netstat &>/dev/null; then
+        netstat -ltn 2>/dev/null | grep -qE "[:.]${port}[[:space:]]" && return 0
+        return 1
+    fi
+    # No probe tool available — cannot tell; assume free and let bind decide.
+    return 1
+}
+
+# ---------------------------------------------------------------------------
 # Launch
 # ---------------------------------------------------------------------------
 echo ""
@@ -192,6 +218,22 @@ _effective_port() {
 }
 EFFECTIVE_PORT="$(_effective_port)"
 _free_port "${EFFECTIVE_PORT}"
+
+# _free_port only stops a devkit-server it can see and own. If something else is
+# still holding the port (e.g. Cockpit on :9090, or any listener owned by another
+# user), the bind would fail *after* the server prints its start-up banner —
+# output that reads like success. Detect that here and stop with remediation.
+if _port_in_use "${EFFECTIVE_PORT}"; then
+    echo ""
+    echo "  [!!]  Port ${EFFECTIVE_PORT} is already in use by another process." >&2
+    echo "        It is not a devkit-server this launcher can stop (it may be owned" >&2
+    echo "        by another user or a system service such as Cockpit)." >&2
+    echo "" >&2
+    echo "        Start on a different port:   bash scripts/launch.sh --port 9191" >&2
+    echo "        Or set \"port\" in devkit.config.json." >&2
+    echo "" >&2
+    exit 1
+fi
 
 chmod +x "${SERVER_BIN}" 2>/dev/null || true
 

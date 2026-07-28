@@ -37,8 +37,16 @@ func main() {
 		noBrowser = flag.Bool("no-browser", false, "don't open browser on startup")
 		tlsFlag   = flag.Bool("tls", false, "enable HTTPS with an auto-generated self-signed certificate")
 		skipSetup = flag.Bool("skip-setup", false, "mark setup complete so API is immediately usable (headless/CI installs)")
+		showVer   = flag.Bool("version", false, "print the server version and exit")
 	)
 	flag.Parse()
+
+	// --version is the first thing an operator or packaging script reaches for;
+	// answer it before doing any startup work.
+	if *showVer {
+		fmt.Printf("airgap-devkit-server %s\n", api.AppVersion)
+		return
+	}
 
 	currentOS := detectOS()
 	repoRoot := resolvePaths(toolsDir, prebuilt)

@@ -11,7 +11,7 @@
 Air-gapped C++ developer toolkit for network-restricted environments. All tools
 work offline. All dependencies are vendored in-repo or in the `prebuilt/` submodule.
 
-**v1.3.62** — DevKit Manager is a single pre-compiled Go binary with
+**v1.3.63** — DevKit Manager is a single pre-compiled Go binary with
 built-in session token authentication and optional HTTPS. No Python, no pip,
 no runtime dependencies required to run the UI.
 
@@ -142,9 +142,15 @@ curl -H "X-DevKit-Token: <token>" http://127.0.0.1:9090/api/tools
 
 # Cookie (set automatically by the browser after the bootstrap redirect)
 
-# Query param (used internally by the bootstrap redirect)
-curl "http://127.0.0.1:9090/api/tools?devkit_token=<token>"
+# One-time URL hand-off — the ONLY endpoint that accepts the token in the query
+# string. It sets the session cookie and redirects to the UI.
+curl -c cookies.txt "http://127.0.0.1:9090/auth/bootstrap?devkit_token=<token>&next=/"
 ```
+
+The token in the query string is accepted **only** by `/auth/bootstrap`. Data
+endpoints such as `/api/tools?devkit_token=<token>` return `401 Unauthorized`
+by design — a URL-borne token would otherwise leak into history, referrer
+headers and access logs. Use the `X-DevKit-Token` header for scripted calls.
 
 The token is printed to the terminal on startup and saved to `.devkit-token`
 in the repo root (readable by the current user only).
@@ -335,9 +341,15 @@ or via the API (`GET /api/prefix`, `POST /api/prefix`).
 | Windows 11 | Git Bash (MINGW64) | Git Bash (MINGW64) |
 | RHEL/Rocky 8, 9, 10 | Bash 4.x | Bash 4.x |
 | Debian 10+ / Ubuntu 20.04+ / openSUSE·SLES 15+ / Arch / Fedora | Bash 4.x | Bash 4.x |
-| Alpine 3.21+ (musl) | Bash / ash | Bash / ash |
+| Alpine 3.21+ (musl) | **Bash (required)** | **Bash (required)** |
 
 Linux tool selection is keyed off the **host libc** (glibc vs musl), not the distro name. The glibc 2.28 floor build (from RHEL 8) runs on every glibc distro listed above; a fully-static musl build covers Alpine and other musl hosts. New distros that use one of these two libc families require no new code.
+
+> **Alpine / BusyBox note:** the entry-point scripts (`launch.sh`, `serve.sh`,
+> `install-cli.sh`) require **bash** — they use `BASH_SOURCE`, arrays and `[[ ]]`,
+> which BusyBox `ash` (Alpine's default shell) does not support. Install it with
+> `apk add bash`; on an air-gapped Alpine host, stage the `bash` apk first. The
+> DevKit Manager server binary itself runs fine under musl without bash.
 
 The DevKit Manager binary (`prebuilt/bin/`) has no runtime dependencies.
 Python is not required to run the UI. It is bundled as an optional installable
@@ -369,11 +381,14 @@ bash scripts/launch.sh --no-browser                     # dev mode, logs in term
 bash scripts/launch.sh --tls --no-browser               # HTTPS mode
 
 # Health check (no token required)
-curl -s http://127.0.0.1:9090/health
+# Note: --noproxy '*' bypasses http_proxy/https_proxy — on a corporate LAN those
+# are usually set and would otherwise send the loopback request to the proxy,
+# which fails. (Equivalently: export no_proxy=127.0.0.1,localhost.)
+curl -s --noproxy '*' http://127.0.0.1:9090/health
 
 # API calls — pass token via header
 TOKEN=$(cat .devkit-token)
-curl -s -H "X-DevKit-Token: $TOKEN" http://127.0.0.1:9090/api/tools
+curl -s --noproxy '*' -H "X-DevKit-Token: $TOKEN" http://127.0.0.1:9090/api/tools
 
 bash tests/run-tests.sh --verbose
 bash scripts/internal/install-cli.sh --yes --profile cpp-dev

@@ -64,6 +64,48 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [1.3.63] — 2026-07-27
+
+Cross-environment validation hardening (LAN / air-gapped / no-admin, RHEL 8/9/10,
+Alpine/musl). Fixes from a full matrix test run.
+
+### Fixed
+- **Re-install over an existing prefix now succeeds.** `devkit_install_archive`
+  replaced each top-level payload entry instead of failing when `mv` hits a
+  non-empty destination directory.
+- **`launch.sh` no longer reads as "started" when the port is taken.** A new
+  owner-independent listener check (a standard user can't see a root-owned socket
+  such as Cockpit on `:9090`) fails fast with a `--port` remediation before the
+  server prints a start-up banner it can't honour.
+- **`run-tests.sh` fails when nothing is installed** (zero passes) instead of
+  exiting 0 — a total install failure is no longer indistinguishable from success.
+- **Installer preflight** names missing host tools (`xz`/`unzip`/`tar`) up front
+  instead of failing mid-extract; `cmake`/`lcov` setups no longer require
+  `findutils`.
+- **`env.sh` is idempotent** — re-sourcing (it is wired into `~/.bashrc`) no
+  longer stacks duplicate `PATH`/`PERL5LIB` entries.
+- **style-formatter** writes its receipt under the devkit prefix
+  (`clang-style-formatter/`) rather than into the user's own repo root.
+- **lcov install is honest about `genhtml`** — it verifies `genhtml` can run and
+  names the missing Perl modules instead of reporting a clean success.
+- **`serve.sh`** warns when firewalld/ufw is likely blocking the advertised port.
+
+### Added
+- **`devkit-server --version`** prints the version and exits.
+- **`/api/tools`** entries carry a `source` field (`devkit` vs `system`) so a
+  host with a pre-existing toolchain no longer makes the dashboard conflate
+  devkit-managed tools with ambient ones.
+
+### Changed
+- **`/health`** discloses the server version only to an authenticated caller;
+  an unauthenticated probe (e.g. a LAN peer in team-server mode) gets liveness only.
+- **Docs**: corrected the API auth example (query-string token is accepted only
+  by `/auth/bootstrap`), added `--noproxy '*'` to loopback probes for
+  corporate-proxy environments, and documented `bash` as a hard prerequisite on
+  Alpine/musl hosts.
+
+---
+
 ## [1.3.62] — 2026-07-06
 
 ### Changed
