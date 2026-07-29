@@ -9,6 +9,21 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+#### Offline lcov genhtml HTML reports (F3)
+- **`genhtml`'s HTML-report step now works fully offline.** genhtml/lcovutil load
+  `DateTime` and `Date::Parse` unconditionally; neither ships with a base Perl, so
+  on an air-gapped host genhtml aborted at load and only line-coverage capture was
+  available. `perl-vendor-lcov.zip` now bundles small pure-Perl compatibility
+  modules (`DateTime.pm`, `Date/Parse.pm`) implementing exactly the API lcov uses
+  (`from_epoch`/`now`/`new`, `delta_days->in_units('days')`, `str2time`). No XS, no
+  CPAN deps — identical on glibc and musl, no per-platform build.
+- **Fixed a latent `Capture::Tiny` mispackaging.** The vendored module shipped as a
+  flat `Tiny.pm`, so `use Capture::Tiny` could never resolve it (masked because
+  genhtml died at `use DateTime` first). It is now correctly placed at
+  `Capture/Tiny.pm`. The lcov manifest `perl-vendor` sha256 is updated to match.
+
 ### Added
 
 #### Two-family Linux model — musl/Alpine support
