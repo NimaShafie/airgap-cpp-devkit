@@ -59,6 +59,13 @@ echo "Building devkit-server-windows-amd64.exe ..."
 GOOS=windows GOARCH=amd64 CGO_ENABLED=0 \
   go build "${BUILD_FLAGS[@]}" -o "$TMP_OUT/devkit-server-windows-amd64.exe" .
 
+# The Linux binary must be executable so a fresh clone can run it directly (git
+# preserves the 100755 mode). Set it before moving into place. (No effect for the
+# Windows .exe, which runs regardless of a POSIX exec bit.) When committing on a
+# host whose filesystem doesn't carry the bit, stage it with
+# `git update-index --chmod=+x prebuilt/bin/devkit-server-linux-amd64`.
+chmod +x "$TMP_OUT/devkit-server-linux-amd64"
+
 mkdir -p "$OUT_DIR"
 mv "$TMP_OUT"/devkit-server-linux-amd64 "$TMP_OUT"/devkit-server-windows-amd64.exe "$OUT_DIR/"
 echo "  → $OUT_DIR/devkit-server-linux-amd64"

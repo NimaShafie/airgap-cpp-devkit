@@ -32,6 +32,8 @@ jobs:
         run: bash ci/lint.sh
       - name: Validate
         run: bash ci/test.sh
+      - name: Prebuilt manifest completeness
+        run: bash scripts/internal/check-prebuilt-manifests.sh
 
   # ── Job 2: Server binary health check ────────────────────────────────────
   server-health:

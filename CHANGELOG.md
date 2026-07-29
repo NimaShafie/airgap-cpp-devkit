@@ -64,6 +64,52 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [1.3.65] — 2026-07-28
+
+Third-round hardening from a read-only re-validation pass. Two P0 blockers.
+
+### Fixed
+- **Every Windows tool install failed** under `set -euo pipefail`: the installer
+  helpers (`devkit_install_exe`/`_silent`/`_nsis_s`/`_msi`) ended in a
+  `[[ … ]] && { … }` that made the function return 1 on success, so the receipt
+  was never written and the caller saw exit 1. Now `if/then` — success returns 0.
+- **LLVM integrity check was fail-open.** A tampered part made the resolver exit 1
+  (indistinguishable from "absent"), so the installer fell through to the next
+  distro tag and exited 0. Integrity failures now exit **2** and abort; only a
+  genuinely absent artifact (exit 1) falls through. Applied across all resolvers.
+- **Resolver errors were misreported.** A checksum mismatch printed "Archive not
+  found"; `devkit_resolve_archive_strict` now distinguishes the two.
+- **`sourcetree`/`putty` version pins didn't match staged content** (3.4.31→3.4.30,
+  0.84→0.83), failing with no message; and the `INSTALLER=$(devkit_find_file …)`
+  guard was dead under `set -e`. Both fixed (also 7zip/notepadpp/git/servy/filezilla).
+- **Declared-but-unstaged Windows installers.** A global `*.exe` gitignore silently
+  dropped `7z2602-x64.exe` and the Notepad++ installer from the submodule.
+  `prebuilt/.gitignore` now re-includes binaries; the installers are staged; a new
+  `scripts/internal/check-prebuilt-manifests.sh` (wired into CI) fails if any
+  manifest-declared artifact isn't tracked.
+- **Linux server binary committed non-executable** (100644) — every run chmod-ed it
+  and dirtied the submodule. Committed 100755; `build-server.sh` sets the bit; the
+  redundant runtime `chmod +x` in `launch.sh`/`smoke.sh` removed.
+- **Assembled split archives leaked to `/tmp`** (a regression from the round-2
+  temp-assembly hardening) — hundreds of MB per install. Now cleaned via a
+  per-process temp root removed on exit and dropped early after extraction.
+- **`install-cli --prefix` was ignored by conan/sqlite/zlib** — they escaped to the
+  invoking user's `$HOME`. `_run_setup` now passes `--prefix`.
+- **`uninstall.sh` orphaned conan/sqlite/zlib/style-formatter** (and hence `env.sh`
+  + the `~/.bashrc` line). Discovery is now receipt-driven, so it can't drift.
+- **VS Code style-formatter mutated the devkit's own checkout** (wrote `.clang-format`
+  + a pre-commit hook). It now detects the devkit repo and skips (writes a receipt).
+- **`serve.sh` firewall check silently no-op'd for non-root** — `firewall-cmd`
+  returns 253 (polkit "not authorized"), which the old gate treated as "no
+  firewall". It now distinguishes not-running (252) from not-authorized (253) and
+  prints an explicit indeterminate note in the latter case.
+- **Bundle status never reported installed extension versions** — added
+  `--show-versions` and populated `installed_version`.
+- **Platform-mismatched artifacts were resolved instead of refused** — a manifest
+  with a `platforms` map but no entry for the requested platform now errors.
+
+---
+
 ## [1.3.64] — 2026-07-28
 
 Second-round hardening from a deeper validation pass. Includes a **critical**

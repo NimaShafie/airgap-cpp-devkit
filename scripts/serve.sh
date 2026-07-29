@@ -143,26 +143,41 @@ _warn_firewall() {
     $LOOPBACK && return 0            # loopback bind is never firewalled
     case "$BIND_HOST" in *:*) return 0 ;; esac  # skip IPv6 literal parsing
 
-    local blocked=""
-    if command -v firewall-cmd &>/dev/null && firewall-cmd --state &>/dev/null; then
-        if ! firewall-cmd --query-port="${PORT}/tcp" &>/dev/null; then
-            blocked="firewalld"
+    if command -v firewall-cmd &>/dev/null; then
+        firewall-cmd --state &>/dev/null; local st=$?
+        # firewall-cmd exit codes: 0 = running; 252 = not running; 253 = running
+        # but this user is NOT authorized to query it (polkit). The non-root
+        # operators who actually run serve.sh hit 253 — the old `&& firewall-cmd
+        # --state` gate silently skipped them, so the warning never fired.
+        if [[ $st -eq 252 ]]; then
+            return 0     # firewalld not running — nothing to warn about
         fi
-    elif command -v ufw &>/dev/null && ufw status 2>/dev/null | grep -qi 'Status: active'; then
-        if ! ufw status 2>/dev/null | grep -qE "(^|[[:space:]])${PORT}(/tcp)?[[:space:]]+(ALLOW|ACCEPT)"; then
-            blocked="ufw"
+        local out rc
+        out="$(firewall-cmd --query-port="${PORT}/tcp" 2>&1)"; rc=$?
+        if [[ $rc -eq 0 ]]; then
+            return 0     # port is explicitly open
+        elif printf '%s' "$out" | grep -qiE 'authoriz'; then
+            echo "  [??] firewalld is active but this user isn't authorized to query it."
+            echo "       If ${PORT}/tcp is closed, LAN peers can't reach the URL above — can't tell from here."
+            echo "       Check as admin:  sudo firewall-cmd --query-port=${PORT}/tcp"
+            echo "       Open it:         sudo firewall-cmd --add-port=${PORT}/tcp   (add --permanent to persist)"
+            echo ""
+        else
+            echo "  [!!] firewalld is active and port ${PORT}/tcp is not open."
+            echo "       Team members on the LAN may not be able to reach the URL above."
+            echo "       Open it (as admin):  firewall-cmd --add-port=${PORT}/tcp   (add --permanent to persist)"
+            echo ""
         fi
+        return 0
     fi
 
-    if [[ -n "$blocked" ]]; then
-        echo "  [!!] ${blocked} appears to be active and port ${PORT}/tcp is not open."
-        echo "       Team members on the LAN may not be able to reach the URL above."
-        if [[ "$blocked" == "firewalld" ]]; then
-            echo "       Open it (as admin):  firewall-cmd --add-port=${PORT}/tcp   (add --permanent to persist)"
-        else
+    if command -v ufw &>/dev/null && ufw status 2>/dev/null | grep -qi 'Status: active'; then
+        if ! ufw status 2>/dev/null | grep -qE "(^|[[:space:]])${PORT}(/tcp)?[[:space:]]+(ALLOW|ACCEPT)"; then
+            echo "  [!!] ufw is active and port ${PORT}/tcp does not appear open."
+            echo "       Team members on the LAN may not be able to reach the URL above."
             echo "       Open it (as admin):  ufw allow ${PORT}/tcp"
+            echo ""
         fi
-        echo ""
     fi
 }
 _warn_firewall

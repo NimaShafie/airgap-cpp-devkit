@@ -67,11 +67,14 @@ func (s *Server) handleBundlePackageStatus(w http.ResponseWriter, r *http.Reques
 			statuses = append(statuses, ps)
 		}
 	case "vscode":
-		installed := vsCodeInstalledSet()
+		installed := vsCodeInstalledVersions()
 		for _, p := range t.Packages {
 			ps := PackageStatus{PackageItem: p}
 			if p.ID != "" {
-				ps.Installed = installed[strings.ToLower(p.ID)]
+				if ver, ok := installed[strings.ToLower(p.ID)]; ok {
+					ps.Installed = true
+					ps.InstalledVersion = ver
+				}
 			}
 			statuses = append(statuses, ps)
 		}
@@ -280,19 +283,28 @@ func pipRemoveOne(sse *sseWriter, p *tools.PackageItem, prefix string) {
 
 // ── VS Code helpers ──────────────────────────────────────────────────────────
 
-// vsCodeInstalledSet returns a set of lowercase extension IDs that are installed.
-func vsCodeInstalledSet() map[string]bool {
-	out, err := execCommand("code", "--list-extensions").Output()
+// vsCodeInstalledVersions returns a map of lowercase extension ID → installed
+// version. --show-versions makes `code` print "publisher.name@version"; without
+// it the version was unavailable and bundle status always reported "". An entry
+// with no resolvable version maps to "".
+func vsCodeInstalledVersions() map[string]string {
+	out, err := execCommand("code", "--list-extensions", "--show-versions").Output()
 	if err != nil {
-		return map[string]bool{}
+		return map[string]string{}
 	}
-	m := map[string]bool{}
+	m := map[string]string{}
 	for _, line := range strings.Split(strings.TrimSpace(string(out)), "\n") {
-		// Strip @version suffix if --show-versions was used
-		if idx := strings.Index(line, "@"); idx != -1 {
-			line = line[:idx]
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
 		}
-		m[strings.ToLower(strings.TrimSpace(line))] = true
+		id, ver := line, ""
+		// Split on the LAST '@' — the version suffix. Extension IDs never contain
+		// '@', so this is unambiguous.
+		if idx := strings.LastIndex(line, "@"); idx != -1 {
+			id, ver = line[:idx], line[idx+1:]
+		}
+		m[strings.ToLower(id)] = ver
 	}
 	return m
 }

@@ -453,7 +453,11 @@ _run_setup() {
     _sep
     echo "  ${label}"
     _sep
-    if bash "${script}" "$@"; then
+    # Pass --prefix like _run_bootstrap does. Without it, conan/sqlite/zlib fall
+    # back to their own default (the invoking user's HOME), so a --prefix install
+    # (e.g. system-wide /opt/devkit) silently scattered these tools into ~/.local.
+    local tool_prefix="${INSTALL_PREFIX_OVERRIDE}/${label}"
+    if bash "${script}" --prefix "${tool_prefix}" "$@"; then
         INSTALLED_TOOLS+=("${label}")
     else
         FAILED_TOOLS+=("${label}")

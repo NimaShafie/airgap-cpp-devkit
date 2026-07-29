@@ -87,65 +87,24 @@ _box_line() {
 _box_blank() { printf '║%*s║\n' "${_W}" ""; }
 
 # ---------------------------------------------------------------------------
-# Tool paths to search for INSTALL_RECEIPT.txt
-# Option D paths (current) + legacy paths (pre-restructure) both supported
-# ---------------------------------------------------------------------------
-# Format: "display-label:relative/path/under/prefix"
-ALL_TOOL_PATHS=(
-    # Option D — current paths
-    "clang-source-build:toolchains/clang/source-build"
-    "clang-style-formatter:toolchains/clang/style-formatter"
-    "clang-rhel8:toolchains/clang/rhel8"
-    "clang-rhel9:toolchains/clang/rhel9"
-    "clang-rhel10:toolchains/clang/rhel10"
-    "clang-mingw:toolchains/clang/mingw"
-    "gcc-windows:toolchains/gcc/windows"
-    "gcc-linux-native:toolchains/gcc/linux/native"
-    "gcc-linux-cross:toolchains/gcc/linux/cross"
-    "cmake:build-tools/cmake"
-    "lcov:toolchains/lcov"
-    "python:languages/python"
-    "servy:dev-tools/servy"
-    "vscode:dev-tools/vscode"
-    "vscode-editor:vscode"
-    "vscode-extensions:dev-tools/vscode-extensions"
-    "git-bundle:dev-tools/git-bundle"
-    "grpc:frameworks/grpc"
-    # Legacy paths (pre-Option D restructure) — kept for transition
-    "clang-llvm:clang-llvm"
-    "cmake-legacy:cmake"
-    "lcov-legacy:lcov"
-    "python-legacy:python"
-    "servy-legacy:servy"
-    "winlibs-gcc-ucrt:winlibs-gcc-ucrt"
-    "gcc-linux-legacy:gcc-linux"
-    "gcc-toolset-legacy:gcc-toolset"
-    "llvm-toolchain:llvm-toolchain"
-    "grpc-legacy:grpc-source-build"
-)
-
-# ---------------------------------------------------------------------------
-# Find installed tools under a prefix
+# Find installed tools under a prefix (receipt-driven — see _find_tools)
 # ---------------------------------------------------------------------------
 _find_tools() {
     local base="$1"
-    local found=()
-    for entry in "${ALL_TOOL_PATHS[@]}"; do
-        local label="${entry%%:*}"
-        local relpath="${entry#*:}"
-        local dir="${base}/${relpath}"
-        if [[ -f "${dir}/INSTALL_RECEIPT.txt" ]]; then
-            found+=("${label}:${dir}")
-        fi
+    local found=() dir
+    # Receipt-driven discovery: any child dir of the prefix that carries an
+    # INSTALL_RECEIPT.txt was installed by the devkit. This can't drift from the
+    # installer the way the old hand-maintained ALL_TOOL_PATHS table did — that
+    # table silently missed conan/sqlite/zlib and used a stale path for the style
+    # formatter, so a "full" uninstall left them (and hence env.sh + the ~/.bashrc
+    # line) behind. Covers the flat <prefix>/<tool> layout and the versioned
+    # grpc-<ver>-* / clang-style-formatter / vscode-extensions dirs alike.
+    shopt -s nullglob
+    for dir in "${base}"/*/; do
+        dir="${dir%/}"
+        [[ -f "${dir}/INSTALL_RECEIPT.txt" ]] && found+=("$(basename "${dir}"):${dir}")
     done
-    # gRPC installs into versioned, per-toolset/config (or per-platform) sibling
-    # dirs — grpc-<ver>-msvc<NNN>-<config> and grpc-<ver>-linux — rather than a
-    # single fixed path, so match them by glob.
-    local gd
-    for gd in "${base}"/grpc-*; do
-        [[ -d "${gd}" && -f "${gd}/INSTALL_RECEIPT.txt" ]] || continue
-        found+=("grpc:${gd}")
-    done
+    shopt -u nullglob
     printf '%s\n' "${found[@]}"
 }
 

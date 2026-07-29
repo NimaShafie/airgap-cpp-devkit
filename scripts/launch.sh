@@ -235,7 +235,6 @@ if _port_in_use "${EFFECTIVE_PORT}"; then
     exit 1
 fi
 
-chmod +x "${SERVER_BIN}" 2>/dev/null || true
 
 exec "${SERVER_BIN}" \
     --tools    "${REPO_ROOT}/tools" \

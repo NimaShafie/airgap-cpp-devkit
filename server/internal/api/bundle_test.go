@@ -104,11 +104,14 @@ func TestPipInstalledMap(t *testing.T) {
 	}
 }
 
-func TestVsCodeInstalledSet(t *testing.T) {
-	defer swapExec(fakeExec("ms-python.python\nms-vscode.cpptools@1.2.3\n", 0))()
-	set := vsCodeInstalledSet()
-	if !set["ms-python.python"] || !set["ms-vscode.cpptools"] {
-		t.Fatalf("vscode set wrong: %+v", set)
+func TestVsCodeInstalledVersions(t *testing.T) {
+	defer swapExec(fakeExec("ms-python.python@2026.4.0\nms-vscode.cpptools@1.2.3\n", 0))()
+	m := vsCodeInstalledVersions()
+	if _, ok := m["ms-python.python"]; !ok {
+		t.Fatalf("vscode map missing entry: %+v", m)
+	}
+	if m["ms-python.python"] != "2026.4.0" || m["ms-vscode.cpptools"] != "1.2.3" {
+		t.Fatalf("vscode versions wrong: %+v", m)
 	}
 }
 

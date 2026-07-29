@@ -13,7 +13,8 @@ cd "$ROOT"
 PORT="${SMOKE_PORT:-9191}"
 BASE="http://127.0.0.1:${PORT}"
 
-[[ "$OSTYPE" == "linux-gnu"* ]] && chmod +x "$DEVKIT_BINARY"
+# The committed Linux binary is mode 100755, so no runtime chmod is needed — and
+# chmod-ing it here would dirty the prebuilt submodule if the mode ever regressed.
 
 # Release gate: the committed binary MUST match the source version. This is the
 # check that would have caught shipping a stale binary. Parse the AppVersion
