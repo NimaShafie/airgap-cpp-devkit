@@ -9,8 +9,15 @@
 # gitignore (e.g. *.exe) silently drops a Windows installer from the submodule,
 # so the manifest promises an install the UI/CLI can never deliver.
 #
+# SEMANTICS: presence is judged against git-TRACKED files (git ls-files), NOT
+#   the working tree. A fresh clone — CI or an air-gapped bundle — only ever has
+#   tracked content, so an artifact that exists on disk but was never committed
+#   (e.g. blocked by a global *.exe gitignore) must fail. A working-tree-only move
+#   or deletion is therefore intentionally NOT flagged; commit state is the source
+#   of truth. To also guard local on-disk presence, add a separate check.
+#
 # USAGE:  bash scripts/internal/check-prebuilt-manifests.sh [prebuilt-dir]
-# EXIT:   0 = every declared artifact is present; 1 = one or more missing.
+# EXIT:   0 = every declared artifact is tracked; 1 = one or more missing.
 # =============================================================================
 set -euo pipefail
 
