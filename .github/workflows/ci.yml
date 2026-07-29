@@ -34,6 +34,8 @@ jobs:
         run: bash ci/test.sh
       - name: Prebuilt manifest completeness
         run: bash scripts/internal/check-prebuilt-manifests.sh
+      - name: No bare EXIT traps in setup.sh
+        run: bash scripts/internal/check-setup-exit-traps.sh
 
   # ── Job 2: Server binary health check ────────────────────────────────────
   server-health:
