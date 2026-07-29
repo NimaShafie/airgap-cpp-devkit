@@ -258,13 +258,27 @@ echo ""
 echo "  Cleaning up PATH registrations..."
 
 BASHRC="${HOME}/.bashrc"
+
+# Dirs slated for removal. Under --dry-run these are still on disk, so "do tools
+# remain?" must be judged against the POST-removal state (discovered receipts
+# minus this set), not a fresh disk scan — otherwise a dry-run --all would wrongly
+# report "keeping env.sh" for a prefix it would in fact empty.
+declare -A _REMOVING=()
+for key in "${TOOLS_TO_REMOVE[@]}"; do _REMOVING["${key#*:}"]=1; done
+
 for candidate_prefix in "$(_get_sys_prefix)" "$(_get_user_prefix)" ${PREFIX_OVERRIDE:+"${PREFIX_OVERRIDE}"}; do
     env_file="${candidate_prefix}/env.sh"
     [[ -f "${env_file}" ]] || continue
 
-    # Tools still installed under this prefix? Then env.sh is still needed.
-    remaining="$(_find_tools "${candidate_prefix}")"
-    if [[ -n "${remaining//[[:space:]]/}" ]]; then
+    # Any receipt-bearing tool dir under this prefix that is NOT being removed?
+    # If so, env.sh is still needed and stays.
+    remaining=""
+    while IFS= read -r _entry; do
+        [[ -z "${_entry}" ]] && continue
+        [[ -n "${_REMOVING["${_entry#*:}"]:-}" ]] && continue
+        remaining=1; break
+    done < <(_find_tools "${candidate_prefix}")
+    if [[ -n "${remaining}" ]]; then
         echo "  [--]  Tools remain under ${candidate_prefix} — keeping env.sh."
         continue
     fi
@@ -279,16 +293,21 @@ for candidate_prefix in "$(_get_sys_prefix)" "$(_get_user_prefix)" ${PREFIX_OVER
     rm -f "${env_file}"
     echo "  [OK]  Removed env.sh: ${env_file}"
 
-    # Drop the guarded source line and its comment header from ~/.bashrc.
+    # Drop the guarded source line and its comment header from ~/.bashrc. grep -v
+    # exits 1 when it filters out every line (a ~/.bashrc that held only the devkit
+    # lines) — a legitimate empty result, not an error — so accept rc<=1 and bail
+    # only on a real grep error (rc>=2). `|| _grc=$?` keeps set -e from aborting.
     if grep -qF "${env_file}" "${BASHRC}" 2>/dev/null; then
-        if grep -v -e "${env_file}" \
-                   -e '^# airgap-cpp-devkit -- added by install\.sh$' \
-                   "${BASHRC}" > "${BASHRC}.tmp"; then
+        _grc=0
+        grep -v -e "${env_file}" \
+                -e '^# airgap-cpp-devkit -- added by install\.sh$' \
+                "${BASHRC}" > "${BASHRC}.tmp" || _grc=$?
+        if [[ ${_grc} -le 1 ]]; then
             mv "${BASHRC}.tmp" "${BASHRC}"
             echo "  [OK]  Removed env.sh source line from ${BASHRC}"
         else
             rm -f "${BASHRC}.tmp"
-            echo "  [WARN] Skipped ${BASHRC} rewrite — grep produced no output." >&2
+            echo "  [WARN] Skipped ${BASHRC} rewrite — grep error (rc=${_grc})." >&2
         fi
     fi
 done
