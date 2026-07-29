@@ -11,7 +11,7 @@
 Air-gapped C++ developer toolkit for network-restricted environments. All tools
 work offline. All dependencies are vendored in-repo or in the `prebuilt/` submodule.
 
-**v1.3.65** — DevKit Manager is a single pre-compiled Go binary with
+**v1.3.66** — DevKit Manager is a single pre-compiled Go binary with
 built-in session token authentication and optional HTTPS. No Python, no pip,
 no runtime dependencies required to run the UI.
 

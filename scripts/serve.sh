@@ -144,7 +144,13 @@ _warn_firewall() {
     case "$BIND_HOST" in *:*) return 0 ;; esac  # skip IPv6 literal parsing
 
     if command -v firewall-cmd &>/dev/null; then
-        firewall-cmd --state &>/dev/null; local st=$?
+        # Capture the status with `|| st=$?` rather than a bare command + `$?`:
+        # under `set -euo pipefail` a bare non-zero-returning command aborts the
+        # whole script, so the old form killed serve.sh before it ever launched
+        # whenever firewalld returned non-zero (252 stopped, 253 polkit-denied) —
+        # exactly the non-root operators this check exists for.
+        local st=0
+        firewall-cmd --state &>/dev/null || st=$?
         # firewall-cmd exit codes: 0 = running; 252 = not running; 253 = running
         # but this user is NOT authorized to query it (polkit). The non-root
         # operators who actually run serve.sh hit 253 — the old `&& firewall-cmd
@@ -152,8 +158,11 @@ _warn_firewall() {
         if [[ $st -eq 252 ]]; then
             return 0     # firewalld not running — nothing to warn about
         fi
-        local out rc
-        out="$(firewall-cmd --query-port="${PORT}/tcp" 2>&1)"; rc=$?
+        # An assignment from a command substitution takes the substitution's exit
+        # status, so a closed port (rc 1) would likewise abort under set -e — hence
+        # the same `|| rc=$?` guard here.
+        local out rc=0
+        out="$(firewall-cmd --query-port="${PORT}/tcp" 2>&1)" || rc=$?
         if [[ $rc -eq 0 ]]; then
             return 0     # port is explicitly open
         elif printf '%s' "$out" | grep -qiE 'authoriz'; then

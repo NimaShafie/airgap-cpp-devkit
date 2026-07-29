@@ -64,6 +64,31 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [1.3.66] — 2026-07-29
+
+Fourth-round re-validation follow-up. One P0 regression fixed, plus a resource
+leak and an incomplete uninstall surfaced by the same pass.
+
+### Fixed
+- **Team server (`serve.sh`) refused to start on any non-root firewalld host.**
+  The advisory firewall probe ran two commands whose non-zero exit aborted the
+  whole script under `set -euo pipefail`: `firewall-cmd --state` (252 stopped /
+  253 polkit-denied) and the closed-port query (`rc 1`). Both now capture status
+  with `|| st=$?` so the check stays advisory and the server always launches.
+- **`uninstall.sh --all` left `env.sh` and its `~/.bashrc` source line orphaned.**
+  `env.sh` became a glob over `<prefix>/*/bin` with no per-tool lines to strip, so
+  the old content-parsing cleanup never emptied it and never removed the shell
+  wiring. Cleanup is now receipt-driven: once no `INSTALL_RECEIPT.txt` remains
+  under a prefix, `env.sh` and its `~/.bashrc` line are removed; a partial
+  uninstall keeps them (the glob self-adjusts).
+- **VS Code extension install leaked ~120 MB of `/tmp` per run.** A bare
+  `trap … EXIT` in `vscode-extensions/setup.sh` replaced the library's temp-root
+  cleanup instead of adding to it. `tools/lib/devkit-install.sh` now exposes a
+  composable `devkit_add_exit_trap`; the library and every setup.sh register
+  through it so all handlers run.
+
+---
+
 ## [1.3.65] — 2026-07-28
 
 Third-round hardening from a read-only re-validation pass. Two P0 blockers.
