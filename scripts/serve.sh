@@ -163,9 +163,14 @@ _warn_firewall() {
         # the same `|| rc=$?` guard here.
         local out rc=0
         out="$(firewall-cmd --query-port="${PORT}/tcp" 2>&1)" || rc=$?
+        # Select the message by EXIT CODE, not by matching English text: rc 253 is
+        # firewalld's "not authorized to query" (polkit), and firewall-cmd is
+        # localized — a text grep for 'authoriz' misfires on a non-English host and
+        # would wrongly tell the operator the port is closed. Keep the text match as
+        # a secondary heuristic for any other non-zero rc.
         if [[ $rc -eq 0 ]]; then
             return 0     # port is explicitly open
-        elif printf '%s' "$out" | grep -qiE 'authoriz'; then
+        elif [[ $rc -eq 253 ]] || printf '%s' "$out" | grep -qiE 'authoriz'; then
             echo "  [??] firewalld is active but this user isn't authorized to query it."
             echo "       If ${PORT}/tcp is closed, LAN peers can't reach the URL above — can't tell from here."
             echo "       Check as admin:  sudo firewall-cmd --query-port=${PORT}/tcp"
