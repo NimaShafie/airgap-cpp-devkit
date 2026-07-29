@@ -13,16 +13,22 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 #### Offline lcov genhtml HTML reports (F3)
 - **`genhtml`'s HTML-report step now works fully offline.** genhtml/lcovutil load
-  `DateTime` and `Date::Parse` unconditionally; neither ships with a base Perl, so
-  on an air-gapped host genhtml aborted at load and only line-coverage capture was
-  available. `perl-vendor-lcov.zip` now bundles small pure-Perl compatibility
-  modules (`DateTime.pm`, `Date/Parse.pm`) implementing exactly the API lcov uses
-  (`from_epoch`/`now`/`new`, `delta_days->in_units('days')`, `str2time`). No XS, no
-  CPAN deps — identical on glibc and musl, no per-platform build.
+  `DateTime`, `Date::Parse` and `Devel::StackTrace` unconditionally; none ship with
+  a base Perl, so on an air-gapped host genhtml aborted at load and only
+  line-coverage capture was available. `perl-vendor-lcov.zip` now bundles small
+  pure-Perl compatibility modules (`DateTime.pm`, `Date/Parse.pm`,
+  `Devel/StackTrace.pm`) implementing exactly the API lcov uses
+  (`from_epoch`/`now`/`new`, `delta_days->in_units('days')`, `str2time`,
+  `StackTrace->new->as_string`). No XS, no CPAN deps — identical on glibc and musl,
+  no per-platform build.
 - **Fixed a latent `Capture::Tiny` mispackaging.** The vendored module shipped as a
   flat `Tiny.pm`, so `use Capture::Tiny` could never resolve it (masked because
   genhtml died at `use DateTime` first). It is now correctly placed at
   `Capture/Tiny.pm`. The lcov manifest `perl-vendor` sha256 is updated to match.
+- **`_verify_genhtml` now reports every missing Perl module at once.** Perl aborts
+  at the first unresolved `use`, so the old check surfaced one module per install
+  attempt. It now enumerates and probes the whole genhtml dependency set and lists
+  them all in a single run.
 
 ### Added
 
