@@ -2,7 +2,7 @@
   "SPDXID": "SPDXRef-DOCUMENT",
   "spdxVersion": "SPDX-2.3",
   "creationInfo": {
-    "created": "2026-07-25T16:59:27Z",
+    "created": "2026-07-31T23:56:21Z",
     "creators": [
       "Organization: airgap-cpp-devkit",
       "Tool: airgap-cpp-devkit/scripts/internal/generate-sbom.sh"
@@ -377,6 +377,38 @@
         {
           "algorithm": "SHA256",
           "checksumValue": "db139d1e3f7fc0ee98a9dbc1109a07b576f06a955b898b74d273a8d2971a2179"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "c9e68b97348f83f7f2e27d45aac24033110752c9f4bf0bd72880751daa877800"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "85a744671d1fa6deda8125b2539eb9a11d710f661ab45f7a0f1a96bcccb8f42b"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "79d8c911cc0fbc4806811298513f99a966e6828229ba5b35d5d836723b542613"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "1235665933c387fe354ea3c514359ee739590a9e8ac70a59fe0f1e0a7c71e541"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "521b320e23d317e1a686926f43d053c936290005285e26b4380194e823600c1c"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "10679fb2865e5afecc5955fd81c7cf0b780cc1d82196c6c10ae1b1c5182024fa"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "d8c6c3da2680c88514f8acf2756919cfddb29e34bb3838f5129144b3fd4e067a"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "40c6c3dc9457a73f026ec78c9857f8473b2eb79c9430c2b60618ebc3fd503d01"
         }
       ],
       "attributionTexts": [
@@ -463,13 +495,21 @@
         "windows: clang%2Bllvm-22.1.8-x86_64-pc-windows-msvc.zip.part-aw SHA256:c030f7593f8dad2ca87821107a24b9847d4a0c706096ac7f47c2374bc8287d09",
         "windows: clang%2Bllvm-22.1.8-x86_64-pc-windows-msvc.zip.part-ax SHA256:fcb42d225638113f3f7829aecd1aad08944a01fac1c9eedc4956d9b4b3358436",
         "windows: clang%2Bllvm-22.1.8-x86_64-pc-windows-msvc.zip.part-ay SHA256:94d7c985600061289fbd2ebef56fcc48b063df36ca25cc3e02c8f0d4cb2a90ec",
-        "windows: clang%2Bllvm-22.1.8-x86_64-pc-windows-msvc.zip.part-az SHA256:db139d1e3f7fc0ee98a9dbc1109a07b576f06a955b898b74d273a8d2971a2179"
+        "windows: clang%2Bllvm-22.1.8-x86_64-pc-windows-msvc.zip.part-az SHA256:db139d1e3f7fc0ee98a9dbc1109a07b576f06a955b898b74d273a8d2971a2179",
+        "linux-rhel8: LLVM-22.1.8-Linux-X64-rhel8.tar.xz.part-aa SHA256:c9e68b97348f83f7f2e27d45aac24033110752c9f4bf0bd72880751daa877800",
+        "linux-rhel8: LLVM-22.1.8-Linux-X64-rhel8.tar.xz.part-ab SHA256:85a744671d1fa6deda8125b2539eb9a11d710f661ab45f7a0f1a96bcccb8f42b",
+        "linux-rhel10: LLVM-22.1.8-Linux-X64-rhel10.tar.xz.part-aa SHA256:79d8c911cc0fbc4806811298513f99a966e6828229ba5b35d5d836723b542613",
+        "linux-rhel10: LLVM-22.1.8-Linux-X64-rhel10.tar.xz.part-ab SHA256:1235665933c387fe354ea3c514359ee739590a9e8ac70a59fe0f1e0a7c71e541",
+        "linux-musl: LLVM-22.1.8-Linux-X64-musl.tar.xz.part-aa SHA256:521b320e23d317e1a686926f43d053c936290005285e26b4380194e823600c1c",
+        "linux-musl: LLVM-22.1.8-Linux-X64-musl.tar.xz.part-ab SHA256:10679fb2865e5afecc5955fd81c7cf0b780cc1d82196c6c10ae1b1c5182024fa",
+        "linux-rhel9: LLVM-22.1.8-Linux-X64-rhel9.tar.xz.part-aa SHA256:d8c6c3da2680c88514f8acf2756919cfddb29e34bb3838f5129144b3fd4e067a",
+        "linux-rhel9: LLVM-22.1.8-Linux-X64-rhel9.tar.xz.part-ab SHA256:40c6c3dc9457a73f026ec78c9857f8473b2eb79c9430c2b60618ebc3fd503d01"
       ]
     },
     {
       "SPDXID": "SPDXRef-toolchains-llvm-mingw",
       "name": "toolchains/llvm-mingw",
-      "versionInfo": "20260407",
+      "versionInfo": "20260616",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
       "filesAnalyzed": false,
@@ -481,41 +521,41 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "27275f560de71f6813f0daaf8dc0e6ee6d3fbf33fd9dbcb66fd2b0f0113f714b"
+          "checksumValue": "1c92ed4430dee3389c57247f1bbed8fdb30cb64d1bb9d4a7fef149d69277e22c"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "7d0cb48a04304bb25293c3f3333061fa21d94ef3f301be1ac1a4f871b20c1e15"
+          "checksumValue": "dea43bf8a1307998e7afcec35949804b699f26ef651bd41488bbd941ab0f3bba"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "a7aa9b51f69843bf1c58290c58cad6eb228cafebb5d4c06e623ca712302aca61"
+          "checksumValue": "ef9fb45fb102ed8dcd49d5ac8af245737b69b8b99c957e597c0edbe3bcc0a320"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "d3eed3b0075f326ed664a341e5dc24fdbae9495e01282e756dd7319cb53b3bd7"
+          "checksumValue": "70355d5dca40ac9c10c6ab4011a7b9bbb1998d05094a82b54173a1fa08cb0bec"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "03cfc4dbe52c942d2c29266fd7013afd47b26dec02a124e9b97567abde177ac7"
+          "checksumValue": "c4e8e9b12f4f4f1fa5bd9d1843cb216228d370f6784f23f17f0032cb2c91feff"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "1a9ae85722a8604b8275e85f5e433f9ddee43bbdacba2efd2bba5f2725b339ff"
+          "checksumValue": "45be655500a8be12a9bbc69f0d713d6191262b1a76e3bc7223bef113afc890c8"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "65082d54d6dc9f82a6d7daf6bc04d580ddedb6a3b5868817603c74d3b65f6760"
+          "checksumValue": "1b1d582304d751032a9c06f8b5be8f1b6ef325bb5d3d128d3c5e5c5d2e8017d5"
         }
       ],
       "attributionTexts": [
-        "linux-x64: llvm-mingw-20260407-ucrt-ubuntu-22.04-x86_64.tar.gz.part-aa SHA256:27275f560de71f6813f0daaf8dc0e6ee6d3fbf33fd9dbcb66fd2b0f0113f714b",
-        "linux-x64: llvm-mingw-20260407-ucrt-ubuntu-22.04-x86_64.tar.gz.part-ab SHA256:7d0cb48a04304bb25293c3f3333061fa21d94ef3f301be1ac1a4f871b20c1e15",
-        "linux-x64: llvm-mingw-20260407-ucrt-ubuntu-22.04-x86_64.tar.gz.part-ac SHA256:a7aa9b51f69843bf1c58290c58cad6eb228cafebb5d4c06e623ca712302aca61",
-        "windows: llvm-mingw-20260407-ucrt-x86_64.zip.part-aa SHA256:d3eed3b0075f326ed664a341e5dc24fdbae9495e01282e756dd7319cb53b3bd7",
-        "windows: llvm-mingw-20260407-ucrt-x86_64.zip.part-ab SHA256:03cfc4dbe52c942d2c29266fd7013afd47b26dec02a124e9b97567abde177ac7",
-        "windows: llvm-mingw-20260407-ucrt-x86_64.zip.part-ac SHA256:1a9ae85722a8604b8275e85f5e433f9ddee43bbdacba2efd2bba5f2725b339ff",
-        "windows: llvm-mingw-20260407-ucrt-x86_64.zip.part-ad SHA256:65082d54d6dc9f82a6d7daf6bc04d580ddedb6a3b5868817603c74d3b65f6760"
+        "linux-x64: llvm-mingw-20260616-ucrt-ubuntu-22.04-x86_64.tar.gz.part-aa SHA256:1c92ed4430dee3389c57247f1bbed8fdb30cb64d1bb9d4a7fef149d69277e22c",
+        "linux-x64: llvm-mingw-20260616-ucrt-ubuntu-22.04-x86_64.tar.gz.part-ab SHA256:dea43bf8a1307998e7afcec35949804b699f26ef651bd41488bbd941ab0f3bba",
+        "linux-x64: llvm-mingw-20260616-ucrt-ubuntu-22.04-x86_64.tar.gz.part-ac SHA256:ef9fb45fb102ed8dcd49d5ac8af245737b69b8b99c957e597c0edbe3bcc0a320",
+        "windows: llvm-mingw-20260616-ucrt-x86_64.zip.part-aa SHA256:70355d5dca40ac9c10c6ab4011a7b9bbb1998d05094a82b54173a1fa08cb0bec",
+        "windows: llvm-mingw-20260616-ucrt-x86_64.zip.part-ab SHA256:c4e8e9b12f4f4f1fa5bd9d1843cb216228d370f6784f23f17f0032cb2c91feff",
+        "windows: llvm-mingw-20260616-ucrt-x86_64.zip.part-ac SHA256:45be655500a8be12a9bbc69f0d713d6191262b1a76e3bc7223bef113afc890c8",
+        "windows: llvm-mingw-20260616-ucrt-x86_64.zip.part-ad SHA256:1b1d582304d751032a9c06f8b5be8f1b6ef325bb5d3d128d3c5e5c5d2e8017d5"
       ]
     },
     {
@@ -537,11 +577,16 @@
         },
         {
           "algorithm": "SHA256",
+          "checksumValue": "e62a85f918af5638a75a872a8c9034ead3053384935778219080608f133db4c8"
+        },
+        {
+          "algorithm": "SHA256",
           "checksumValue": "d6bfb86c1bed1516237a0118cf0197a2f6517ab59f7e924d6ccd3a59df9887d3"
         }
       ],
       "attributionTexts": [
         "linux-x64: ninja-1.13.2-linux.tar.gz SHA256:7a9da8821e4663ed97ca04081969b156a1b1b07683f86058b4c35a7a58758b90",
+        "linux-x64-musl: ninja-1.13.2-linux-musl.tar.gz SHA256:e62a85f918af5638a75a872a8c9034ead3053384935778219080608f133db4c8",
         "windows: ninja-1.13.2-windows.zip SHA256:d6bfb86c1bed1516237a0118cf0197a2f6517ab59f7e924d6ccd3a59df9887d3"
       ]
     },
@@ -652,11 +697,16 @@
         {
           "algorithm": "SHA256",
           "checksumValue": "b976979c95ef213c85dca1637b2305c93d79fd84098f7c5c4d1d43ba65a830d1"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "062d05f0e4973510f8ea5af4ac56f31d4129b88190bab5942ac7baa5638c33a2"
         }
       ],
       "attributionTexts": [
         "linux-x64: linux-x64 SHA256:34ddce86cbac7bfd80a9f9d7f325d50fe7fcc041f5c3bb4ba0bba0763eeebcd0",
-        "windows: lcov-2.5.zip SHA256:b976979c95ef213c85dca1637b2305c93d79fd84098f7c5c4d1d43ba65a830d1"
+        "windows: lcov-2.5.zip SHA256:b976979c95ef213c85dca1637b2305c93d79fd84098f7c5c4d1d43ba65a830d1",
+        "perl-vendor: perl-vendor-lcov.zip SHA256:062d05f0e4973510f8ea5af4ac56f31d4129b88190bab5942ac7baa5638c33a2"
       ]
     },
     {
@@ -696,12 +746,17 @@
         {
           "algorithm": "SHA256",
           "checksumValue": "f2cfefb94d7b6c7324bc1339ae1579ed059cccf1717a011c9e12e58465d8ea8f"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "e73a35f1e7dbb9644e7ff2b5fdd738ae47b2cd9c7a4702df4a54de3cb30635b8"
         }
       ],
       "attributionTexts": [
         "windows: cmake-4.3.3-windows-x86_64.zip SHA256:fc95d4a2547b308f1282dad4b35353987912a84e9334f799c03cbf023aafc69f",
         "linux-x64: cmake-4.3.3-linux-x86_64.tar.gz.part-aa SHA256:c0e529c559666ea550316fe2d146be9b2478832f2eb520b0e601b4e2d5d2ae3a",
-        "linux-x64: cmake-4.3.3-linux-x86_64.tar.gz.part-ab SHA256:f2cfefb94d7b6c7324bc1339ae1579ed059cccf1717a011c9e12e58465d8ea8f"
+        "linux-x64: cmake-4.3.3-linux-x86_64.tar.gz.part-ab SHA256:f2cfefb94d7b6c7324bc1339ae1579ed059cccf1717a011c9e12e58465d8ea8f",
+        "linux-x64-musl: cmake-4.3.3-linux-x86_64-musl.tar.gz SHA256:e73a35f1e7dbb9644e7ff2b5fdd738ae47b2cd9c7a4702df4a54de3cb30635b8"
       ]
     },
     {
@@ -734,7 +789,7 @@
     {
       "SPDXID": "SPDXRef-servy",
       "name": "dev-tools/servy",
-      "versionInfo": "8.7",
+      "versionInfo": "8.9",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
       "filesAnalyzed": false,
@@ -746,16 +801,16 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "45d36c935c7947a853335a0418fb656e3a234679c276c61e3b44efa1569f3da0"
+          "checksumValue": "edcf8f37c9d854e859322fec9f7c5f853da5534cfb09cbf686c4f5831df339f4"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "a7f54c69f8511ca02b48ef7e5386fcc343b2d7bca132c755f6f93d0213da6807"
+          "checksumValue": "e8ba2ba6c5904b48ed759a21e06501e1286d1edbef69806fd0405e9e23306f89"
         }
       ],
       "attributionTexts": [
-        "windows: servy-8.7-x64-installer.exe.part-aa SHA256:45d36c935c7947a853335a0418fb656e3a234679c276c61e3b44efa1569f3da0",
-        "windows: servy-8.7-x64-installer.exe.part-ab SHA256:a7f54c69f8511ca02b48ef7e5386fcc343b2d7bca132c755f6f93d0213da6807"
+        "windows: servy-8.9-x64-installer.exe.part-aa SHA256:edcf8f37c9d854e859322fec9f7c5f853da5534cfb09cbf686c4f5831df339f4",
+        "windows: servy-8.9-x64-installer.exe.part-ab SHA256:e8ba2ba6c5904b48ed759a21e06501e1286d1edbef69806fd0405e9e23306f89"
       ]
     },
     {
@@ -774,10 +829,35 @@
         {
           "algorithm": "SHA256",
           "checksumValue": "c90fe36442cf573e8a19b3e8733d121622b8e2d5a0c47cbda97aeba9517d1c45"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "1f8e0c13b267ef621d7112fca522cee4220f088648fc7a263b6807c89e71a427"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "5b6bde9535348cc494d6cc2ed69500b0365eebb3ce678a2fffb260bfc218876b"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "0ad7d10fe613415fb056a16f0699e39cb4182271300a0c353137b744671b3c78"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "c9ae4d55d72fa7b291fd258f6b21c7014e36a7b8d53ca418720685527cf0737a"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "61f9c05a8a4cf88f12c0e62bb3b60937bc18329f3f4fd8aa75a38b3caf1348a4"
         }
       ],
       "attributionTexts": [
-        "windows: sqlite-tools-win-x64-3530300.zip SHA256:c90fe36442cf573e8a19b3e8733d121622b8e2d5a0c47cbda97aeba9517d1c45"
+        "windows: sqlite-tools-win-x64-3530300.zip SHA256:c90fe36442cf573e8a19b3e8733d121622b8e2d5a0c47cbda97aeba9517d1c45",
+        "linux-glibc-static: sqlite3-3.53.3-linux-x64-glibc SHA256:1f8e0c13b267ef621d7112fca522cee4220f088648fc7a263b6807c89e71a427",
+        "linux-musl-static: sqlite3-3.53.3-linux-x64-musl SHA256:5b6bde9535348cc494d6cc2ed69500b0365eebb3ce678a2fffb260bfc218876b",
+        "linux-rhel8: sqlite-3.26.0-20.el8_10.x86_64.rpm SHA256:0ad7d10fe613415fb056a16f0699e39cb4182271300a0c353137b744671b3c78",
+        "linux-rhel9: sqlite-3.34.1-10.el9_8.x86_64.rpm SHA256:c9ae4d55d72fa7b291fd258f6b21c7014e36a7b8d53ca418720685527cf0737a",
+        "linux-rhel10: sqlite-3.46.1-5.el10_1.x86_64.rpm SHA256:61f9c05a8a4cf88f12c0e62bb3b60937bc18329f3f4fd8aa75a38b3caf1348a4"
       ]
     },
     {
@@ -1104,13 +1184,13 @@
       ],
       "attributionTexts": [
         "windows: zlib132.zip SHA256:e8bf55f3017aa181690990cb58a994e77885da140609fc8f94abe9b65d2cae28",
-        "linux-x64: zlib-1.3.2.tar.gz SHA256:bb329a0a2cd0274d05519d61c667c062e06990d72e125ee2dfa8de64f0119d16"
+        "linux: zlib-1.3.2.tar.gz SHA256:bb329a0a2cd0274d05519d61c667c062e06990d72e125ee2dfa8de64f0119d16"
       ]
     },
     {
       "SPDXID": "SPDXRef-languages-python",
       "name": "languages/python",
-      "versionInfo": "3.14.4",
+      "versionInfo": "3.14.6",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
       "filesAnalyzed": false,
@@ -1122,32 +1202,47 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "11a6f5f5e7defeaa67a0b8e797f0eabec6e4499e663815319a0e0d360091f906"
+          "checksumValue": "75afa83f93b284d19040e24bc440ab741c09582c0d5310504d607a4e08c3dbaf"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "ec3630899fc6834971002388cc6471bfa5cea50b495c5279f064c2416c10e887"
+          "checksumValue": "3a324eb2a1d846e4cb7bff558dae532e2c19bb7ce3cea875d874571efc8542b2"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "4e5be3f73013ea89c56f099285e5d372f6986e79d3080e41608722025eb2a2b4"
+          "checksumValue": "ac505d424da18b68a906155f05c7e12420d7e1a604e087d4b8199aadc95e0790"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "31e428174680378df2d9452b7066c9458966e5a4ebee763db76ca7e34c46fb92"
+          "checksumValue": "6701e71f80936647761863b7ceeeacef8a5804231139d239e9e4c5a584393d19"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "9736d85adf67159176140196a4bc6a62980a34731c95605ee846af40b57f22f2"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "15c1f3316351550125f6e7e7c6a83c796dff412a77d71f9a3d9e71706e59dec0"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "d7cd2c7dab1d5d5676394920bd8a52902b754f2576e5e67584888a7e6fc2cb3a"
         }
       ],
       "attributionTexts": [
-        "windows: python-3.14.4-amd64.zip SHA256:11a6f5f5e7defeaa67a0b8e797f0eabec6e4499e663815319a0e0d360091f906",
-        "linux-x64: cpython-3.14.4-linux-x64.tar.gz.part-aa SHA256:ec3630899fc6834971002388cc6471bfa5cea50b495c5279f064c2416c10e887",
-        "linux-x64: cpython-3.14.4-linux-x64.tar.gz.part-ab SHA256:4e5be3f73013ea89c56f099285e5d372f6986e79d3080e41608722025eb2a2b4",
-        "linux-x64: cpython-3.14.4-linux-x64.tar.gz.part-ac SHA256:31e428174680378df2d9452b7066c9458966e5a4ebee763db76ca7e34c46fb92"
+        "windows: python-3.14.6-amd64.zip SHA256:75afa83f93b284d19040e24bc440ab741c09582c0d5310504d607a4e08c3dbaf",
+        "linux-x64: cpython-3.14.6-linux-x64.tar.gz.part-aa SHA256:3a324eb2a1d846e4cb7bff558dae532e2c19bb7ce3cea875d874571efc8542b2",
+        "linux-x64: cpython-3.14.6-linux-x64.tar.gz.part-ab SHA256:ac505d424da18b68a906155f05c7e12420d7e1a604e087d4b8199aadc95e0790",
+        "linux-x64: cpython-3.14.6-linux-x64.tar.gz.part-ac SHA256:6701e71f80936647761863b7ceeeacef8a5804231139d239e9e4c5a584393d19",
+        "linux-x64-musl: cpython-3.14.6-linux-x64-musl.tar.gz.part-aa SHA256:9736d85adf67159176140196a4bc6a62980a34731c95605ee846af40b57f22f2",
+        "linux-x64-musl: cpython-3.14.6-linux-x64-musl.tar.gz.part-ab SHA256:15c1f3316351550125f6e7e7c6a83c796dff412a77d71f9a3d9e71706e59dec0",
+        "linux-x64-musl: cpython-3.14.6-linux-x64-musl.tar.gz.part-ac SHA256:d7cd2c7dab1d5d5676394920bd8a52902b754f2576e5e67584888a7e6fc2cb3a"
       ]
     },
     {
       "SPDXID": "SPDXRef-languages-dotnet",
       "name": "languages/dotnet",
-      "versionInfo": "10.0.301",
+      "versionInfo": "10.0.302",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
       "filesAnalyzed": false,
@@ -1159,61 +1254,61 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "79c90245f9500b91133d5319899165279ef6601aa8a78225d51454dba0968789"
+          "checksumValue": "81880a39c590567c82f0331b9dad1e60bd4dd7036326c4932f095204e1a84f5d"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "03a5328e74548ad39254487fcba60d220a6ed2271920703fd99ebab6f7d59487"
+          "checksumValue": "6b25d5db3ba685a71fc055ab3c9d0b6bcffd50159848f728872a3dbc5d16518a"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "947343c57e2433344666254208dac7402a3e727b6105509d57cd53168d6ebe7e"
+          "checksumValue": "18f5156671a335cec401217fb2975a56311b44bae0551a923e3c9917a12de3af"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "f4fd1fd7fd65a92fd19e485d9e19a613a1867547f33df250d65613388c50b678"
+          "checksumValue": "dfe1bec4a132fa3c6ca666babbf7efbf4ec19471c1ca5aaacb0285c6cfd5d461"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "a5583f7ca7a76c3e4c000acd6a263551bf40666605de9c03ed97fb5dee9f5f00"
+          "checksumValue": "21c9b5f98cba8a99369ac79664d71105b87699ba866e5b113d7c7b18704592e9"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "b8498e9f27f5a3d662967e6e73ddb7980ee91807baf5189e6a8020bb3ebe2750"
+          "checksumValue": "9d82c30b7c6cc8fa186d91ef99944dae36c63a2db2403bdc61b63cecf0e3a330"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "732ecab415b6cf8c63dc628b5661d8318223e859898b8953d146b3ce5744b54e"
+          "checksumValue": "61dee004a76afb7e1e6f90d638b70d45049bb8092e2fb1a48683dcecd34375ba"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "9fa69df9c27cc287dec85c955a9a9487252931cb018a7579a4e70231a8ceb721"
+          "checksumValue": "17459cefa49890bb6665822f92e155288f2f12b304373731d4936932b3b57a00"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "f247f1e66b808cc6e25c50bf4a643bc33ec753740f025e35ac3d9e391aa2d1ff"
+          "checksumValue": "24ed29aba8f861e7eeb13514d00570c7ab0c3296899cc2d9a792b81be8497220"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "7e97bc0d6bdff5d246a8a09ab5b439056c05d8e95044df6f6777a923e18a45ca"
+          "checksumValue": "600b729548a9e18018c0c6a278533eba742258e4aec6f237d08d2f41c42ee449"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "135753d261b210c134a822b48bbdcde8f7f41e8cd63d8b0c079087e1e8ac0f28"
+          "checksumValue": "5040ce804db508554395cd59ef3e6e4c3cb40a1b2e6cb7ff5d6f45a323eae481"
         }
       ],
       "attributionTexts": [
-        "linux-x64: dotnet-sdk-10.0.301-linux-x64.tar.gz.part-aa SHA256:79c90245f9500b91133d5319899165279ef6601aa8a78225d51454dba0968789",
-        "linux-x64: dotnet-sdk-10.0.301-linux-x64.tar.gz.part-ab SHA256:03a5328e74548ad39254487fcba60d220a6ed2271920703fd99ebab6f7d59487",
-        "linux-x64: dotnet-sdk-10.0.301-linux-x64.tar.gz.part-ac SHA256:947343c57e2433344666254208dac7402a3e727b6105509d57cd53168d6ebe7e",
-        "linux-x64: dotnet-sdk-10.0.301-linux-x64.tar.gz.part-ad SHA256:f4fd1fd7fd65a92fd19e485d9e19a613a1867547f33df250d65613388c50b678",
-        "linux-x64: dotnet-sdk-10.0.301-linux-x64.tar.gz.part-ae SHA256:a5583f7ca7a76c3e4c000acd6a263551bf40666605de9c03ed97fb5dee9f5f00",
-        "windows: dotnet-sdk-10.0.301-win-x64.zip.part-aa SHA256:b8498e9f27f5a3d662967e6e73ddb7980ee91807baf5189e6a8020bb3ebe2750",
-        "windows: dotnet-sdk-10.0.301-win-x64.zip.part-ab SHA256:732ecab415b6cf8c63dc628b5661d8318223e859898b8953d146b3ce5744b54e",
-        "windows: dotnet-sdk-10.0.301-win-x64.zip.part-ac SHA256:9fa69df9c27cc287dec85c955a9a9487252931cb018a7579a4e70231a8ceb721",
-        "windows: dotnet-sdk-10.0.301-win-x64.zip.part-ad SHA256:f247f1e66b808cc6e25c50bf4a643bc33ec753740f025e35ac3d9e391aa2d1ff",
-        "windows: dotnet-sdk-10.0.301-win-x64.zip.part-ae SHA256:7e97bc0d6bdff5d246a8a09ab5b439056c05d8e95044df6f6777a923e18a45ca",
-        "windows: dotnet-sdk-10.0.301-win-x64.zip.part-af SHA256:135753d261b210c134a822b48bbdcde8f7f41e8cd63d8b0c079087e1e8ac0f28"
+        "linux-x64: dotnet-sdk-10.0.302-linux-x64.tar.gz.part-aa SHA256:81880a39c590567c82f0331b9dad1e60bd4dd7036326c4932f095204e1a84f5d",
+        "linux-x64: dotnet-sdk-10.0.302-linux-x64.tar.gz.part-ab SHA256:6b25d5db3ba685a71fc055ab3c9d0b6bcffd50159848f728872a3dbc5d16518a",
+        "linux-x64: dotnet-sdk-10.0.302-linux-x64.tar.gz.part-ac SHA256:18f5156671a335cec401217fb2975a56311b44bae0551a923e3c9917a12de3af",
+        "linux-x64: dotnet-sdk-10.0.302-linux-x64.tar.gz.part-ad SHA256:dfe1bec4a132fa3c6ca666babbf7efbf4ec19471c1ca5aaacb0285c6cfd5d461",
+        "linux-x64: dotnet-sdk-10.0.302-linux-x64.tar.gz.part-ae SHA256:21c9b5f98cba8a99369ac79664d71105b87699ba866e5b113d7c7b18704592e9",
+        "windows: dotnet-sdk-10.0.302-win-x64.zip.part-aa SHA256:9d82c30b7c6cc8fa186d91ef99944dae36c63a2db2403bdc61b63cecf0e3a330",
+        "windows: dotnet-sdk-10.0.302-win-x64.zip.part-ab SHA256:61dee004a76afb7e1e6f90d638b70d45049bb8092e2fb1a48683dcecd34375ba",
+        "windows: dotnet-sdk-10.0.302-win-x64.zip.part-ac SHA256:17459cefa49890bb6665822f92e155288f2f12b304373731d4936932b3b57a00",
+        "windows: dotnet-sdk-10.0.302-win-x64.zip.part-ad SHA256:24ed29aba8f861e7eeb13514d00570c7ab0c3296899cc2d9a792b81be8497220",
+        "windows: dotnet-sdk-10.0.302-win-x64.zip.part-ae SHA256:600b729548a9e18018c0c6a278533eba742258e4aec6f237d08d2f41c42ee449",
+        "windows: dotnet-sdk-10.0.302-win-x64.zip.part-af SHA256:5040ce804db508554395cd59ef3e6e4c3cb40a1b2e6cb7ff5d6f45a323eae481"
       ]
     },
     {
@@ -1272,7 +1367,7 @@
     {
       "SPDXID": "SPDXRef-dev-tools-gdb",
       "name": "dev-tools/gdb",
-      "versionInfo": "17.1",
+      "versionInfo": "17.2",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
       "filesAnalyzed": false,
@@ -1280,7 +1375,7 @@
       "licenseDeclared": "GPL-3.0-or-later",
       "copyrightText": "Copyright (C) Free Software Foundation, Inc.",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "GDB 17.1 GNU debugger. Linux only. Source build from vendored gdb-17.1.tar.gz (~25 min). Requires gcc, make, readline-devel."
+      "comment": "GDB 17.2 GNU debugger. Linux only. Source build from vendored gdb-17.2.tar.gz (~25 min). Requires gcc, make, readline-devel."
     },
     {
       "SPDXID": "SPDXRef-dev-tools-notepadpp",

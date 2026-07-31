@@ -319,15 +319,15 @@ or via the API (`GET /api/prefix`, `POST /api/prefix`).
 | [`tools/dev-tools/git-bundle/`](tools/dev-tools/git-bundle/README.md) | Transfers Git repos with nested submodules across air-gapped boundaries | Yes |
 | [`tools/toolchains/lcov/`](tools/toolchains/lcov/) | Code coverage via lcov 2.5 + gcov; vendored Perl deps included | No |
 | [`tools/languages/python/`](tools/languages/python/README.md) | Portable Python 3.14.4 — Windows embeddable + Linux standalone | No |
-| [`tools/languages/dotnet/`](tools/languages/dotnet/README.md) | Portable .NET 10 SDK 10.0.202 — Windows + Linux, no installer | No |
+| [`tools/languages/dotnet/`](tools/languages/dotnet/README.md) | Portable .NET 10 SDK 10.0.302 — Windows + Linux, no installer | No |
 | [`tools/dev-tools/vscode-extensions/`](tools/dev-tools/vscode-extensions/README.md) | Offline VS Code extensions: C/C++, C++ TestMate, Python | No |
 | [`tools/toolchains/gcc/windows/`](tools/toolchains/gcc/windows/README.md) | GCC 15.2.0 + MinGW-w64 13.0.0 UCRT for Windows | No |
-| [`tools/dev-tools/servy/`](tools/dev-tools/servy/README.md) | Servy 8.7 — Windows service manager (no-op on Linux) | No |
+| [`tools/dev-tools/servy/`](tools/dev-tools/servy/README.md) | Servy 8.9 — Windows service manager (no-op on Linux) | No |
 | [`tools/dev-tools/conan/`](tools/dev-tools/conan/README.md) | Conan 2.27.1 — C/C++ package manager, no Python required | No |
 | [`tools/frameworks/grpc/`](tools/frameworks/grpc/README.md) | gRPC v1.83.0 — Windows prebuilt per MSVC toolset (VS 2019/2022/2026, Release or Debug) + Linux RHEL/Rocky 8/9/10 (x86_64) | No |
 | [`tools/lib/zlib/`](tools/lib/zlib/) | zlib 1.3.2 — gzip/DEFLATE compression library; vendored source, CMake build; Windows + Linux | No |
 | [`tools/dev-tools/filezilla/`](tools/dev-tools/filezilla/README.md) | FileZilla 3.70.4 — FTP/SFTP client; Windows + Linux | No |
-| [`tools/dev-tools/gdb/`](tools/dev-tools/gdb/README.md) | GDB 17.1 — Linux source build (~25 min) | No |
+| [`tools/dev-tools/gdb/`](tools/dev-tools/gdb/README.md) | GDB 17.2 — Linux source build (~25 min) | No |
 | [`tools/dev-tools/notepadpp/`](tools/dev-tools/notepadpp/README.md) | Notepad++ 8.9.7 — Windows only; portable zip or NSIS installer | No |
 | [`tools/dev-tools/putty/`](tools/dev-tools/putty/README.md) | PuTTY 0.83 — Windows MSI + Linux source build | No |
 | [`tools/dev-tools/sourcetree/`](tools/dev-tools/sourcetree/README.md) | SourceTree 3.4.30 — Git GUI client; Windows only | No |

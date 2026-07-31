@@ -88,7 +88,9 @@ devkit_transcode_targz() {
     local src="$1" dest="$2"
     case "$src" in
         *.tar.gz|*.tgz)
-            cp -f "$src" "$dest" ;;
+            # Source is already native .tar.gz; if it resolves to the same file
+            # as the destination there is nothing to transcode.
+            [[ "$src" -ef "$dest" ]] || cp -f "$src" "$dest" ;;
         *.tar.xz)
             if command -v xz &>/dev/null; then
                 xz -dc "$src" | gzip -nc > "$dest"
