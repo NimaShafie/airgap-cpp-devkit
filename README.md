@@ -315,7 +315,7 @@ or via the API (`GET /api/prefix`, `POST /api/prefix`).
 |-----------|---------|-----------|
 | [`tools/toolchains/llvm/style-formatter/`](tools/toolchains/llvm/style-formatter/README.md) | LLVM C++ style enforcement via Git pre-commit hook | Yes |
 | [`tools/toolchains/clang/source-build/`](tools/toolchains/clang/source-build/README.md) | clang-format + clang-tidy from LLVM 22.1.3; prebuilt or source build | No |
-| [`tools/build-tools/cmake/`](tools/build-tools/cmake/README.md) | CMake 4.3.1 — prebuilt or source build; RHEL/Rocky 8, 9, 10 + Windows | No |
+| [`tools/build-tools/cmake/`](tools/build-tools/cmake/README.md) | CMake 4.4.2 — prebuilt or source build; RHEL/Rocky 8, 9, 10 + Windows | No |
 | [`tools/dev-tools/git-bundle/`](tools/dev-tools/git-bundle/README.md) | Transfers Git repos with nested submodules across air-gapped boundaries | Yes |
 | [`tools/toolchains/lcov/`](tools/toolchains/lcov/) | Code coverage via lcov 2.5 + gcov; vendored Perl deps included | No |
 | [`tools/languages/python/`](tools/languages/python/README.md) | Portable Python 3.14.4 — Windows embeddable + Linux standalone | No |
@@ -329,8 +329,8 @@ or via the API (`GET /api/prefix`, `POST /api/prefix`).
 | [`tools/dev-tools/filezilla/`](tools/dev-tools/filezilla/README.md) | FileZilla 3.70.4 — FTP/SFTP client; Windows + Linux | No |
 | [`tools/dev-tools/gdb/`](tools/dev-tools/gdb/README.md) | GDB 17.2 — Linux source build (~25 min) | No |
 | [`tools/dev-tools/notepadpp/`](tools/dev-tools/notepadpp/README.md) | Notepad++ 8.9.7 — Windows only; portable zip or NSIS installer | No |
-| [`tools/dev-tools/putty/`](tools/dev-tools/putty/README.md) | PuTTY 0.83 — Windows MSI + Linux source build | No |
-| [`tools/dev-tools/sourcetree/`](tools/dev-tools/sourcetree/README.md) | SourceTree 3.4.30 — Git GUI client; Windows only | No |
+| [`tools/dev-tools/putty/`](tools/dev-tools/putty/README.md) | PuTTY 0.84 — Windows MSI + Linux source build | No |
+| [`tools/dev-tools/sourcetree/`](tools/dev-tools/sourcetree/README.md) | SourceTree 3.4.31 — Git GUI client; Windows only | No |
 
 ---
 

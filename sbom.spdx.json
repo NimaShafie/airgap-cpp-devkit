@@ -2,7 +2,7 @@
   "SPDXID": "SPDXRef-DOCUMENT",
   "spdxVersion": "SPDX-2.3",
   "creationInfo": {
-    "created": "2026-07-31T23:56:21Z",
+    "created": "2026-08-01T01:38:08Z",
     "creators": [
       "Organization: airgap-cpp-devkit",
       "Tool: airgap-cpp-devkit/scripts/internal/generate-sbom.sh"
@@ -725,7 +725,7 @@
     {
       "SPDXID": "SPDXRef-build-tools-cmake",
       "name": "build-tools/cmake",
-      "versionInfo": "4.3.3",
+      "versionInfo": "4.4.2",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
       "filesAnalyzed": false,
@@ -737,26 +737,31 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "fc95d4a2547b308f1282dad4b35353987912a84e9334f799c03cbf023aafc69f"
+          "checksumValue": "49cb12fc21beef40481f4b4e943ee184795da2e2133606316f96f164a5f7c69e"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "c0e529c559666ea550316fe2d146be9b2478832f2eb520b0e601b4e2d5d2ae3a"
+          "checksumValue": "470475a7650c6ccc04931f91df03e26968602140d186a4cc21d4c260dfc5dd3e"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "f2cfefb94d7b6c7324bc1339ae1579ed059cccf1717a011c9e12e58465d8ea8f"
+          "checksumValue": "a5a5de24e70ac0d518c7fa7bf4ca6dab8abf16edc2d54a54748d392fd17c6bf0"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "e73a35f1e7dbb9644e7ff2b5fdd738ae47b2cd9c7a4702df4a54de3cb30635b8"
+          "checksumValue": "55da92e087ed13378ad9492fbd4943425bdc608c2e2a7ae76ff0ddefc365fc21"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "da10ae454f5229f32197ff7aacd4e311d57916874d1481a25f0be71f62dcfa98"
         }
       ],
       "attributionTexts": [
-        "windows: cmake-4.3.3-windows-x86_64.zip SHA256:fc95d4a2547b308f1282dad4b35353987912a84e9334f799c03cbf023aafc69f",
-        "linux-x64: cmake-4.3.3-linux-x86_64.tar.gz.part-aa SHA256:c0e529c559666ea550316fe2d146be9b2478832f2eb520b0e601b4e2d5d2ae3a",
-        "linux-x64: cmake-4.3.3-linux-x86_64.tar.gz.part-ab SHA256:f2cfefb94d7b6c7324bc1339ae1579ed059cccf1717a011c9e12e58465d8ea8f",
-        "linux-x64-musl: cmake-4.3.3-linux-x86_64-musl.tar.gz SHA256:e73a35f1e7dbb9644e7ff2b5fdd738ae47b2cd9c7a4702df4a54de3cb30635b8"
+        "windows: cmake-4.4.2-windows-x86_64.zip.part-aa SHA256:49cb12fc21beef40481f4b4e943ee184795da2e2133606316f96f164a5f7c69e",
+        "windows: cmake-4.4.2-windows-x86_64.zip.part-ab SHA256:470475a7650c6ccc04931f91df03e26968602140d186a4cc21d4c260dfc5dd3e",
+        "linux-x64: cmake-4.4.2-linux-x86_64.tar.gz.part-aa SHA256:a5a5de24e70ac0d518c7fa7bf4ca6dab8abf16edc2d54a54748d392fd17c6bf0",
+        "linux-x64: cmake-4.4.2-linux-x86_64.tar.gz.part-ab SHA256:55da92e087ed13378ad9492fbd4943425bdc608c2e2a7ae76ff0ddefc365fc21",
+        "linux-x64-musl: cmake-4.4.2-linux-x86_64-musl.tar.gz SHA256:da10ae454f5229f32197ff7aacd4e311d57916874d1481a25f0be71f62dcfa98"
       ]
     },
     {
@@ -816,7 +821,7 @@
     {
       "SPDXID": "SPDXRef-sqlite",
       "name": "dev-tools/sqlite",
-      "versionInfo": "3.53.3",
+      "versionInfo": "3.53.4",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
       "filesAnalyzed": false,
@@ -828,15 +833,15 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "c90fe36442cf573e8a19b3e8733d121622b8e2d5a0c47cbda97aeba9517d1c45"
+          "checksumValue": "f46ee2475de4cbe287e6e5f7d43c838796b14e7379cd216bdbb28d391429f9fc"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "1f8e0c13b267ef621d7112fca522cee4220f088648fc7a263b6807c89e71a427"
+          "checksumValue": "286b7260d731c940a7df135d3022578a96123068c81103449cf7f8d053d77147"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "5b6bde9535348cc494d6cc2ed69500b0365eebb3ce678a2fffb260bfc218876b"
+          "checksumValue": "f1738c3e2a32994c508215838b47428809b161b959fddd616695efc3639264a6"
         },
         {
           "algorithm": "SHA256",
@@ -852,9 +857,9 @@
         }
       ],
       "attributionTexts": [
-        "windows: sqlite-tools-win-x64-3530300.zip SHA256:c90fe36442cf573e8a19b3e8733d121622b8e2d5a0c47cbda97aeba9517d1c45",
-        "linux-glibc-static: sqlite3-3.53.3-linux-x64-glibc SHA256:1f8e0c13b267ef621d7112fca522cee4220f088648fc7a263b6807c89e71a427",
-        "linux-musl-static: sqlite3-3.53.3-linux-x64-musl SHA256:5b6bde9535348cc494d6cc2ed69500b0365eebb3ce678a2fffb260bfc218876b",
+        "windows: sqlite-tools-win-x64-3530400.zip SHA256:f46ee2475de4cbe287e6e5f7d43c838796b14e7379cd216bdbb28d391429f9fc",
+        "linux-glibc-static: sqlite3-3.53.4-linux-x64-glibc SHA256:286b7260d731c940a7df135d3022578a96123068c81103449cf7f8d053d77147",
+        "linux-musl-static: sqlite3-3.53.4-linux-x64-musl SHA256:f1738c3e2a32994c508215838b47428809b161b959fddd616695efc3639264a6",
         "linux-rhel8: sqlite-3.26.0-20.el8_10.x86_64.rpm SHA256:0ad7d10fe613415fb056a16f0699e39cb4182271300a0c353137b744671b3c78",
         "linux-rhel9: sqlite-3.34.1-10.el9_8.x86_64.rpm SHA256:c9ae4d55d72fa7b291fd258f6b21c7014e36a7b8d53ca418720685527cf0737a",
         "linux-rhel10: sqlite-3.46.1-5.el10_1.x86_64.rpm SHA256:61f9c05a8a4cf88f12c0e62bb3b60937bc18329f3f4fd8aa75a38b3caf1348a4"
@@ -1402,7 +1407,7 @@
     {
       "SPDXID": "SPDXRef-dev-tools-putty",
       "name": "dev-tools/putty",
-      "versionInfo": "0.83",
+      "versionInfo": "0.84",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
       "filesAnalyzed": false,
@@ -1414,17 +1419,17 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "aa8e5036d973688f1e8622fbe9ab22e037346e0def0197bf5e7cdf37da4e223d"
+          "checksumValue": "190d00150e67ad3ff51af4b50e76a3ab97b863a34efd50472627b17c0cf4102b"
         }
       ],
       "attributionTexts": [
-        "windows: putty-64bit-0.83-installer.msi SHA256:aa8e5036d973688f1e8622fbe9ab22e037346e0def0197bf5e7cdf37da4e223d"
+        "windows: putty-64bit-0.84-installer.msi SHA256:190d00150e67ad3ff51af4b50e76a3ab97b863a34efd50472627b17c0cf4102b"
       ]
     },
     {
       "SPDXID": "SPDXRef-dev-tools-sourcetree",
       "name": "dev-tools/sourcetree",
-      "versionInfo": "3.4.30",
+      "versionInfo": "3.4.31",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
       "filesAnalyzed": false,
@@ -1436,11 +1441,11 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "07271493c0de23157563b10151db1f9fd7cc8bfcf2507ea3894087e5f9c3529f"
+          "checksumValue": "90c1634a01e8e3b6f6745b5bb5a484987b3902f9f922bd24021b12f7d14e47f0"
         }
       ],
       "attributionTexts": [
-        "windows: SourceTreeSetup-3.4.30.exe SHA256:07271493c0de23157563b10151db1f9fd7cc8bfcf2507ea3894087e5f9c3529f"
+        "windows: SourceTreeSetup-3.4.31.exe SHA256:90c1634a01e8e3b6f6745b5bb5a484987b3902f9f922bd24021b12f7d14e47f0"
       ]
     },
     {
