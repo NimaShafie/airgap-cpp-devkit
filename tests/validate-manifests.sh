@@ -118,7 +118,7 @@ _section "2/4  devkit.json — required fields & valid values"
 if [[ ! -d "$TOOLS_DIR" ]]; then
     printf "    SKIP  tools/ submodule not initialised\n"
 else
-    DEVKIT_REQUIRED=(id name version category platform setup check_cmd)
+    DEVKIT_REQUIRED=(id name version category platform setup)
     VALID_PLATFORMS=(windows linux both)
 
     while IFS= read -r -d '' f; do
@@ -140,6 +140,17 @@ else
                 all_ok=false
             fi
         done
+
+        # check_cmd is required for standalone tools but not for bundles: a
+        # bundle (e.g. VS Code extensions) has no single command that proves it
+        # installed — its state is the per-package status, so a "$tool --version"
+        # check would be misleading. Bundles are identified by "bundle_type".
+        if [[ -z "$(_json_get "$f" bundle_type)" ]]; then
+            if [[ -z "$(_json_get "$f" check_cmd)" ]]; then
+                _fail "$label — missing required field: check_cmd"
+                all_ok=false
+            fi
+        fi
 
         plat="$(_json_get "$f" platform)"
         # shellcheck disable=SC2076

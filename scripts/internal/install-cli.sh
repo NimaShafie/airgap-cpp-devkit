@@ -650,9 +650,17 @@ fi
 echo ""
 echo "  [10/13] Visual Studio Code editor (optional)..."
 if [[ "${INSTALL_VSCODE}" == "true" ]]; then
-    _run_bootstrap "vscode" "${REPO_ROOT}/tools/dev-tools/vscode/setup.sh"
-    # Make `code` discoverable for the extension step that follows.
-    export PATH="${INSTALL_PREFIX_OVERRIDE}/vscode/bin:${PATH}"
+    # Skip gracefully when the prebuilt payload isn't staged (e.g. a slimmed
+    # distribution or a sparse CI checkout that fetches only a subset of tools).
+    # An optional tool with no payload is a skip, not a failure of the whole run.
+    if find "${REPO_ROOT}/prebuilt/dev-tools/vscode" -type f 2>/dev/null | grep -q .; then
+        _run_bootstrap "vscode" "${REPO_ROOT}/tools/dev-tools/vscode/setup.sh"
+        # Make `code` discoverable for the extension step that follows.
+        export PATH="${INSTALL_PREFIX_OVERRIDE}/vscode/bin:${PATH}"
+    else
+        echo "  [--]  Skipped: vscode editor (prebuilt payload not staged)"
+        SKIPPED_TOOLS+=("vscode")
+    fi
 else
     echo "  [--]  Skipped: vscode editor"
     SKIPPED_TOOLS+=("vscode")
