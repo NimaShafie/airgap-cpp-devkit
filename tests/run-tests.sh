@@ -52,11 +52,17 @@ if [[ -n "${PREFIX_OVERRIDE}" ]]; then
 elif [[ "${OS}" == "windows" ]]; then
   PREFIX="$(cygpath -u "${LOCALAPPDATA:-${HOME}/AppData/Local}" 2>/dev/null || echo "${HOME}/AppData/Local")/airgap-cpp-devkit"
 else
-  # Try system-wide first, fall back to user
-  if [[ -d "/opt/airgap-cpp-devkit" ]]; then
-    PREFIX="/opt/airgap-cpp-devkit"
+  # Prefer whichever prefix actually holds an install, keyed off env.sh (written
+  # at the prefix root on a successful install). A bare /opt/airgap-cpp-devkit —
+  # e.g. one pre-created by a container image — must not shadow a real user
+  # install, or the smoke tests would inspect an empty tree and report that
+  # nothing is installed. System-wide wins only when it genuinely has an install.
+  _sys_prefix="/opt/airgap-cpp-devkit"
+  _usr_prefix="${HOME}/.local/share/airgap-cpp-devkit"
+  if [[ -f "${_sys_prefix}/env.sh" ]]; then
+    PREFIX="${_sys_prefix}"
   else
-    PREFIX="${HOME}/.local/share/airgap-cpp-devkit"
+    PREFIX="${_usr_prefix}"
   fi
 fi
 
