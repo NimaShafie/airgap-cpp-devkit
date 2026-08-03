@@ -47,4 +47,6 @@ WORKDIR /workspace
 USER devkit
 
 ENV DEVKIT_PROFILE=cpp-dev
+# No HEALTHCHECK by design: this image runs the test suite once and exits, so
+# there is no long-lived service to probe. It is a CI harness, never deployed.
 CMD ["bash", "/workspace/ci/linux-test-entrypoint.sh"]

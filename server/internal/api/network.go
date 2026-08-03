@@ -491,11 +491,27 @@ type ToolVersion struct {
 	Files   []string `json:"files"`
 }
 
-// safeVersion accepts only a single path segment with no separators or parent
-// references, so a version parameter cannot traverse outside its tool directory.
+// safeVersion accepts only the characters that appear in real version strings.
+// Besides keeping the value to a single path segment (no separators or parent
+// references) so it cannot traverse outside its tool directory, it must reject
+// shell metacharacters: the version is written verbatim into a tool's setup.sh
+// as VERSION="..." and that script is later executed with install privilege.
 func safeVersion(v string) bool {
-	return v != "" && v != "." && v != ".." &&
-		!strings.ContainsAny(v, `/\`) && !strings.Contains(v, "..")
+	if v == "" || len(v) > 64 || v == "." || v == ".." || strings.Contains(v, "..") {
+		return false
+	}
+	for _, c := range v {
+		switch {
+		case c >= '0' && c <= '9',
+			c >= 'a' && c <= 'z',
+			c >= 'A' && c <= 'Z',
+			c == '.', c == '-', c == '_', c == '+':
+			// allowed
+		default:
+			return false
+		}
+	}
+	return true
 }
 
 func (s *Server) handleToolVersions(w http.ResponseWriter, r *http.Request) {

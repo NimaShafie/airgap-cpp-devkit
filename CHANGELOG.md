@@ -9,7 +9,29 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+#### Operator-supplied TLS certificate
+- **`devkit-ui` accepts `--tls-cert` / `--tls-key`.** When both are given (together
+  with `--tls`), the server uses that certificate instead of the auto-generated
+  self-signed one — the supported way to run team mode behind a real CA-issued
+  certificate. Supplying only one of the pair is rejected at startup.
+
 ### Fixed
+
+#### Server input and packaging hardening
+- **Tool version strings are validated against a strict allow-list.** `safeVersion`
+  now accepts only the characters that occur in real versions (`[A-Za-z0-9._+-]`,
+  max 64 chars, no `..`). The value is written into a tool's `setup.sh` and used to
+  build filesystem paths, so keeping it to a known-safe character set is enforced in
+  one place, with regression tests.
+- **Embedded JSON escapes the U+2028 / U+2029 line separators.** The `toJSON`
+  template helper now rewrites these to their `\u` form so JSON injected into a
+  `<script>` block always stays inside its string literal on older JS engines.
+- **`stage-binaries.sh` refuses to package a stale server binary.** After staging it
+  reads the binary's embedded toolchain and `golang.org/x/text` versions via
+  `go version -m` and fails the build if either is older than `server/go.mod`
+  declares, so a published wheel can never lag the patched source.
 
 #### Offline lcov genhtml HTML reports (F3)
 - **`genhtml`'s HTML-report step now works fully offline.** genhtml/lcovutil load

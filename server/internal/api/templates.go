@@ -23,6 +23,12 @@ var baseFuncMap = template.FuncMap{
 			return template.JS("null")
 		}
 		s := strings.ReplaceAll(string(b), "</", `<\/`)
+		// json.Marshal escapes <, >, & but leaves the U+2028/U+2029 line
+		// separators, which terminate a JS string literal in older engines and
+		// can break out of a <script> context. Escape them to their JS unicode
+		// form so the embedded JSON stays inside its string literal.
+		s = strings.ReplaceAll(s, " ", `\u2028`)
+		s = strings.ReplaceAll(s, " ", `\u2029`)
 		return template.JS(s)
 	},
 }

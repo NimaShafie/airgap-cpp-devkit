@@ -1526,6 +1526,10 @@ func (s *Server) handleToolLogFile(w http.ResponseWriter, r *http.Request) {
 		jsonErr(w, "invalid filename", 400)
 		return
 	}
+	// Log filenames are timestamps like 20260802-141530.log, so only digits,
+	// dashes and dots are ever legitimate. Restricting to that set keeps the
+	// value a single leaf name: no separator can appear, so the join below
+	// always resolves inside logDir.
 	for _, c := range file {
 		if !((c >= '0' && c <= '9') || c == '-' || c == '.') {
 			jsonErr(w, "invalid filename", 400)

@@ -81,6 +81,9 @@ def parse_args(argv=None):
 
 def _win_gateway():
     """Parse the default gateway from Windows `route print` output."""
+    # "0.0.0.0" here is the route table's wildcard destination for the default
+    # route (and the column value matched below) — a lookup key, not a socket
+    # bind address; nothing in this module opens a listening socket.
     out = subprocess.check_output(["route", "print", "0.0.0.0"],
                                   stderr=subprocess.DEVNULL).decode("utf-8", "ignore")
     for line in out.splitlines():

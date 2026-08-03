@@ -66,7 +66,13 @@ func TestSafeVersion(t *testing.T) {
 			t.Errorf("safeVersion(%q) = false, want true", v)
 		}
 	}
-	for _, v := range []string{"", ".", "..", "a/b", `a\b`, "1..2"} {
+	// Reject path traversal and any shell metacharacter: the version is written
+	// verbatim into a privileged setup.sh as VERSION="...".
+	for _, v := range []string{
+		"", ".", "..", "a/b", `a\b`, "1..2",
+		`1.0"; id`, "1.0$(id)", "1.0`id`", "1.0;id", "1.0|id",
+		"1.0 2.0", "1.0\n2.0", `1.0"`, "1.0&whoami",
+	} {
 		if safeVersion(v) {
 			t.Errorf("safeVersion(%q) = true, want false", v)
 		}

@@ -81,4 +81,6 @@ USER devkit
 # Override DEVKIT_PROFILE to test a different profile (minimal, devops, full).
 ENV DEVKIT_PROFILE=cpp-dev
 
+# No HEALTHCHECK by design: this image runs the test suite once and exits, so
+# there is no long-lived service to probe. It is a CI harness, never deployed.
 CMD ["bash", "/workspace/ci/linux-test-entrypoint.sh"]

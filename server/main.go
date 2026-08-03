@@ -36,6 +36,8 @@ func main() {
 		host      = flag.String("host", "127.0.0.1", "HTTP bind address")
 		noBrowser = flag.Bool("no-browser", false, "don't open browser on startup")
 		tlsFlag   = flag.Bool("tls", false, "enable HTTPS with an auto-generated self-signed certificate")
+		tlsCert   = flag.String("tls-cert", "", "path to a TLS certificate (PEM); with --tls-key, overrides the self-signed cert")
+		tlsKey    = flag.String("tls-key", "", "path to the TLS private key (PEM) matching --tls-cert")
 		skipSetup = flag.Bool("skip-setup", false, "mark setup complete so API is immediately usable (headless/CI installs)")
 		showVer   = flag.Bool("version", false, "print the server version and exit")
 	)
@@ -96,7 +98,7 @@ func main() {
 	}
 
 	log.Printf("Listening on %s://%s", scheme, addr)
-	listenAndServe(httpSrv, repoRoot, *tlsFlag)
+	listenAndServe(httpSrv, repoRoot, *tlsFlag, *tlsCert, *tlsKey)
 }
 
 // resolvePaths derives repoRoot from the executable location and fills in the
@@ -148,14 +150,26 @@ func printBanner(baseURL, currentOS, token string) {
 }
 
 // listenAndServe starts httpSrv over TLS or plain HTTP and blocks until exit.
-func listenAndServe(httpSrv *http.Server, repoRoot string, useTLS bool) {
+// When certPath and keyPath are both set, that operator-supplied certificate is
+// used instead of the auto-generated self-signed one — the supported way to run
+// team mode behind a real CA-issued certificate.
+func listenAndServe(httpSrv *http.Server, repoRoot string, useTLS bool, certPath, keyPath string) {
 	if !useTLS {
 		log.Fatal(httpSrv.ListenAndServe())
 		return
 	}
-	certFile, keyFile, tlsErr := ensureTLSCert(repoRoot)
-	if tlsErr != nil {
-		log.Fatalf("TLS cert error: %v", tlsErr)
+	if (certPath == "") != (keyPath == "") {
+		log.Fatalf("TLS: --tls-cert and --tls-key must be provided together")
+	}
+	certFile, keyFile := certPath, keyPath
+	if certFile == "" {
+		var tlsErr error
+		certFile, keyFile, tlsErr = ensureTLSCert(repoRoot)
+		if tlsErr != nil {
+			log.Fatalf("TLS cert error: %v", tlsErr)
+		}
+	} else {
+		log.Printf("TLS: using operator-supplied certificate %s", certFile)
 	}
 	log.Fatal(httpSrv.ListenAndServeTLS(certFile, keyFile))
 }
