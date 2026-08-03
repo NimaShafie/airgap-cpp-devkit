@@ -9,6 +9,8 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.3.67] — 2026-08-02
+
 ### Added
 
 #### Operator-supplied TLS certificate
@@ -104,6 +106,18 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `generate-sbom.sh` now keeps **all** prebuilt manifests a tool ships at its
   newest version (e.g. gRPC's Windows and Linux platform manifests), instead of
   collapsing to a single one. Older versions still collapse as before.
+
+#### Bundled tool version bumps
+- **CMake 4.3.3 → 4.4.2** — adds a from-source musl variant (static libstdc++/libgcc,
+  links only `ld-musl`); Windows + glibc from upstream.
+- **SQLite 3.53.3 → 3.53.4** — from-source static `sqlite3` CLI for both libc families
+  (glibc + musl); Windows tools zip refreshed; RHEL/Rocky el8/el9/el10 RPMs unchanged.
+- **GDB 17.1 → 17.2**, **PuTTY 0.83 → 0.84**, **SourceTree 3.4.30 → 3.4.31**.
+- **FileZilla 3.70.4 → 3.70.6** — clean (non-sponsored) win64 installer + upstream
+  `.tar.xz` Linux tarball.
+- **llvm-mingw 20260407 → 20260616**; **Git for Windows 2.55.0 → 2.55.0.windows.3**
+  (wincred fix).
+- SBOM regenerated; every affected `manifest.json` carries a fresh SHA-256.
 
 ---
 
