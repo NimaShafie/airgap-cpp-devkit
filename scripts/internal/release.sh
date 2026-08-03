@@ -241,11 +241,24 @@ if [[ "$SKIP_GH_RELEASE" == false ]]; then
         fi
 
         # Build the release notes from the CHANGELOG block for this version.
+        # Print the body between this version's "## [ver]" header and the next
+        # "## [" header, excluding both headers, section-separator "---" lines,
+        # and leading/trailing blank lines. A plain awk range (/start/,/end/)
+        # fails here because the start line also matches the end pattern, which
+        # collapses the range to the header line alone.
         _changelog_section() {
             local ver="$1" cl="$REPO_ROOT/CHANGELOG.md"
-            awk "/^## \[$ver\]/,/^## \[/" "$cl" \
-                | head -n -1 \
-                | tail -n +2
+            awk -v ver="$ver" '
+                index($0, "## [" ver "]") == 1 { f = 1; next }
+                f && /^## \[/                  { exit }
+                f && $0 == "---"               { next }
+                f { buf[n++] = $0 }
+                END {
+                    i = 0;     while (i < n && buf[i] ~ /^[[:space:]]*$/) i++
+                    j = n - 1; while (j >= i && buf[j] ~ /^[[:space:]]*$/) j--
+                    for (k = i; k <= j; k++) print buf[k]
+                }
+            ' "$cl"
         }
         RELEASE_NOTES="$(_changelog_section "$VERSION")"
         if [[ -z "$RELEASE_NOTES" ]]; then
