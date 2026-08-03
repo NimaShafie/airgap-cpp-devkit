@@ -326,7 +326,7 @@ or via the API (`GET /api/prefix`, `POST /api/prefix`).
 | [`tools/dev-tools/conan/`](tools/dev-tools/conan/README.md) | Conan 2.27.1 — C/C++ package manager, no Python required | No |
 | [`tools/frameworks/grpc/`](tools/frameworks/grpc/README.md) | gRPC v1.83.0 — Windows prebuilt per MSVC toolset (VS 2019/2022/2026, Release or Debug) + Linux RHEL/Rocky 8/9/10 (x86_64) | No |
 | [`tools/lib/zlib/`](tools/lib/zlib/) | zlib 1.3.2 — gzip/DEFLATE compression library; vendored source, CMake build; Windows + Linux | No |
-| [`tools/dev-tools/filezilla/`](tools/dev-tools/filezilla/README.md) | FileZilla 3.70.4 — FTP/SFTP client; Windows + Linux | No |
+| [`tools/dev-tools/filezilla/`](tools/dev-tools/filezilla/README.md) | FileZilla 3.70.6 — FTP/SFTP client; Windows + Linux | No |
 | [`tools/dev-tools/gdb/`](tools/dev-tools/gdb/README.md) | GDB 17.2 — Linux source build (~25 min) | No |
 | [`tools/dev-tools/notepadpp/`](tools/dev-tools/notepadpp/README.md) | Notepad++ 8.9.7 — Windows only; portable zip or NSIS installer | No |
 | [`tools/dev-tools/putty/`](tools/dev-tools/putty/README.md) | PuTTY 0.84 — Windows MSI + Linux source build | No |

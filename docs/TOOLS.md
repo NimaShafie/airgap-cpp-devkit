@@ -65,7 +65,7 @@ gRPC prebuilt includes: `bin/` (protoc, grpc_cpp_plugin, all plugins), `include/
 
 | Tool | Version | Platform | Prebuilt? | Location |
 |------|---------|----------|-----------|----------|
-| **FileZilla** | 3.70.4 | Windows + Linux | Yes | `tools/dev-tools/filezilla/` |
+| **FileZilla** | 3.70.6 | Windows + Linux | Yes | `tools/dev-tools/filezilla/` |
 | **GDB** | 17.2 | Linux | No (source build ~25 min) | `tools/dev-tools/gdb/` |
 | **Notepad++** | 8.9.7 | Windows | Yes (portable zip + installer) | `tools/dev-tools/notepadpp/` |
 | **PuTTY** | 0.84 | Windows + Linux | Yes (Win MSI) / source build (Linux) | `tools/dev-tools/putty/` |
@@ -241,7 +241,7 @@ Linux support uses a **two libc family** model: a glibc 2.28 floor build covers 
 | gRPC 1.83.0 | Yes | Yes (RHEL/Rocky 8/9/10 x86_64) | - | Windows: per MSVC toolset (v142/v143/v145) × Release/Debug |
 | Python 3.14.6 | Yes | Yes (glibc standalone) | Yes (musl standalone) | python-build-standalone per libc family |
 | .NET SDK 10.0.202 | Yes | Yes | - | Portable, no installer |
-| FileZilla 3.70.4 | Yes | Yes | Yes | Prebuilt installer (Win) + binary tarball (Linux) |
+| FileZilla 3.70.6 | Yes | Yes | Yes | Prebuilt installer (Win) + binary tarball (Linux) |
 | GDB 17.2 | - | Yes | Yes | Linux source build; requires gcc, make, readline-devel |
 | Notepad++ 8.9.7 | Yes | - | - | Windows only; portable zip (no admin) + installer available |
 | PuTTY 0.84 | Yes (MSI) | Yes (source) | Yes (source) | Linux builds CLI tools only; requires cmake + gcc |
@@ -306,7 +306,7 @@ bash tools/dev-tools/sqlite/setup.sh                 # SQLite CLI
 bash tools/dev-tools/matlab/setup.sh                 # MATLAB verification
 bash tools/dev-tools/vscode-extensions/setup.sh      # VS Code extensions
 bash tools/toolchains/gcc/windows/setup.sh x86_64    # GCC + MinGW-w64 (Windows only)
-bash tools/dev-tools/filezilla/setup.sh              # FileZilla 3.70.4
+bash tools/dev-tools/filezilla/setup.sh              # FileZilla 3.70.6
 bash tools/dev-tools/gdb/setup.sh                    # GDB 17.2 (Linux only, source build ~25 min)
 bash tools/dev-tools/notepadpp/setup.sh              # Notepad++ 8.9.7 (Windows only)
 bash tools/dev-tools/putty/setup.sh                  # PuTTY 0.83

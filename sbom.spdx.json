@@ -2,7 +2,7 @@
   "SPDXID": "SPDXRef-DOCUMENT",
   "spdxVersion": "SPDX-2.3",
   "creationInfo": {
-    "created": "2026-08-01T01:38:08Z",
+    "created": "2026-08-03T02:50:30Z",
     "creators": [
       "Organization: airgap-cpp-devkit",
       "Tool: airgap-cpp-devkit/scripts/internal/generate-sbom.sh"
@@ -1345,7 +1345,7 @@
     {
       "SPDXID": "SPDXRef-dev-tools-filezilla",
       "name": "dev-tools/filezilla",
-      "versionInfo": "3.70.4",
+      "versionInfo": "3.70.6",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
       "filesAnalyzed": false,
@@ -1357,16 +1357,16 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "3d3b6d6d55858f72b12cc4a55d8fec6950e56bdd0507b6bab2fc2b160dc055bd"
+          "checksumValue": "e345086eb4cc092fdc56e1f024491de2fe5b4225a76178e78cfc3f82f7c979df"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "2792cfc5bfe80c771915c0cc8c9bb67cbd06fd8544681a24336b38c89c382496"
+          "checksumValue": "2ca1fb5849dbe22ce2a63d33c7e2bdc31198a6bf475c3fdd530245db760fe17d"
         }
       ],
       "attributionTexts": [
-        "windows: FileZilla_3.70.4_win64_sponsored2-setup.exe SHA256:3d3b6d6d55858f72b12cc4a55d8fec6950e56bdd0507b6bab2fc2b160dc055bd",
-        "linux-x64: FileZilla_3.70.4_x86_64-linux-gnu.tar.gz SHA256:2792cfc5bfe80c771915c0cc8c9bb67cbd06fd8544681a24336b38c89c382496"
+        "windows: FileZilla_3.70.6_win64-setup.exe SHA256:e345086eb4cc092fdc56e1f024491de2fe5b4225a76178e78cfc3f82f7c979df",
+        "linux-x64: FileZilla_3.70.6_x86_64-linux-gnu.tar.xz SHA256:2ca1fb5849dbe22ce2a63d33c7e2bdc31198a6bf475c3fdd530245db760fe17d"
       ]
     },
     {
