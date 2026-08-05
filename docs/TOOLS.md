@@ -70,8 +70,8 @@ gRPC prebuilt includes: `bin/` (protoc, grpc_cpp_plugin, all plugins), `include/
 | **Notepad++** | 8.9.7 | Windows | Yes (portable zip + installer) | `tools/dev-tools/notepadpp/` |
 | **PuTTY** | 0.84 | Windows + Linux | Yes (Win MSI) / source build (Linux) | `tools/dev-tools/putty/` |
 | **SourceTree** | 3.4.31 | Windows | Yes | `tools/dev-tools/sourcetree/` |
-| **Servy** | 8.9 | Windows | Yes (single file ~80 MB) | `tools/dev-tools/servy/` |
-| **Conan** | 2.31.1 | Windows + Linux | Yes (self-contained) | `tools/dev-tools/conan/` |
+| **Servy** | 9.0 | Windows | Yes (single file ~80 MB) | `tools/dev-tools/servy/` |
+| **Conan** | 2.31.2 | Windows + Linux | Yes (self-contained) | `tools/dev-tools/conan/` |
 | **VS Code extensions** | Various | Windows + Linux | Yes (.vsix) | `tools/dev-tools/vscode-extensions/` |
 | **SQLite CLI** | 3.53.4 (Win) / 3.26.0 RPM (RHEL/Rocky 8) | Windows + Linux | Yes | `tools/dev-tools/sqlite/` |
 | **MATLAB verification** | - | Windows + Linux | - (checks existing install) | `tools/dev-tools/matlab/` |
@@ -215,9 +215,9 @@ All .zip archives use deflate level 9 compression.
 | CMake 4.4.2 Linux glibc (.tar.gz) | 62MB | 2 | 50MB |
 | CMake 4.4.2 Linux musl (.tar.gz) | 38MB | 1 | -- single file |
 | CMake 4.4.2 Windows (.zip) | 52MB | 2 | 50MB |
-| Servy 8.9 Windows (.exe) | 82MB | 2 | 50MB |
-| Conan 2.31.1 Windows (.zip) | 15MB | 1 | -- single file |
-| Conan 2.31.1 Linux (.tgz) | 27MB | 1 | -- single file |
+| Servy 9.0 Windows (.exe) | 82MB | 2 | 50MB |
+| Conan 2.31.2 Windows (.zip) | 15MB | 1 | -- single file |
+| Conan 2.31.2 Linux (.tgz) | 27MB | 1 | -- single file |
 | Python 3.14.4 Windows embed (.zip) | 12MB | 1 | -- single file |
 | SQLite 3.53.4 Windows CLI (.zip) | 6.3MB | 1 | -- single file |
 | SQLite 3.53.4 Linux CLI (static glibc/musl) | 2.8/2.2MB | 1 | -- single file |
@@ -246,8 +246,8 @@ Linux support uses a **two libc family** model: a glibc 2.28 floor build covers 
 | Notepad++ 8.9.7 | Yes | - | - | Windows only; portable zip (no admin) + installer available |
 | PuTTY 0.84 | Yes (MSI) | Yes (source) | Yes (source) | Linux builds CLI tools only; requires cmake + gcc |
 | SourceTree 3.4.31 | Yes | - | - | Windows only; Squirrel installer targets %LocalAppData%\SourceTree |
-| Servy 8.9 | Yes | - | - | Windows only, graceful no-op on Linux |
-| Conan 2.31.1 | Yes | Yes | Yes | Self-contained, no Python required |
+| Servy 9.0 | Yes | - | - | Windows only, graceful no-op on Linux |
+| Conan 2.31.2 | Yes | Yes | Yes | Self-contained, no Python required |
 | VS Code extensions | Yes | Yes | Yes | Per-platform .vsix files |
 | SQLite CLI 3.53.4 | Yes | Yes (static glibc-floor binary; RHEL/Rocky fall back to distro RPM per el8/el9/el10) | Yes (fully-static musl binary) | Static per-libc binary preferred; RPM fallback on RHEL/Rocky only |
 | zlib 1.3.2 | Yes | Yes | Yes | Source build using host cc/gcc/clang; works on any distro |
@@ -300,8 +300,8 @@ bash tools/toolchains/clang/style-formatter/bootstrap.sh  # pre-commit hook
 bash tools/build-tools/cmake/setup.sh                # CMake 4.3.1
 bash tools/toolchains/lcov/setup.sh                 # lcov 2.5 (Linux only)
 bash tools/languages/python/setup.sh                 # Python 3.14.4 + pip packages
-bash tools/dev-tools/conan/setup.sh                  # Conan 2.31.1
-bash tools/dev-tools/servy/setup.sh                  # Servy 8.9 (Windows only)
+bash tools/dev-tools/conan/setup.sh                  # Conan 2.31.2
+bash tools/dev-tools/servy/setup.sh                  # Servy 9.0 (Windows only)
 bash tools/dev-tools/sqlite/setup.sh                 # SQLite CLI
 bash tools/dev-tools/matlab/setup.sh                 # MATLAB verification
 bash tools/dev-tools/vscode-extensions/setup.sh      # VS Code extensions

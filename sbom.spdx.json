@@ -2,7 +2,7 @@
   "SPDXID": "SPDXRef-DOCUMENT",
   "spdxVersion": "SPDX-2.3",
   "creationInfo": {
-    "created": "2026-08-03T02:50:30Z",
+    "created": "2026-08-05T04:13:25Z",
     "creators": [
       "Organization: airgap-cpp-devkit",
       "Tool: airgap-cpp-devkit/scripts/internal/generate-sbom.sh"
@@ -767,7 +767,7 @@
     {
       "SPDXID": "SPDXRef-conan",
       "name": "dev-tools/conan",
-      "versionInfo": "2.31.1",
+      "versionInfo": "2.31.2",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
       "filesAnalyzed": false,
@@ -779,22 +779,22 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "0e3371a817c9f3b60e2af0fdbf4fdec80c882749ce4251a5dd998d525cba069e"
+          "checksumValue": "6998acad336a58711f79029fd4aca71434e6fb9613da0d79a007f0c2bcbcb314"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "b42491ccf90ef6ed433e465c00806b1b5a3d958b315adb7b01d1b6d232f17c14"
+          "checksumValue": "8d4eceaacff05e415e5a3ed4128b2a9309651cebb74cec3231f210d8487d75d5"
         }
       ],
       "attributionTexts": [
-        "linux-x64: conan-2.31.1-linux-x86_64.tar.gz SHA256:0e3371a817c9f3b60e2af0fdbf4fdec80c882749ce4251a5dd998d525cba069e",
-        "windows: conan-2.31.1-windows-x86_64.zip SHA256:b42491ccf90ef6ed433e465c00806b1b5a3d958b315adb7b01d1b6d232f17c14"
+        "linux-x64: conan-2.31.2-linux-x86_64.tar.gz SHA256:6998acad336a58711f79029fd4aca71434e6fb9613da0d79a007f0c2bcbcb314",
+        "windows: conan-2.31.2-windows-x86_64.zip SHA256:8d4eceaacff05e415e5a3ed4128b2a9309651cebb74cec3231f210d8487d75d5"
       ]
     },
     {
       "SPDXID": "SPDXRef-servy",
       "name": "dev-tools/servy",
-      "versionInfo": "8.9",
+      "versionInfo": "9.0",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
       "filesAnalyzed": false,
@@ -806,16 +806,16 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "edcf8f37c9d854e859322fec9f7c5f853da5534cfb09cbf686c4f5831df339f4"
+          "checksumValue": "d74941a55a5b8d01884ad3493d636efe2cb11dbb4e68498a2dfe90a6da6cabfa"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "e8ba2ba6c5904b48ed759a21e06501e1286d1edbef69806fd0405e9e23306f89"
+          "checksumValue": "8be57626edae583cefcf73c4bbaa9b35c5ab776421c86ad2f2fa0ae841a964bc"
         }
       ],
       "attributionTexts": [
-        "windows: servy-8.9-x64-installer.exe.part-aa SHA256:edcf8f37c9d854e859322fec9f7c5f853da5534cfb09cbf686c4f5831df339f4",
-        "windows: servy-8.9-x64-installer.exe.part-ab SHA256:e8ba2ba6c5904b48ed759a21e06501e1286d1edbef69806fd0405e9e23306f89"
+        "windows: servy-9.0-x64-installer.exe.part-aa SHA256:d74941a55a5b8d01884ad3493d636efe2cb11dbb4e68498a2dfe90a6da6cabfa",
+        "windows: servy-9.0-x64-installer.exe.part-ab SHA256:8be57626edae583cefcf73c4bbaa9b35c5ab776421c86ad2f2fa0ae841a964bc"
       ]
     },
     {
