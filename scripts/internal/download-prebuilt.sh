@@ -11,7 +11,7 @@
 #
 # Usage:
 #   bash scripts/internal/download-prebuilt.sh [--small] [--large]
-#   --small   Only small/medium tools (cmake, notepadpp, 7zip, conan, servy)
+#   --small   Only small/medium tools (cmake, notepadpp, conan, servy)
 #   --large   Only large tools (llvm, dotnet, vscode) — can take 30+ min
 #   (no flags) runs all
 set -euo pipefail
@@ -111,21 +111,6 @@ if [[ "$RUN_SMALL" == true ]]; then
 }
 MEOF
   ok "Notepad++ 8.9.4 complete."
-
-  # ── 7-Zip 26.01 (Windows installer .exe; Linux archive → .tar.gz) ───────────
-  log "7-Zip 26.01"
-  SZIP_DIR="$PREBUILT_DIR/dev-tools/7zip/26.01"
-  mkdir -p "$SZIP_DIR"
-
-  dl "https://github.com/ip7z/7zip/releases/download/26.01/7z2601-x64.exe" \
-     "$SZIP_DIR/7z2601-x64.exe"
-  dl "https://github.com/ip7z/7zip/releases/download/26.01/7z2601-linux-x64.tar.xz" \
-     "$TMP_DIR/7z-lin.tar.xz"
-  devkit_transcode_targz "$TMP_DIR/7z-lin.tar.xz" "$SZIP_DIR/7z2601-linux-x64.tar.gz"
-  maybe_split "$SZIP_DIR/7z2601-linux-x64.tar.gz"
-
-  gen_manifest "$SZIP_DIR" 7zip 26.01 ip7z/7zip 26.01
-  ok "7-Zip 26.01 complete."
 
   # ── Conan 2.28.0 ────────────────────────────────────────────────────────────
   log "Conan 2.28.0"

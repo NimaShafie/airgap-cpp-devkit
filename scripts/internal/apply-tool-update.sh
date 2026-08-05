@@ -104,7 +104,7 @@ done
 TOOL_NAME=$(json_field     "$DEVKIT_JSON" "name")
 CURRENT_VER=$(json_field   "$DEVKIT_JSON" "version")
 GITHUB_REPO=$(json_field   "$DEVKIT_JSON" "github_repo")
-# tag_prefix: distinguish absent (default "v") from explicitly "" (no prefix, e.g. Conan, 7zip)
+# tag_prefix: distinguish absent (default "v") from explicitly "" (no prefix, e.g. Conan)
 TAG_PREFIX=$(python3 -c "
 import json, sys
 d = json.load(open(sys.argv[1]))

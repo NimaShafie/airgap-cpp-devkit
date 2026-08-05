@@ -209,7 +209,7 @@ PYEOF
 
     # --- install-cli.sh — show lines to remove manually ---
     local cli_grep
-    # Match the id itself AND the UPPER_SNAKE_CASE variable form (e.g. 7zip → 7ZIP, vscode-extensions → VSCODE_EXTENSIONS)
+    # Match the id itself AND the UPPER_SNAKE_CASE variable form (e.g. vscode-extensions → VSCODE_EXTENSIONS)
     local id_upper
     id_upper="$(echo "${id}" | tr '[:lower:]-' '[:upper:]_')"
     cli_grep=$(grep -n "${id}\|INSTALL_${id_upper}" "${REPO_ROOT}/install-cli.sh" 2>/dev/null || true)
