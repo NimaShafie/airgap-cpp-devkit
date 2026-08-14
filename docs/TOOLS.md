@@ -70,7 +70,7 @@ gRPC prebuilt includes: `bin/` (protoc, grpc_cpp_plugin, all plugins), `include/
 | **Notepad++** | 8.9.7 | Windows | Yes (portable zip + installer) | `tools/dev-tools/notepadpp/` |
 | **PuTTY** | 0.84 | Windows + Linux | Yes (Win MSI) / source build (Linux) | `tools/dev-tools/putty/` |
 | **SourceTree** | 3.4.31 | Windows | Yes | `tools/dev-tools/sourcetree/` |
-| **Servy** | 9.0 | Windows | Yes (single file ~80 MB) | `tools/dev-tools/servy/` |
+| **Servy** | 9.4 | Windows | Yes (single file ~80 MB) | `tools/dev-tools/servy/` |
 | **Conan** | 2.31.2 | Windows + Linux | Yes (self-contained) | `tools/dev-tools/conan/` |
 | **VS Code extensions** | Various | Windows + Linux | Yes (.vsix) | `tools/dev-tools/vscode-extensions/` |
 | **SQLite CLI** | 3.53.4 (Win) / 3.26.0 RPM (RHEL/Rocky 8) | Windows + Linux | Yes | `tools/dev-tools/sqlite/` |
@@ -301,7 +301,7 @@ bash tools/build-tools/cmake/setup.sh                # CMake 4.3.1
 bash tools/toolchains/lcov/setup.sh                 # lcov 2.5 (Linux only)
 bash tools/languages/python/setup.sh                 # Python 3.14.4 + pip packages
 bash tools/dev-tools/conan/setup.sh                  # Conan 2.31.2
-bash tools/dev-tools/servy/setup.sh                  # Servy 9.0 (Windows only)
+bash tools/dev-tools/servy/setup.sh                  # Servy 9.4 (Windows only)
 bash tools/dev-tools/sqlite/setup.sh                 # SQLite CLI
 bash tools/dev-tools/matlab/setup.sh                 # MATLAB verification
 bash tools/dev-tools/vscode-extensions/setup.sh      # VS Code extensions

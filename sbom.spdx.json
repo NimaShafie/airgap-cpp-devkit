@@ -2,7 +2,7 @@
   "SPDXID": "SPDXRef-DOCUMENT",
   "spdxVersion": "SPDX-2.3",
   "creationInfo": {
-    "created": "2026-08-05T04:13:25Z",
+    "created": "2026-08-14T16:46:49Z",
     "creators": [
       "Organization: airgap-cpp-devkit",
       "Tool: airgap-cpp-devkit/scripts/internal/generate-sbom.sh"
@@ -794,7 +794,7 @@
     {
       "SPDXID": "SPDXRef-servy",
       "name": "dev-tools/servy",
-      "versionInfo": "9.0",
+      "versionInfo": "9.4",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
       "filesAnalyzed": false,
@@ -806,16 +806,16 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "d74941a55a5b8d01884ad3493d636efe2cb11dbb4e68498a2dfe90a6da6cabfa"
+          "checksumValue": "ead2ca35e3481b9f3ea444a901c3f363d8f5de93969b806273015049e5b73dd3"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "8be57626edae583cefcf73c4bbaa9b35c5ab776421c86ad2f2fa0ae841a964bc"
+          "checksumValue": "4e19029d00745dc26769369b350590c96021cbf398bb05b5e86a266bf0d58870"
         }
       ],
       "attributionTexts": [
-        "windows: servy-9.0-x64-installer.exe.part-aa SHA256:d74941a55a5b8d01884ad3493d636efe2cb11dbb4e68498a2dfe90a6da6cabfa",
-        "windows: servy-9.0-x64-installer.exe.part-ab SHA256:8be57626edae583cefcf73c4bbaa9b35c5ab776421c86ad2f2fa0ae841a964bc"
+        "windows: servy-9.4-x64-installer.exe.part-aa SHA256:ead2ca35e3481b9f3ea444a901c3f363d8f5de93969b806273015049e5b73dd3",
+        "windows: servy-9.4-x64-installer.exe.part-ab SHA256:4e19029d00745dc26769369b350590c96021cbf398bb05b5e86a266bf0d58870"
       ]
     },
     {
