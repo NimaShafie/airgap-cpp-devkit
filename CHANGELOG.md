@@ -9,6 +9,18 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.3.70] — 2026-08-22
+
+### Changed
+
+- The Linux `devkit-server` binary is now built as a musl static-PIE:
+  position-independent (ASLR-eligible) yet fully static with no dynamic
+  interpreter, so it still runs on both musl and glibc hosts. `build-server.sh`
+  produces it via an Alpine/musl container when a container runtime is present,
+  and falls back to the previous static build otherwise. Windows binaries
+  already ship ASLR (DYNAMICBASE) by default and are unchanged.
+
+
 ## [1.3.69] — 2026-08-22
 
 ### Added

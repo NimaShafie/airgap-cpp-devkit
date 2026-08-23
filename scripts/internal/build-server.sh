@@ -50,12 +50,48 @@ fi
 TMP_OUT="$(mktemp -d)"
 trap 'rm -rf "$TMP_OUT"' EXIT
 
+# A container runtime lets the Linux binary be built as a musl static-PIE.
+CONTAINER=""
+if command -v podman &>/dev/null; then
+  CONTAINER=podman
+elif command -v docker &>/dev/null; then
+  CONTAINER=docker
+fi
+
 echo ""
 echo "Building devkit-server-linux-amd64 ..."
-GOOS=linux GOARCH=amd64 CGO_ENABLED=0 \
-  go build "${BUILD_FLAGS[@]}" -o "$TMP_OUT/devkit-server-linux-amd64" .
+if [[ -n "$CONTAINER" ]]; then
+  # Built on Alpine with an external musl linker, the result is a position-
+  # independent yet fully static ELF (no dynamic interpreter): it gains ASLR and
+  # still runs on both musl and glibc hosts. A plain -buildmode=pie from the
+  # pure-Go cross-compile would instead require /lib64/ld-linux, which is absent
+  # on Alpine, so the container build is the portable way to get ASLR here.
+  echo "  via $CONTAINER (Alpine / musl static-pie)"
+  "$CONTAINER" run --rm \
+    -v "$SERVER_DIR":/src:ro,Z \
+    -v "$TMP_OUT":/out:Z \
+    docker.io/golang:alpine sh -c '
+      set -e
+      apk add --no-cache musl-dev gcc >/dev/null
+      cp -a /src /build && cd /build
+      gv=$(go env GOVERSION | sed "s/go//"); sed -i "s/^go .*/go ${gv}/" go.mod
+      export GOFLAGS=-mod=vendor GOTOOLCHAIN=local
+      CGO_ENABLED=1 go build -buildmode=pie \
+        -ldflags="-linkmode=external -extldflags=-static-pie -s -w" \
+        -o /out/devkit-server-linux-amd64 .
+    '
+else
+  echo "  [!!] No container runtime (podman/docker) found — falling back to a"
+  echo "       static, non-PIE Linux build (no ASLR on the main image). Official"
+  echo "       releases should be built where podman/docker or CI (Alpine) is"
+  echo "       available so the Linux binary ships as a musl static-pie."
+  GOOS=linux GOARCH=amd64 CGO_ENABLED=0 \
+    go build "${BUILD_FLAGS[@]}" -o "$TMP_OUT/devkit-server-linux-amd64" .
+fi
 
 echo "Building devkit-server-windows-amd64.exe ..."
+# The Go Windows PE already carries DYNAMICBASE + HIGH_ENTROPY_VA (ASLR) by
+# default, so no -buildmode=pie is needed here.
 GOOS=windows GOARCH=amd64 CGO_ENABLED=0 \
   go build "${BUILD_FLAGS[@]}" -o "$TMP_OUT/devkit-server-windows-amd64.exe" .
 
