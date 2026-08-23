@@ -10,12 +10,15 @@ title = "airgap-devkit gitleaks config"
 useDefault = true
 
 [allowlist]
-  description = "Placeholder doc credentials and synthetic tokens in Go unit tests"
-  regexes = ['''REPLACE_WITH_''']
+  description = "Placeholder doc credentials and the synthetic constant used by Go unit tests"
+  regexes = [
+    '''REPLACE_WITH_''',
+    # The fixed synthetic value assigned to the in-memory test server token.
+    # Scoped to this exact string so a real secret in the same file is still caught.
+    '''0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef''',
+  ]
   paths = [
     '''README\.md''',
     '''\.ci/README\.md''',
     '''\.ci/jenkins/SETUP\.md''',
-    # Static test fixtures — synthetic tokens used only by Go unit tests.
-    '''server/internal/api/handlers_extra_test\.go''',
   ]

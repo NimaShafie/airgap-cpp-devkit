@@ -9,6 +9,22 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.3.68] — 2026-08-22
+
+### Changed
+
+- Updated the Go toolchain to 1.26.6 and rebuilt the `devkit-server` binaries.
+- gRPC prebuilt installs now require a recorded per-part SHA-256 in the manifest and
+  verify every part before the archive is reassembled and extracted. A missing
+  manifest, missing python3, or absent checksum now aborts the install rather than
+  proceeding.
+
+### Internal
+
+- Narrowed the secrets-scan allowlist to the specific synthetic constant used by the
+  API unit tests, so a real credential added to that test file is still detected.
+
+
 ## [1.3.67] — 2026-08-02
 
 ### Added
