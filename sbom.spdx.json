@@ -2,7 +2,7 @@
   "SPDXID": "SPDXRef-DOCUMENT",
   "spdxVersion": "SPDX-2.3",
   "creationInfo": {
-    "created": "2026-08-14T16:46:49Z",
+    "created": "2026-08-22T23:52:35Z",
     "creators": [
       "Organization: airgap-cpp-devkit",
       "Tool: airgap-cpp-devkit/scripts/internal/generate-sbom.sh"
@@ -593,7 +593,7 @@
     {
       "SPDXID": "SPDXRef-toolchains-gcc",
       "name": "toolchains/gcc",
-      "versionInfo": "16.1.0",
+      "versionInfo": "16.2.0",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
       "filesAnalyzed": false,
@@ -601,32 +601,8 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "GCC 15.2.0. Windows: WinLibs GCC 15.2.0 mingw-w64ucrt 14.0.0 r7 (.tar.xz 4 parts). Linux: gcc-toolset-15 RHEL/Rocky 8, 9, 10 RPMs (.tar.xz 2 parts). Includes gcov.",
+      "comment": "GCC 16.2.0. Windows: WinLibs GCC 16.2.0 mingw-w64ucrt 14.0.0 r1 (.zip 6 parts). Linux: gcc-toolset-15 RHEL/Rocky 8, 9, 10 RPMs (.zip 2 parts, gcc 16.1.0). Includes gcov.",
       "checksums": [
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "6260349fcfdbb8804f67a2a43fc18ce7e2a6497c70948fce6651a661b51c8600"
-        },
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "cbe10ed3e4d2486ed47fb2581e7fedcdad030b8b7b4788cdeed886f34241936f"
-        },
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "ab3ef8553f4dc40368486180d2acde117115bec8f2a65d9cff0114a39456e7e0"
-        },
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "0b4128c1a8f1c8221145e445bf48a950ec192274d08a870fdb225c76742bfa8a"
-        },
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "c89c6a422ae52950e74928f8ce86d35e315f50515243ab5220b9b79522772ae3"
-        },
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "bec5f1548c10043b7602fbb3749b81fad00f870d6cc22eff543fcecaae7fef4d"
-        },
         {
           "algorithm": "SHA256",
           "checksumValue": "c326d392f9ee53ecdb9608d6f48d1f72e83d3189fad034bc2eb6ae8ca3da2833"
@@ -637,44 +613,38 @@
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "541bff3b912c1f46c0bb22e55ffad428c030db1bc5ec18f95a7d8f3ab0710ec8"
+          "checksumValue": "db285990e6f2a240ca3e32dcf6215b2dd1580826533d4f3bd84dfa52950d25a2"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "81bc5f5a263b96176b98e033bf97aed0dbf042bac7a28ad02e6f7fb8fb6128a2"
+          "checksumValue": "8bb152616d17849f6812e01a21d3e348039343f8feb13fd60daeef256503901b"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "94323bb0585ffaa6aeceb0cd56ad4862eee71e90b20678310d126d3def00c699"
+          "checksumValue": "007f250b5abf4bbc5ef98d26f199bd4653ed563cffadd57cdc17ca79f270115f"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "cf2c770c4653e7c9cd3e49062944be2a039fea03f89116e3d91251532ab5e68b"
+          "checksumValue": "7147de2c53f2f93f84c080b6beb7fede31ac4ce979cb61497f4231154a3a1436"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "95b96b5a29cb6479035ed570433ea060d116069d56be9d9ca0d82505d157106d"
+          "checksumValue": "6401435719ef3cd8f5a8129e4a903ee28ffdfe11405766afeac39241495bf7e6"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "cc8e460bd0c1712f26002e7c5bbe5f7c6d164473d858e8e60f5ea70688917643"
+          "checksumValue": "30a670a32f99a23588499c9af36ddddff94364e6f173fdc61774dbb92626103b"
         }
       ],
       "attributionTexts": [
-        "windows: winlibs-x86_64-posix-seh-gcc-16.1.0-mingw-w64ucrt-14.0.0-r3.zip.part-aa SHA256:6260349fcfdbb8804f67a2a43fc18ce7e2a6497c70948fce6651a661b51c8600",
-        "windows: winlibs-x86_64-posix-seh-gcc-16.1.0-mingw-w64ucrt-14.0.0-r3.zip.part-ab SHA256:cbe10ed3e4d2486ed47fb2581e7fedcdad030b8b7b4788cdeed886f34241936f",
-        "windows: winlibs-x86_64-posix-seh-gcc-16.1.0-mingw-w64ucrt-14.0.0-r3.zip.part-ac SHA256:ab3ef8553f4dc40368486180d2acde117115bec8f2a65d9cff0114a39456e7e0",
-        "windows: winlibs-x86_64-posix-seh-gcc-16.1.0-mingw-w64ucrt-14.0.0-r3.zip.part-ad SHA256:0b4128c1a8f1c8221145e445bf48a950ec192274d08a870fdb225c76742bfa8a",
-        "windows: winlibs-x86_64-posix-seh-gcc-16.1.0-mingw-w64ucrt-14.0.0-r3.zip.part-ae SHA256:c89c6a422ae52950e74928f8ce86d35e315f50515243ab5220b9b79522772ae3",
-        "windows: winlibs-x86_64-posix-seh-gcc-16.1.0-mingw-w64ucrt-14.0.0-r3.zip.part-af SHA256:bec5f1548c10043b7602fbb3749b81fad00f870d6cc22eff543fcecaae7fef4d",
         "linux-x64: gcc-toolset-15-rhel8-rpms.zip.part-aa SHA256:c326d392f9ee53ecdb9608d6f48d1f72e83d3189fad034bc2eb6ae8ca3da2833",
         "linux-x64: gcc-toolset-15-rhel8-rpms.zip.part-ab SHA256:68310fb285172b0c8432b2f6b5bbb6c266d9533f7bbf294f6d9146dde576a06d",
-        "windows: winlibs-x86_64-posix-seh-gcc-15.2.0-mingw-w64ucrt-14.0.0-r7.zip.part-aa SHA256:541bff3b912c1f46c0bb22e55ffad428c030db1bc5ec18f95a7d8f3ab0710ec8",
-        "windows: winlibs-x86_64-posix-seh-gcc-15.2.0-mingw-w64ucrt-14.0.0-r7.zip.part-ab SHA256:81bc5f5a263b96176b98e033bf97aed0dbf042bac7a28ad02e6f7fb8fb6128a2",
-        "windows: winlibs-x86_64-posix-seh-gcc-15.2.0-mingw-w64ucrt-14.0.0-r7.zip.part-ac SHA256:94323bb0585ffaa6aeceb0cd56ad4862eee71e90b20678310d126d3def00c699",
-        "windows: winlibs-x86_64-posix-seh-gcc-15.2.0-mingw-w64ucrt-14.0.0-r7.zip.part-ad SHA256:cf2c770c4653e7c9cd3e49062944be2a039fea03f89116e3d91251532ab5e68b",
-        "windows: winlibs-x86_64-posix-seh-gcc-15.2.0-mingw-w64ucrt-14.0.0-r7.zip.part-ae SHA256:95b96b5a29cb6479035ed570433ea060d116069d56be9d9ca0d82505d157106d",
-        "windows: winlibs-x86_64-posix-seh-gcc-15.2.0-mingw-w64ucrt-14.0.0-r7.zip.part-af SHA256:cc8e460bd0c1712f26002e7c5bbe5f7c6d164473d858e8e60f5ea70688917643"
+        "windows: winlibs-x86_64-posix-seh-gcc-16.2.0-mingw-w64ucrt-14.0.0-r1.zip.part-aa SHA256:db285990e6f2a240ca3e32dcf6215b2dd1580826533d4f3bd84dfa52950d25a2",
+        "windows: winlibs-x86_64-posix-seh-gcc-16.2.0-mingw-w64ucrt-14.0.0-r1.zip.part-ab SHA256:8bb152616d17849f6812e01a21d3e348039343f8feb13fd60daeef256503901b",
+        "windows: winlibs-x86_64-posix-seh-gcc-16.2.0-mingw-w64ucrt-14.0.0-r1.zip.part-ac SHA256:007f250b5abf4bbc5ef98d26f199bd4653ed563cffadd57cdc17ca79f270115f",
+        "windows: winlibs-x86_64-posix-seh-gcc-16.2.0-mingw-w64ucrt-14.0.0-r1.zip.part-ad SHA256:7147de2c53f2f93f84c080b6beb7fede31ac4ce979cb61497f4231154a3a1436",
+        "windows: winlibs-x86_64-posix-seh-gcc-16.2.0-mingw-w64ucrt-14.0.0-r1.zip.part-ae SHA256:6401435719ef3cd8f5a8129e4a903ee28ffdfe11405766afeac39241495bf7e6",
+        "windows: winlibs-x86_64-posix-seh-gcc-16.2.0-mingw-w64ucrt-14.0.0-r1.zip.part-af SHA256:30a670a32f99a23588499c9af36ddddff94364e6f173fdc61774dbb92626103b"
       ]
     },
     {
@@ -794,7 +764,7 @@
     {
       "SPDXID": "SPDXRef-servy",
       "name": "dev-tools/servy",
-      "versionInfo": "9.4",
+      "versionInfo": "9.7",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
       "filesAnalyzed": false,
@@ -806,16 +776,16 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "ead2ca35e3481b9f3ea444a901c3f363d8f5de93969b806273015049e5b73dd3"
+          "checksumValue": "144f67abb89b147e6de0138f8b26d19754042ce0e51c38683beff9203006667e"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "4e19029d00745dc26769369b350590c96021cbf398bb05b5e86a266bf0d58870"
+          "checksumValue": "db9c99480e8b694d8a9b07a84fcd3758337a7979c2b0af4f19b99604240a6f27"
         }
       ],
       "attributionTexts": [
-        "windows: servy-9.4-x64-installer.exe.part-aa SHA256:ead2ca35e3481b9f3ea444a901c3f363d8f5de93969b806273015049e5b73dd3",
-        "windows: servy-9.4-x64-installer.exe.part-ab SHA256:4e19029d00745dc26769369b350590c96021cbf398bb05b5e86a266bf0d58870"
+        "windows: servy-9.7-x64-installer.exe.part-aa SHA256:144f67abb89b147e6de0138f8b26d19754042ce0e51c38683beff9203006667e",
+        "windows: servy-9.7-x64-installer.exe.part-ab SHA256:db9c99480e8b694d8a9b07a84fcd3758337a7979c2b0af4f19b99604240a6f27"
       ]
     },
     {

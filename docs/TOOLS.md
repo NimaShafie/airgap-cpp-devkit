@@ -19,7 +19,7 @@ All tools work without internet access. All dependencies are vendored.
 | **LLVM source** | 22.1.3 | Windows + Linux | - (source only) | `tools/toolchains/clang/source-build/llvm-src/` |
 | **llvm-mingw** | 20260616 | Windows + Linux | Yes | `prebuilt/toolchains/clang/mingw/` |
 | **Clang RPMs** | 20.1.8 | RHEL/Rocky 8, 9, 10 | Yes | `prebuilt/toolchains/clang/rhel8/` |
-| **GCC + MinGW-w64** | 15.2.0 + 13.0.0 UCRT | Windows | Yes | `tools/toolchains/gcc/windows/` |
+| **GCC + MinGW-w64** | 16.2.0 + 14.0.0 UCRT | Windows | Yes | `tools/toolchains/gcc/windows/` |
 | **gcc-toolset** | 15 | RHEL/Rocky 8, 9, 10 | Yes | `prebuilt/toolchains/gcc/linux/` |
 | **GCC cross (x86_64-bionic)** | 15 | Linux | Yes | `tools/toolchains/gcc/linux/cross/` |
 | **GCC native (RHEL/Rocky)** | 15 | RHEL/Rocky 8, 9, 10 | Yes | `tools/toolchains/gcc/linux/native/` |
@@ -70,7 +70,7 @@ gRPC prebuilt includes: `bin/` (protoc, grpc_cpp_plugin, all plugins), `include/
 | **Notepad++** | 8.9.7 | Windows | Yes (portable zip + installer) | `tools/dev-tools/notepadpp/` |
 | **PuTTY** | 0.84 | Windows + Linux | Yes (Win MSI) / source build (Linux) | `tools/dev-tools/putty/` |
 | **SourceTree** | 3.4.31 | Windows | Yes | `tools/dev-tools/sourcetree/` |
-| **Servy** | 9.4 | Windows | Yes (single file ~80 MB) | `tools/dev-tools/servy/` |
+| **Servy** | 9.7 | Windows | Yes (single file ~80 MB) | `tools/dev-tools/servy/` |
 | **Conan** | 2.31.2 | Windows + Linux | Yes (self-contained) | `tools/dev-tools/conan/` |
 | **VS Code extensions** | Various | Windows + Linux | Yes (.vsix) | `tools/dev-tools/vscode-extensions/` |
 | **SQLite CLI** | 3.53.4 (Win) / 3.26.0 RPM (RHEL/Rocky 8) | Windows + Linux | Yes | `tools/dev-tools/sqlite/` |
@@ -202,7 +202,7 @@ All .zip archives use deflate level 9 compression.
 | gRPC 1.83.0 Windows Release (.zip, ×3 toolsets v142/v143/v145) | ~180MB each | 4 each | 45MB |
 | gRPC 1.83.0 Windows Debug (.zip, ×3 toolsets v142/v143/v145) | ~490MB each | 11 each | 45MB |
 | gRPC 1.83.0 Linux RHEL/Rocky 8/9/10 (.tar.gz, x86_64) | ~91MB | 2 | 45MB |
-| WinLibs GCC 15.2.0 Windows (.zip) | 264MB | 6 | 49MB |
+| WinLibs GCC 16.2.0 Windows (.zip) | 261MB | 6 | 50MB |
 | llvm-mingw 20260616 Windows (.zip) | 178MB | 4 | 50MB |
 | llvm-mingw 20260616 Linux (.tar.gz) | 135MB | 3 | 50MB |
 | .NET SDK 10.0.302 Windows (.zip) | 283MB | 6 | 49MB |
@@ -215,7 +215,7 @@ All .zip archives use deflate level 9 compression.
 | CMake 4.4.2 Linux glibc (.tar.gz) | 62MB | 2 | 50MB |
 | CMake 4.4.2 Linux musl (.tar.gz) | 38MB | 1 | -- single file |
 | CMake 4.4.2 Windows (.zip) | 52MB | 2 | 50MB |
-| Servy 9.0 Windows (.exe) | 82MB | 2 | 50MB |
+| Servy 9.7 Windows (.exe) | 80MB | 2 | 50MB |
 | Conan 2.31.2 Windows (.zip) | 15MB | 1 | -- single file |
 | Conan 2.31.2 Linux (.tgz) | 27MB | 1 | -- single file |
 | Python 3.14.4 Windows embed (.zip) | 12MB | 1 | -- single file |
@@ -246,7 +246,7 @@ Linux support uses a **two libc family** model: a glibc 2.28 floor build covers 
 | Notepad++ 8.9.7 | Yes | - | - | Windows only; portable zip (no admin) + installer available |
 | PuTTY 0.84 | Yes (MSI) | Yes (source) | Yes (source) | Linux builds CLI tools only; requires cmake + gcc |
 | SourceTree 3.4.31 | Yes | - | - | Windows only; Squirrel installer targets %LocalAppData%\SourceTree |
-| Servy 9.0 | Yes | - | - | Windows only, graceful no-op on Linux |
+| Servy 9.7 | Yes | - | - | Windows only, graceful no-op on Linux |
 | Conan 2.31.2 | Yes | Yes | Yes | Self-contained, no Python required |
 | VS Code extensions | Yes | Yes | Yes | Per-platform .vsix files |
 | SQLite CLI 3.53.4 | Yes | Yes (static glibc-floor binary; RHEL/Rocky fall back to distro RPM per el8/el9/el10) | Yes (fully-static musl binary) | Static per-libc binary preferred; RPM fallback on RHEL/Rocky only |
@@ -301,7 +301,7 @@ bash tools/build-tools/cmake/setup.sh                # CMake 4.3.1
 bash tools/toolchains/lcov/setup.sh                 # lcov 2.5 (Linux only)
 bash tools/languages/python/setup.sh                 # Python 3.14.4 + pip packages
 bash tools/dev-tools/conan/setup.sh                  # Conan 2.31.2
-bash tools/dev-tools/servy/setup.sh                  # Servy 9.4 (Windows only)
+bash tools/dev-tools/servy/setup.sh                  # Servy 9.7 (Windows only)
 bash tools/dev-tools/sqlite/setup.sh                 # SQLite CLI
 bash tools/dev-tools/matlab/setup.sh                 # MATLAB verification
 bash tools/dev-tools/vscode-extensions/setup.sh      # VS Code extensions

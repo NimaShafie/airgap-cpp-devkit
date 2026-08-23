@@ -24,7 +24,7 @@
 #   - style-formatter         pre-commit hook
 #
 # OPTIONAL tools (prompted, or selected via --profile):
-#   - servy              9.4    (Windows only)
+#   - servy              9.7    (Windows only)
 #   - conan              2.30.0 (Windows + Linux)
 #   - tools/dev-tools/vscode-extensions  (requires VS Code + 'code' on PATH)
 #   - winlibs-gcc-ucrt   (Windows only)
@@ -155,8 +155,8 @@ if [[ "${AUTO_YES}" == "false" ]]; then
     if [[ "${OS}" == "windows" ]]; then
     echo ""
     echo "  Windows-only:"
-    echo "   [11] servy          9.4      Windows service manager          [~3s]"
-    echo "   [12] winlibs-gcc   15.2.0   GCC + MinGW-w64                [~8min]"
+    echo "   [11] servy          9.7      Windows service manager          [~3s]"
+    echo "   [12] winlibs-gcc   16.2.0   GCC + MinGW-w64                [~8min]"
     echo "   [13] grpc           1.83.0   C++ framework (prebuilt, per-VS)  [~1min]"
     fi
     echo ""
@@ -278,11 +278,11 @@ if [[ "${AUTO_YES}" == "false" ]]; then
         if [[ "${OS}" == "windows" ]]; then
             echo ""
             echo "  --- Windows-only tools ---"
-            printf "  Install servy 9.4?             Windows service manager     [~3s]  [y/N]: "
+            printf "  Install servy 9.7?             Windows service manager     [~3s]  [y/N]: "
             read -r reply
             [[ "${reply^^}" == "Y" ]] && INSTALL_SERVY=true
 
-            printf "  Install winlibs-gcc-ucrt?      GCC 15.2.0 + MinGW-w64     [~8min]  [y/N]: "
+            printf "  Install winlibs-gcc-ucrt?      GCC 16.2.0 + MinGW-w64     [~8min]  [y/N]: "
             read -r reply
             [[ "${reply^^}" == "Y" ]] && INSTALL_WINLIBS=true
 
@@ -319,7 +319,7 @@ if [[ "${AUTO_YES}" == "false" ]]; then
     echo "  Tools to install:"
     echo "    [OK] tools/toolchains/llvm, cmake 4.3.2, python 3.14.4, style-formatter"
     [[ "${OS}" == "linux" ]]              && echo "    [OK] lcov 2.5"
-    [[ "${INSTALL_SERVY}"   == "true" ]]  && echo "    [OK] servy 9.4 (Windows only)"
+    [[ "${INSTALL_SERVY}"   == "true" ]]  && echo "    [OK] servy 9.7 (Windows only)"
     [[ "${INSTALL_CONAN}"   == "true" ]]  && echo "    [OK] conan 2.30.0"
     [[ "${INSTALL_VSCODE}"  == "true" ]]  && echo "    [OK] tools/dev-tools/vscode-extensions"
     [[ "${INSTALL_WINLIBS}" == "true" ]]  && echo "    [OK] winlibs-gcc-ucrt"
@@ -607,7 +607,7 @@ unset _CLANG_FORMAT
 # Step 7: servy (optional, Windows only)
 # ---------------------------------------------------------------------------
 echo ""
-echo "  [7/13] Servy 7.9 (optional, Windows only)..."
+echo "  [7/13] Servy 9.7 (optional, Windows only)..."
 if [[ "${INSTALL_SERVY}" == "true" ]]; then
     _run_setup "servy" "${REPO_ROOT}/tools/dev-tools/servy/setup.sh"
 else
@@ -692,7 +692,7 @@ echo "  [11/13] Optional platform tools..."
 if [[ "${OS}" == "windows" ]]; then
     if [[ "${INSTALL_WINLIBS}" == "true" ]]; then
         _run_bootstrap_winlibs "winlibs-gcc-ucrt" \
-            "${REPO_ROOT}/tools/toolchains/gcc/windows/setup.sh"
+            "${REPO_ROOT}/tools/toolchains/gcc/setup.sh"
     else
         echo "  [--]  Skipped: winlibs-gcc-ucrt"
         SKIPPED_TOOLS+=("winlibs-gcc-ucrt")
