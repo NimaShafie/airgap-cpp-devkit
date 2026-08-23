@@ -64,6 +64,9 @@ CLAUDE.md
 # Auth token (generated at runtime)
 .devkit-token
 
+# Per-user token roster (holds live tokens; provisioned per deployment)
+.devkit-users.json
+
 # Access URL with embedded token (written by serve.sh at runtime)
 .devkit-access-url
 

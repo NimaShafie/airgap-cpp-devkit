@@ -149,8 +149,44 @@ Two options, from most to least infrastructure:
 - Restrict the port with a host firewall to the team's subnet.
 - Keep `allow_egress: false` on air-gapped hosts (blocks the update checker's
   outbound calls).
+- For multi-user servers, add a per-user token roster (next section) so
+  installs, uploads, and config changes are attributable and least-privileged
+  instead of everyone sharing one all-powerful token.
 
-### 8. Large package uploads
+### 8. Per-user tokens and roles (optional)
+
+By default a single shared token (`.devkit-token`) grants full access — every
+holder can install tools and upload packages, and actions are not attributable
+to a person. For a shared team server, drop a `.devkit-users.json` next to the
+repo root to issue **named tokens with roles**:
+
+```json
+{
+  "users": [
+    { "name": "alice", "token": "<64-hex>", "role": "admin" },
+    { "name": "bob",   "token": "<64-hex>", "role": "operator" },
+    { "name": "guest", "token": "<64-hex>", "role": "viewer" }
+  ]
+}
+```
+
+Generate each token with `openssl rand -hex 32`. The file holds live tokens, so
+it is `git`-ignored and should be mode `600`.
+
+| Role | Can do |
+|---|---|
+| `viewer` | read-only: dashboard, status, tool listings, install logs |
+| `operator` | everything viewer can, plus install / uninstall / version + package operations |
+| `admin` | everything operator can, plus package **uploads**, config changes, config import, and shutdown |
+
+- When the roster is present the shared `.devkit-token` is **rejected** — access
+  comes only from a named token. Remove the file to return to single-token mode.
+- Every privileged (operator/admin) request is written to the server log as
+  `audit: user=… role=… METHOD path`, giving per-user attribution.
+- Package upload/install runs an executable `setup.sh`, so it is admin-only —
+  keep the `admin` role to trusted operators.
+
+### 9. Large package uploads
 
 The **Packages → Upload Package** area accepts multi-GB `.zip` archives. Uploads
 are sent in resumable chunks (tus protocol): a dropped connection or a page

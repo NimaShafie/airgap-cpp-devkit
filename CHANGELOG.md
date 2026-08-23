@@ -9,6 +9,21 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.3.69] — 2026-08-22
+
+### Added
+
+- Optional per-user token roster (`.devkit-users.json`) with `viewer` / `operator` /
+  `admin` roles. Read-only views accept any authenticated caller; install, uninstall,
+  and version/package operations require operator; package uploads, config changes,
+  config import, and shutdown require admin. Every privileged request is audit-logged
+  with the acting user. With no roster file the single shared token keeps full access,
+  so existing single-token deployments are unchanged. See docs/DEPLOYMENT.md.
+- Release binaries are now code-signed: Authenticode on the Windows `.exe` and a GPG
+  detached signature on the Linux binary, with the signing public key published
+  alongside the release for verification.
+
+
 ## [1.3.68] — 2026-08-22
 
 ### Changed

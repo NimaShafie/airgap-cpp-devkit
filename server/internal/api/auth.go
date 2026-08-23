@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/subtle"
 	"encoding/hex"
@@ -57,12 +58,12 @@ func (s *Server) tokenAuth(next http.Handler) http.Handler {
 			return
 		}
 
-		got := s.requestToken(r)
-
-		if !s.tokenMatches(got) {
+		id, ok := s.identify(s.requestToken(r))
+		if !ok {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
+		r = r.WithContext(context.WithValue(r.Context(), identityKey, id))
 		next.ServeHTTP(w, r)
 	})
 }
@@ -87,14 +88,15 @@ func (s *Server) handleAuthBootstrap(w http.ResponseWriter, r *http.Request) {
 	// sure it cannot leak onward through the referrer header.
 	w.Header().Set("Referrer-Policy", "no-referrer")
 
-	if !s.tokenMatches(r.URL.Query().Get("devkit_token")) {
+	presented := r.URL.Query().Get("devkit_token")
+	if _, ok := s.identify(presented); !ok {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 	next := safeNext(r.URL.Query().Get("next"))
 	http.SetCookie(w, &http.Cookie{
 		Name:     "devkit_token",
-		Value:    s.token,
+		Value:    presented,
 		Path:     "/",
 		HttpOnly: true,
 		Secure:   r.TLS != nil,

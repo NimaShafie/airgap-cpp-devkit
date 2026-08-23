@@ -31,7 +31,10 @@ import (
 
 type ctxKey int
 
-const nonceKey ctxKey = iota
+const (
+	nonceKey ctxKey = iota
+	identityKey
+)
 
 // Shared literals used across the api package.
 const (
@@ -78,6 +81,7 @@ type Server struct {
 	Config      devconfig.Config
 	webFS       fs.FS
 	token       string
+	users       []User
 	startTime   time.Time
 
 	mu            sync.RWMutex
@@ -137,6 +141,9 @@ func New(repoRoot, prebuiltDir, currentOS string, cfg devconfig.Config, webFS fs
 		prefix:      detectPrefix(currentOS),
 		profiles:    defaultProfiles(repoRoot, allIDs),
 	}
+
+	// Optional per-user token roster. Absent file → single-shared-token mode.
+	s.users = loadUsers(repoRoot)
 
 	// Load persisted prefix override
 	if p := readPrefixOverride(repoRoot); p != "" {
@@ -217,9 +224,13 @@ func (s *Server) Routes() http.Handler {
 	r.Use(responseHeaders)
 	r.Use(s.tokenAuth)
 	r.Use(s.setupCheck)
+	// Authorization: read-only endpoints accept any authenticated caller
+	// (viewer). State-changing tool operations require operator; uploads,
+	// config, import, and shutdown require admin. In single-shared-token mode
+	// the shared token resolves to admin, so this leaves that mode unchanged.
 	r.Get("/auth/bootstrap", s.handleAuthBootstrap)
 	r.Get(pathSetup, s.handleSetup)
-	r.Post("/api/setup", s.handleSaveSetup)
+	r.Post("/api/setup", s.requireRole(RoleAdmin, s.handleSaveSetup))
 	r.Get("/", s.handleDashboard)
 	r.Get("/logs", s.handleLogs)
 	r.Get("/health", s.handleHealth)
@@ -228,52 +239,54 @@ func (s *Server) Routes() http.Handler {
 	r.Get("/api/network", s.handleNetworkStatus)
 	r.Get("/api/updates", s.handleCheckUpdates)
 	r.Get("/api/update-history", s.handleUpdateHistory)
-	r.Get("/download-update/{id}", s.handleDownloadUpdate)
+	r.Get("/download-update/{id}", s.requireRole(RoleOperator, s.handleDownloadUpdate))
 	r.Get("/api/tool/{id}/versions", s.handleToolVersions)
-	r.Delete("/api/tool/{id}/versions/{ver}", s.handleDeleteVersion)
-	r.Post("/api/tool/{id}/versions/{ver}/use", s.handleUseVersion)
+	r.Delete("/api/tool/{id}/versions/{ver}", s.requireRole(RoleOperator, s.handleDeleteVersion))
+	r.Post("/api/tool/{id}/versions/{ver}/use", s.requireRole(RoleOperator, s.handleUseVersion))
 	r.Get("/api/tools", s.handleAPITools)
 	r.Get("/api/tool/{id}", s.handleAPITool)
 	r.Get("/api/tool/{id}/manual-install", s.handleManualInstall)
 	r.Get(pathAPIPrefix, s.handleGetPrefix)
-	r.Post(pathAPIPrefix, s.handleSetPrefix)
-	r.Delete(pathAPIPrefix, s.handleResetPrefix)
+	r.Post(pathAPIPrefix, s.requireRole(RoleOperator, s.handleSetPrefix))
+	r.Delete(pathAPIPrefix, s.requireRole(RoleOperator, s.handleResetPrefix))
 	r.Get("/api/export", s.handleExport)
-	r.Post("/api/import", s.handleImport)
+	r.Post("/api/import", s.requireRole(RoleAdmin, s.handleImport))
 	r.Get(pathAPIProfiles, s.handleGetProfiles)
-	r.Post(pathAPIProfiles, s.handleSaveProfile)
-	r.Delete("/api/profiles/{id}", s.handleDeleteProfile)
-	r.Post("/api/config", s.handleSaveConfig)
-	r.Post("/api/time-format", s.handleSaveTimeFormat)
+	r.Post(pathAPIProfiles, s.requireRole(RoleOperator, s.handleSaveProfile))
+	r.Delete("/api/profiles/{id}", s.requireRole(RoleOperator, s.handleDeleteProfile))
+	r.Post("/api/config", s.requireRole(RoleAdmin, s.handleSaveConfig))
+	r.Post("/api/time-format", s.requireRole(RoleOperator, s.handleSaveTimeFormat))
 	r.Get("/api/team/status", s.handleTeamStatus)
-	r.Post("/api/team/sync", s.handleTeamSync)
-	r.Get("/install/{id}", s.handleInstall)
-	r.Delete("/uninstall/{id}", s.handleUninstall)
-	r.Get("/install-profile/{id}", s.handleInstallProfile)
-	r.Get("/check/{id}", s.handleCheck)
+	r.Post("/api/team/sync", s.requireRole(RoleOperator, s.handleTeamSync))
+	r.Get("/install/{id}", s.requireRole(RoleOperator, s.handleInstall))
+	r.Delete("/uninstall/{id}", s.requireRole(RoleOperator, s.handleUninstall))
+	r.Get("/install-profile/{id}", s.requireRole(RoleOperator, s.handleInstallProfile))
+	r.Get("/check/{id}", s.requireRole(RoleOperator, s.handleCheck))
 	r.Get("/api/tool/{id}/log", s.handleToolLog)
 	r.Get("/api/tool/{id}/logs", s.handleToolLogList)
 	r.Get("/api/tool/{id}/logs/{file}", s.handleToolLogFile)
 	r.Get("/api/tool/{id}/packages/status", s.handleBundlePackageStatus)
-	r.Get("/install-pkg/{id}/{pkg}", s.handleInstallPackage)
-	r.Get("/remove-pkg/{id}/{pkg}", s.handleRemovePackage)
+	r.Get("/install-pkg/{id}/{pkg}", s.requireRole(RoleOperator, s.handleInstallPackage))
+	r.Get("/remove-pkg/{id}/{pkg}", s.requireRole(RoleOperator, s.handleRemovePackage))
 	// Resumable chunked upload (tus protocol). The handler owns every method
 	// under this prefix (POST create, PATCH chunk, HEAD offset, DELETE abort).
+	// Uploaded packages carry an executable setup.sh, so the whole prefix is
+	// admin-gated.
 	if tush := s.tusHandler(); tush != nil {
-		r.Handle("/packages/upload", tush)
-		r.Handle("/packages/upload/*", tush)
+		r.Handle("/packages/upload", s.requireRole(RoleAdmin, tush.ServeHTTP))
+		r.Handle("/packages/upload/*", s.requireRole(RoleAdmin, tush.ServeHTTP))
 	}
 	r.Get("/packages/upload-config", s.handleUploadConfig)
-	r.Post("/packages/import", s.handlePackageImport)
-	r.Delete("/packages/{id}", s.handlePackageDelete)
+	r.Post("/packages/import", s.requireRole(RoleAdmin, s.handlePackageImport))
+	r.Delete("/packages/{id}", s.requireRole(RoleOperator, s.handlePackageDelete))
 	r.Get(pathAPILayout, s.handleGetLayout)
-	r.Post(pathAPILayout, s.handleSaveLayout)
-	r.Delete(pathAPILayout, s.handleResetLayout)
-	r.Post("/api/open-prefix", s.handleOpenPrefix)
-	r.Post("/api/tool/{id}/meta", s.handleSaveToolMeta)
-	r.Delete("/api/tool/{id}/meta", s.handleResetToolMeta)
+	r.Post(pathAPILayout, s.requireRole(RoleOperator, s.handleSaveLayout))
+	r.Delete(pathAPILayout, s.requireRole(RoleOperator, s.handleResetLayout))
+	r.Post("/api/open-prefix", s.requireRole(RoleOperator, s.handleOpenPrefix))
+	r.Post("/api/tool/{id}/meta", s.requireRole(RoleOperator, s.handleSaveToolMeta))
+	r.Delete("/api/tool/{id}/meta", s.requireRole(RoleOperator, s.handleResetToolMeta))
 	r.Get("/api/health/tools", s.handleHealthTools)
-	r.Post("/shutdown", s.handleShutdown)
+	r.Post("/shutdown", s.requireRole(RoleAdmin, s.handleShutdown))
 	return r
 }
 
@@ -829,7 +842,7 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	// hits it pre-authentication, so the version is disclosed only to a caller
 	// that already holds the token — an unauthenticated probe gets liveness only.
 	resp := map[string]string{"status": "ok"}
-	if s.tokenMatches(s.requestToken(r)) {
+	if _, ok := s.identify(s.requestToken(r)); ok {
 		resp["version"] = AppVersion
 	}
 	jsonOK(w, resp)
