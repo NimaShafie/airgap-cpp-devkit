@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "name": "airgap-devkit",
+  "display_name": "Air-gap DevKit",
+  "category": "dev-env",
+  "kind": "bash",
+  "description": "Offline C/C++ development kit: a prebuilt Go 'DevKit Manager' web UI that acquires, installs, and verifies toolchains and tools on an air-gapped host with no Python, pip, or network. Launches the manager and opens it in your browser.",
+  "docs": "README.md",
+  "launch": {
+    "bash": {
+      "windows": { "script": "scripts/launch.sh" },
+      "linux":   { "script": "scripts/launch.sh" }
+    }
+  },
+  "commands": [
+    {
+      "label": "Serve for a team (shared server)",
+      "help": "Host the DevKit Manager on a network interface so teammates can reach it from their own machines; prints a token-authenticated URL to share.",
+      "run": {
+        "windows": { "script": "scripts/serve.sh" },
+        "linux":   { "script": "scripts/serve.sh" }
+      }
+    }
+  ]
+}
